@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NHL 2026–27 Prediction Sheets</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script>
+  // ───── Your Supabase project (Project Settings > API Keys). Both values are safe to publish. ─────
+  window.PICKS_CONFIG = {
+    SUPABASE_URL: "https://quomusxbmkwhgrunosfy.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "sb_publishable_NaOzdASO29mYYlGQvfcYPA_j-ARxapF",
+    SEASON: "20262027"
+  };
+</script>
+<style>
+/* Team colors (--board, --accent, --stripe, --ctl-*, --title) are set by script for the chosen team. */
+:root{
+  --board:#001628; --accent:#99D9D9; --stripe:#99D9D9; --brand:#355464; --title:#99D9D9;
+  --ctl-light:#355464; --ctl-dark:#99D9D9; --ctl-ink-light:#fff; --ctl-ink-dark:#001628;
+  --ink:#0B1A24; --muted:#50636E; --line:#D3DDE2; --panel:#FFFFFF;
+  --bg:color-mix(in srgb, var(--brand) 7%, #F5F7F8);
+  --home:color-mix(in srgb, var(--brand) 6%, #FFFFFF);
+  --ctl:var(--ctl-light); --ctl-ink:var(--ctl-ink-light);
+  --alarm:#E9072B;
+  --win:#0E7C66; --winbg:#D5F0E8; --loss:#B3122C; --lossbg:#FBDDE2; --otl:#9A6A00; --otlbg:#FBEFCF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#E6EEF1; --muted:#98ABB4; --line:#243440;
+    --panel:color-mix(in srgb, var(--board) 22%, #10171C);
+    --bg:color-mix(in srgb, var(--board) 30%, #080C0F);
+    --home:color-mix(in srgb, var(--board) 40%, #10171C);
+    --ctl:var(--ctl-dark); --ctl-ink:var(--ctl-ink-dark);
+    --win:#5FD3B3; --winbg:#0F3A31; --loss:#FF8095; --lossbg:#3E1520; --otl:#F2C14E; --otlbg:#3A2D0C;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 190px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
+.wrap{max-width:820px;margin:0 auto;padding:0 16px 48px}
+
+/* Scoreboard */
+.board{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--board);color:#fff;
+  margin:0 -16px;padding:14px 16px 12px;border-bottom:4px solid var(--stripe)}
+.board-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.board h1{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.25rem;letter-spacing:.02em;margin:0;color:var(--title)}
+.teamsel{font:600 .9rem "Barlow",sans-serif;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:5px 8px;max-width:100%}
+.teamsel option,.teamsel optgroup{color:#000;background:#fff}
+.sub{font-size:.85rem;color:rgba(255,255,255,.75);display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}
+.record{display:flex;align-items:flex-end;gap:22px;margin-top:6px;flex-wrap:wrap}
+.rec{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:clamp(2.6rem,9vw,4rem);line-height:.9;font-variant-numeric:tabular-nums}
+.rec .dash{opacity:.55;padding:0 .08em}
+.stat{font-family:"Barlow Condensed",sans-serif;line-height:1}
+.stat b{display:block;font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{font-size:.85rem;color:rgba(255,255,255,.75);font-family:"Barlow",sans-serif}
+.actual{margin-top:8px;font-size:.9rem;color:rgba(255,255,255,.75)}
+.actual b{color:#fff;font-weight:600;font-variant-numeric:tabular-nums}
+.progress{margin-top:10px;height:6px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--stripe);transition:width .25s}
+.save{display:inline-flex;align-items:center;gap:6px}
+.save::before{content:"";width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5)}
+.save[data-s="ok"]::before{background:#5FD3B3}
+.save[data-s="busy"]::before{background:#F2C14E}
+.save[data-s="err"]::before{background:#FF4D5E}
+
+/* Team picker */
+.picker h1{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:clamp(2.2rem,7vw,3.2rem);line-height:1;margin:28px 0 6px}
+.picker > p{margin:0 0 8px;color:var(--muted)}
+.picker h2{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.3rem;margin:22px 0 8px;border-bottom:2px solid var(--ink);padding-bottom:3px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.tile{display:flex;align-items:center;min-height:52px;padding:8px 12px;border:0;border-left:8px solid var(--t-stripe);border-radius:6px;
+  background:var(--t-board);color:#fff;font:700 1.1rem "Barlow Condensed",sans-serif;letter-spacing:.01em;text-align:left;cursor:pointer}
+.tile:hover{filter:brightness(1.12)}
+
+/* Account + controls */
+.account{margin:16px 0 0;padding:12px;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.account p{margin:0;flex:1 1 220px;font-size:.9rem;color:var(--muted)}
+.account input{flex:1 1 200px;min-width:0;font:inherit;padding:7px 10px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:14px 0 6px}
+.right{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1.5px solid var(--ctl);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);font:600 .9rem "Barlow",sans-serif;padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ctl);color:var(--ctl-ink)}
+.plain{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font:600 .9rem "Barlow",sans-serif;padding:7px 12px;border-radius:6px;cursor:pointer}
+.plain:hover{border-color:var(--ctl)}
+.plain.primary{background:var(--ctl);border-color:var(--ctl);color:var(--ctl-ink)}
+.plain.armed{background:var(--alarm);border-color:var(--alarm);color:#fff}
+.note{font-size:.85rem;color:var(--muted);margin:4px 0 0}
+.empty{margin-top:24px;padding:16px;border:1.5px dashed var(--line);border-radius:8px;color:var(--muted)}
+
+/* Games */
+.month{margin-top:26px}
+.month-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:4px}
+.month-head h2{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:1.9rem;margin:0;line-height:1}
+.month-head .mrec{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.05rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.game{display:grid;grid-template-columns:2.2rem 6.4rem 1fr auto;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.game.home{background:var(--home);box-shadow:inset 3px 0 0 var(--stripe)}
+.gnum{font-family:"Barlow Condensed",sans-serif;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.gdate{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.05rem;line-height:1.1}
+.gdate small{display:block;font-family:"Barlow",sans-serif;font-weight:400;font-size:.8rem;color:var(--muted)}
+.opp{min-width:0}
+.opp strong{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opp .ha{font-size:.8rem;color:var(--muted)}
+.opp .tag{font-size:.72rem;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
+.final{display:inline-block;margin-left:6px;font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums}
+.final[data-r="W"]{color:var(--win)} .final[data-r="L"]{color:var(--loss)} .final[data-r="OTL"]{color:var(--otl)}
+.verdict{font-size:.8rem;font-weight:600;margin-left:6px}
+.verdict.hit{color:var(--win)} .verdict.miss{color:var(--muted)}
+.picks{display:inline-flex;gap:4px}
+.picks button{width:3rem;height:2.4rem;border:1.5px solid var(--line);background:transparent;color:var(--muted);
+  font:700 .95rem "Barlow Condensed",sans-serif;letter-spacing:.03em;border-radius:5px;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+.picks button:hover{border-color:var(--ctl);color:var(--ink)}
+.picks button[data-v="W"][aria-pressed="true"]{background:var(--winbg);border-color:var(--win);color:var(--win)}
+.picks button[data-v="L"][aria-pressed="true"]{background:var(--lossbg);border-color:var(--loss);color:var(--loss)}
+.picks button[data-v="OTL"][aria-pressed="true"]{background:var(--otlbg);border-color:var(--otl);color:var(--otl)}
+.game.locked .picks button{cursor:default}
+.game.locked .picks button:not([aria-pressed="true"]){opacity:.35}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--alarm);outline-offset:2px}
+
+.hidden{display:none!important}
+footer{margin-top:28px;font-size:.82rem;color:var(--muted)}
+
+@media (max-width:560px){
+  .game{grid-template-columns:5.6rem 1fr;grid-template-areas:"d o" "p p";row-gap:8px}
+  .gnum{display:none}
+  .gdate{grid-area:d}.opp{grid-area:o}
+  .picks{grid-area:p;display:grid;grid-template-columns:repeat(3,1fr)}
+  .picks button{width:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{.board{position:static}.controls,.account,.teamsel{display:none}.game{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Team picker (shown until a team is chosen) -->
+  <section class="picker hidden" id="picker">
+    <h1>NHL 2026–27 prediction sheets</h1>
+    <p>Choose a team to predict every regular-season game: win, loss, or overtime loss.</p>
+    <div id="tiles"></div>
+  </section>
+
+  <!-- Sheet -->
+  <div id="app" class="hidden">
+    <header class="board" aria-live="polite">
+      <div class="board-top">
+        <h1 id="title">Prediction sheet</h1>
+        <select class="teamsel" id="teamsel" aria-label="Choose a team"></select>
+      </div>
+      <div class="sub"><span id="picked">0 games picked</span><span class="save" id="savestate" data-s="local">Saved in this browser</span></div>
+      <div class="record">
+        <div class="rec" id="rec">0<span class="dash">–</span>0<span class="dash">–</span>0</div>
+        <div class="stat"><b id="pts">0</b><span>points</span></div>
+        <div class="stat"><b id="pace">—</b><span id="pacelabel">full-season pace</span></div>
+      </div>
+      <div class="actual" id="actual">Actual record appears here once games are final.</div>
+      <div class="progress"><i id="bar"></i></div>
+    </header>
+
+    <section class="account" id="account">
+      <p id="accountMsg">Sign in to save your picks to your database and use them on any device.</p>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" aria-label="Email address">
+      <button class="plain primary" id="signin">Email me a sign-in link</button>
+      <button class="plain hidden" id="signout">Sign out</button>
+    </section>
+
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Show games">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="home" aria-pressed="false">Home</button>
+        <button data-f="away" aria-pressed="false">Away</button>
+        <button data-f="open" aria-pressed="false">Unpicked</button>
+      </div>
+      <div class="right">
+        <button class="plain" id="dl">Download picks (CSV)</button>
+        <button class="plain" id="clear">Clear all picks</button>
+      </div>
+    </div>
+    <p class="note">Tap W, L, or OTL for each game; tap again to undo. Shaded rows are home games; times are in your time zone. Final scores fill in automatically after each game, and picks lock once a game is final.</p>
+
+    <main id="sheet"></main>
+    <div class="empty hidden" id="empty"></div>
+
+    <footer>2026–27 NHL regular season. Schedules and scores sync from the NHL's public data feed; start times are subject to change. Points use W = 2, OTL = 1; shootout losses count as OTL. Team colors are approximations for this fan-made sheet.</footer>
+  </div>
+</div>
+
+<script>
+const LOCK_FINAL_GAMES = true; // set to false to allow changing picks after a game ends
+
+/* board = scoreboard background, accent = team highlight, brand = main color for tints and buttons,
+   stripe (optional) = forces the edge stripe color when the automatic pick isn't right */
+const TEAMS = {
+  // Atlantic
+  BOS:{name:"Boston Bruins",         div:"Atlantic",     board:"#000000", accent:"#FFB81C", brand:"#FFB81C"},
+  BUF:{name:"Buffalo Sabres",        div:"Atlantic",     board:"#003087", accent:"#FFB81C", brand:"#003087"},
+  DET:{name:"Detroit Red Wings",     div:"Atlantic",     board:"#CE1126", accent:"#FFFFFF", brand:"#CE1126"},
+  FLA:{name:"Florida Panthers",      div:"Atlantic",     board:"#041E42", accent:"#C8102E", brand:"#C8102E"},
+  MTL:{name:"Montreal Canadiens",    div:"Atlantic",     board:"#192168", accent:"#AF1E2D", brand:"#AF1E2D"},
+  OTT:{name:"Ottawa Senators",       div:"Atlantic",     board:"#000000", accent:"#DA1A32", brand:"#DA1A32"},
+  TBL:{name:"Tampa Bay Lightning",   div:"Atlantic",     board:"#002868", accent:"#FFFFFF", brand:"#002868"},
+  TOR:{name:"Toronto Maple Leafs",   div:"Atlantic",     board:"#00205B", accent:"#FFFFFF", brand:"#00205B"},
+  // Metropolitan
+  CAR:{name:"Carolina Hurricanes",   div:"Metropolitan", board:"#CE1126", accent:"#A4A9AD", brand:"#CE1126"},
+  CBJ:{name:"Columbus Blue Jackets", div:"Metropolitan", board:"#002654", accent:"#CE1126", brand:"#002654"},
+  NJD:{name:"New Jersey Devils",     div:"Metropolitan", board:"#000000", accent:"#CE1126", brand:"#CE1126"},
+  NYI:{name:"New York Islanders",    div:"Metropolitan", board:"#00539B", accent:"#F47D30", brand:"#00539B"},
+  NYR:{name:"New York Rangers",      div:"Metropolitan", board:"#0038A8", accent:"#CE1126", brand:"#0038A8", stripe:"#CE1126"},
+  PHI:{name:"Philadelphia Flyers",   div:"Metropolitan", board:"#000000", accent:"#F74902", brand:"#F74902"},
+  PIT:{name:"Pittsburgh Penguins",   div:"Metropolitan", board:"#000000", accent:"#FCB514", brand:"#FCB514"},
+  WSH:{name:"Washington Capitals",   div:"Metropolitan", board:"#041E42", accent:"#C8102E", brand:"#C8102E"},
+  // Central
+  CHI:{name:"Chicago Blackhawks",    div:"Central",      board:"#000000", accent:"#CF0A2C", brand:"#CF0A2C"},
+  COL:{name:"Colorado Avalanche",    div:"Central",      board:"#6F263D", accent:"#A2AAAD", brand:"#236192"},
+  DAL:{name:"Dallas Stars",          div:"Central",      board:"#006847", accent:"#8F8F8C", brand:"#006847"},
+  MIN:{name:"Minnesota Wild",        div:"Central",      board:"#154734", accent:"#EAAA00", brand:"#A6192E"},
+  NSH:{name:"Nashville Predators",   div:"Central",      board:"#041E42", accent:"#FFB81C", brand:"#FFB81C"},
+  STL:{name:"St. Louis Blues",       div:"Central",      board:"#002F87", accent:"#FCB514", brand:"#002F87"},
+  UTA:{name:"Utah Mammoth",          div:"Central",      board:"#000000", accent:"#6CACE4", brand:"#6CACE4"},
+  WPG:{name:"Winnipeg Jets",         div:"Central",      board:"#041E42", accent:"#AC162C", brand:"#004C97"},
+  // Pacific
+  ANA:{name:"Anaheim Ducks",         div:"Pacific",      board:"#000000", accent:"#FC4C02", brand:"#FC4C02"},
+  CGY:{name:"Calgary Flames",        div:"Pacific",      board:"#C8102E", accent:"#F1BE48", brand:"#C8102E"},
+  EDM:{name:"Edmonton Oilers",       div:"Pacific",      board:"#041E42", accent:"#FF4C00", brand:"#FF4C00"},
+  LAK:{name:"Los Angeles Kings",     div:"Pacific",      board:"#111111", accent:"#A2AAAD", brand:"#A2AAAD"},
+  SJS:{name:"San Jose Sharks",       div:"Pacific",      board:"#006D75", accent:"#EA7200", brand:"#006D75"},
+  SEA:{name:"Seattle Kraken",        div:"Pacific",      board:"#001628", accent:"#99D9D9", brand:"#355464"},
+  VAN:{name:"Vancouver Canucks",     div:"Pacific",      board:"#00205B", accent:"#00843D", brand:"#00843D"},
+  VGK:{name:"Vegas Golden Knights",  div:"Pacific",      board:"#333F42", accent:"#B4975A", brand:"#B4975A"},
+};
+const DIVISIONS=["Atlantic","Metropolitan","Central","Pacific"];
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+/* ───────── Color helpers ───────── */
+function lum(hex){
+  const c=hex.replace("#","").match(/../g).map(h=>parseInt(h,16)/255)
+    .map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4));
+  return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
+}
+function contrast(a,b){ const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p); return (x+0.05)/(y+0.05); }
+const inkOn=bg=>contrast(bg,"#FFFFFF")>=Math.min(4.5,contrast(bg,"#000000"))?"#FFFFFF":"#000000";
+function firstReadable(bg,candidates,min=3){ return candidates.find(c=>contrast(c,bg)>=min)||candidates[candidates.length-1]; }
+
+function applyTheme(code){
+  const t=TEAMS[code], s=document.documentElement.style;
+  const stripe = t.stripe || firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2);
+  const ctlLight = firstReadable("#F5F7F8",[t.brand,t.board,"#222222"],3);
+  const ctlDark  = firstReadable("#10171C",[t.brand,t.accent,"#E6EEF1"],3);
+  s.setProperty("--board",t.board); s.setProperty("--accent",t.accent); s.setProperty("--brand",t.brand);
+  s.setProperty("--stripe",stripe);
+  s.setProperty("--title",firstReadable(t.board,[t.accent,"#FFFFFF"],3));
+  s.setProperty("--ctl-light",ctlLight); s.setProperty("--ctl-ink-light",inkOn(ctlLight));
+  s.setProperty("--ctl-dark",ctlDark);   s.setProperty("--ctl-ink-dark",inkOn(ctlDark));
+  document.querySelector('meta[name="theme-color"]')?.remove();
+  const m=document.createElement("meta"); m.name="theme-color"; m.content=t.board; document.head.appendChild(m);
+}
+
+/* ───────── State ───────── */
+const cfg=window.PICKS_CONFIG||{};
+const SEASON=cfg.SEASON||"20262027";
+const configured = window.supabase && cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT");
+const sb = configured ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY) : null;
+
+let team=null;      // e.g. "SEA"
+let games=[];       // this team's games, in order
+let picks={};       // { game_id: "W" | "L" | "OTL" }
+let userId=null;
+let filter="all";
+const localKey=()=>`nhl-picks-${SEASON}-${team}`;
+function saveLocal(){ try{ localStorage.setItem(localKey(), JSON.stringify(picks)); }catch(e){} }
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(localKey())||"{}")||{}; }catch(e){ return {}; } }
+
+const stateEl=document.getElementById("savestate");
+function setState(s,t){ stateEl.dataset.s=s; stateEl.textContent=t; }
+
+/* ───────── Team picker ───────── */
+function buildPicker(){
+  const tiles=document.getElementById("tiles"), sel=document.getElementById("teamsel");
+  DIVISIONS.forEach(div=>{
+    const codes=Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name));
+    const h=document.createElement("h2"); h.textContent=`${div} Division`; tiles.appendChild(h);
+    const grid=document.createElement("div"); grid.className="tiles"; tiles.appendChild(grid);
+    const og=document.createElement("optgroup"); og.label=`${div} Division`; sel.appendChild(og);
+    codes.forEach(c=>{
+      const t=TEAMS[c], b=document.createElement("button");
+      b.className="tile"; b.textContent=t.name; b.dataset.team=c;
+      b.style.setProperty("--t-board",t.board);
+      b.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+      grid.appendChild(b);
+      const o=document.createElement("option"); o.value=c; o.textContent=t.name; og.appendChild(o);
+    });
+  });
+  tiles.addEventListener("click",e=>{ const b=e.target.closest(".tile"); if(b) chooseTeam(b.dataset.team); });
+  sel.addEventListener("change",()=>chooseTeam(sel.value));
+}
+
+async function chooseTeam(code){
+  if(!TEAMS[code]) return;
+  team=code;
+  try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){}
+  const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
+  applyTheme(code);
+  document.title=`${TEAMS[code].name} 2026–27 Prediction Sheet`;
+  document.getElementById("title").textContent=`${TEAMS[code].name} · 2026–27 predictions`;
+  document.getElementById("teamsel").value=code;
+  document.getElementById("picker").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  window.scrollTo(0,0);
+  picks=loadLocal(); games=[]; renderSheet(); refresh();
+  await loadGames();
+  if(userId) await loadPicks();
+}
+
+/* ───────── Database ───────── */
+async function loadGames(){
+  const empty=document.getElementById("empty");
+  if(!sb){
+    empty.textContent="Database not connected yet: add your Supabase URL and key near the top of index.html (see README).";
+    empty.classList.remove("hidden"); return;
+  }
+  const want=team;
+  const {data,error}=await sb.from("games")
+    .select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,venue,neutral_site")
+    .eq("season",SEASON).or(`home.eq.${team},away.eq.${team}`)
+    .order("game_date").order("start_utc");
+  if(want!==team) return; // user switched teams mid-request
+  if(error){ empty.textContent=`Couldn’t load the schedule: ${error.message}`; empty.classList.remove("hidden"); return; }
+  games=data;
+  if(!games.length){
+    empty.textContent="No schedule in the database yet. Run the “Update NHL games” workflow once from your repository’s Actions tab (see README).";
+    empty.classList.remove("hidden");
+  }else empty.classList.add("hidden");
+  renderSheet(); refresh();
+}
+
+async function savePick(gid){
+  saveLocal();
+  if(!sb||!userId) return;
+  setState("busy","Saving…");
+  const q = picks[gid]
+    ? sb.from("team_picks").upsert({user_id:userId, team, game_id:Number(gid), pick:picks[gid], updated_at:new Date().toISOString()}, {onConflict:"user_id,team,game_id"})
+    : sb.from("team_picks").delete().eq("user_id",userId).eq("team",team).eq("game_id",Number(gid));
+  const {error}=await q;
+  error ? setState("err","Couldn’t save to database; saved in this browser") : setState("ok","Saved to database");
+}
+
+async function clearCloud(){
+  saveLocal();
+  if(!sb||!userId) return;
+  setState("busy","Saving…");
+  const {error}=await sb.from("team_picks").delete().eq("user_id",userId).eq("team",team);
+  error ? setState("err","Couldn’t clear database; cleared in this browser") : setState("ok","Saved to database");
+}
+
+async function loadPicks(){
+  if(!team) return;
+  const want=team;
+  setState("busy","Loading picks…");
+  const {data,error}=await sb.from("team_picks").select("game_id,pick").eq("team",team);
+  if(want!==team) return;
+  if(error){ setState("err","Couldn’t load picks from database"); return; }
+  if(data.length){
+    picks=Object.fromEntries(data.map(r=>[String(r.game_id),r.pick]));
+    saveLocal();
+  }else if(Object.keys(picks).length){
+    // first sign-in for this team: upload picks made in this browser
+    const rows=Object.entries(picks).map(([gid,pick])=>({user_id:userId,team,game_id:Number(gid),pick}));
+    const {error:e2}=await sb.from("team_picks").upsert(rows,{onConflict:"user_id,team,game_id"});
+    if(e2){ setState("err","Couldn’t upload picks to database"); refresh(); return; }
+  }
+  setState("ok","Saved to database");
+  refresh();
+}
+
+/* ───────── Account ───────── */
+const accountMsg=document.getElementById("accountMsg"), emailEl=document.getElementById("email"),
+      signinBtn=document.getElementById("signin"), signoutBtn=document.getElementById("signout");
+function showAccount(email){
+  const inn=!!email;
+  emailEl.classList.toggle("hidden",inn); signinBtn.classList.toggle("hidden",inn); signoutBtn.classList.toggle("hidden",!inn);
+  accountMsg.textContent = inn ? `Signed in as ${email}. Picks save to your database.` :
+    "Sign in to save your picks to your database and use them on any device.";
+  if(!inn) setState("local","Saved in this browser");
+}
+signinBtn.addEventListener("click", async ()=>{
+  const email=emailEl.value.trim();
+  if(!email){ accountMsg.textContent="Enter your email address, then request a sign-in link."; emailEl.focus(); return; }
+  signinBtn.disabled=true;
+  const {error}=await sb.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin+location.pathname+location.search}});
+  signinBtn.disabled=false;
+  accountMsg.textContent = error ? `Sign-in link not sent: ${error.message}` : `Check ${email} for a sign-in link, then open it on this device.`;
+});
+signoutBtn.addEventListener("click", async ()=>{ await sb.auth.signOut(); });
+
+/* ───────── Sheet ───────── */
+const sheet=document.getElementById("sheet");
+let groups=[];
+const pad=n=>String(n).padStart(2,"0");
+const localTime=iso=>iso?new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}):"Time TBD";
+const isFinal=g=>g.period_type && g.home_score!=null && g.away_score!=null;
+function resultFor(g){
+  if(!isFinal(g)) return null;
+  const home=g.home===team, us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
+  return us>them ? "W" : g.period_type==="REG" ? "L" : "OTL";
+}
+
+function renderSheet(){
+  sheet.innerHTML=""; groups=[];
+  let cur=null, list=null;
+  games.forEach((g,i)=>{
+    const [y,mo,d]=g.game_date.split("-").map(Number);
+    const k=`${y}-${mo}`;
+    if(k!==cur){
+      cur=k;
+      const sec=document.createElement("section"); sec.className="month";
+      sec.innerHTML=`<div class="month-head"><h2>${MONTHS[mo-1]} ${y}</h2><span class="mrec"></span></div>`;
+      list=document.createElement("div"); sec.appendChild(list); sheet.appendChild(sec);
+      groups.push({el:sec, ids:[]});
+    }
+    const gid=String(g.game_id);
+    groups[groups.length-1].ids.push(gid);
+    const home=g.home===team, oppCode=home?g.away:g.home, opp=TEAMS[oppCode]?.name||oppCode, vs=home?"vs":"at";
+    const tags=[];
+    if(g.neutral_site) tags.push(g.venue?`Neutral site: ${g.venue}`:"Neutral site");
+    if(g.schedule_state && g.schedule_state!=="OK") tags.push(g.schedule_state==="PPD"?"Postponed":g.schedule_state);
+    const row=document.createElement("div");
+    row.className="game"+(home?" home":""); row.dataset.id=gid;
+    row.innerHTML=`
+      <span class="gnum">${i+1}</span>
+      <span class="gdate">${DAYS[new Date(y,mo-1,d).getDay()]} ${MONTHS[mo-1].slice(0,3)} ${d}<small>${localTime(g.start_utc)}</small></span>
+      <span class="opp"><strong></strong><span class="ha">${home?"Home":"Away"}</span>${tags.map(t=>`<span class="tag"></span>`).join("")}<span class="final"></span><span class="verdict"></span></span>
+      <span class="picks" role="group">
+        <button data-v="W" aria-pressed="false" aria-label="Win">W</button>
+        <button data-v="L" aria-pressed="false" aria-label="Loss">L</button>
+        <button data-v="OTL" aria-pressed="false" aria-label="Overtime loss">OTL</button>
+      </span>`;
+    row.querySelector("strong").textContent=`${vs} ${opp}`;
+    row.querySelectorAll(".tag").forEach((el,j)=>el.textContent=tags[j]);
+    row.querySelector(".picks").setAttribute("aria-label",`Prediction for game ${i+1}, ${vs} ${opp}`);
+    list.appendChild(row);
+  });
+}
+
+function tally(ids, src){
+  let w=0,l=0,o=0;
+  ids.forEach(id=>{const p=src(id); if(p==="W")w++; else if(p==="L")l++; else if(p==="OTL")o++;});
+  return {w,l,o,n:w+l+o,pts:w*2+o};
+}
+const byId=()=>Object.fromEntries(games.map(g=>[String(g.game_id),g]));
+const recHTML=t=>`${t.w}<span class="dash">–</span>${t.l}<span class="dash">–</span>${t.o}`;
+
+function refresh(){
+  const G=byId(), total=games.length||84;
+  const actualOf=id=>G[id]?resultFor(G[id]):null, pickOf=id=>picks[id];
+  document.querySelectorAll(".game").forEach(row=>{
+    const id=row.dataset.id, p=picks[id], g=G[id], r=g?resultFor(g):null;
+    row.querySelectorAll(".picks button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===p)));
+    const fin=row.querySelector(".final"), ver=row.querySelector(".verdict");
+    if(r){
+      const home=g.home===team, us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
+      const suffix=g.period_type==="OT"?" OT":g.period_type==="SO"?" SO":"";
+      fin.dataset.r=r; fin.textContent=`Final ${r} ${us}–${them}${suffix}`;
+      ver.textContent = p ? (p===r?"✓ Correct":"✗ Missed") : "";
+      ver.className = "verdict" + (p ? (p===r?" hit":" miss") : "");
+    }else{ fin.textContent=""; ver.textContent=""; }
+    row.classList.toggle("locked", LOCK_FINAL_GAMES && !!r);
+  });
+  const ids=games.map(g=>String(g.game_id));
+  const t=tally(ids,pickOf);
+  const rec=document.getElementById("rec");
+  rec.innerHTML=recHTML(t);
+  rec.setAttribute("aria-label",`Predicted record ${t.w} wins, ${t.l} losses, ${t.o} overtime losses`);
+  document.getElementById("pts").textContent=t.pts;
+  document.getElementById("pace").textContent=t.n?Math.round(t.pts/t.n*total):"—";
+  document.getElementById("pacelabel").textContent=`${total}-game pace`;
+  document.getElementById("picked").textContent=`${t.n} of ${total} games picked`;
+  document.getElementById("bar").style.width=(t.n/total*100)+"%";
+
+  const a=tally(ids,actualOf), act=document.getElementById("actual");
+  if(a.n){
+    const graded=ids.filter(id=>actualOf(id)&&picks[id]);
+    const hits=graded.filter(id=>picks[id]===actualOf(id)).length;
+    act.innerHTML=`Actual: <b>${a.w}–${a.l}–${a.o}</b> (${a.pts} pts) &nbsp; Your picks: <b>${hits} of ${graded.length}</b> correct`+
+      (graded.length?` (${Math.round(hits/graded.length*100)}%)`:"");
+  }else act.textContent="Actual record appears here once games are final.";
+  groups.forEach(gr=>{
+    const m=tally(gr.ids,pickOf);
+    gr.el.querySelector(".mrec").textContent = m.n ? `${m.w}–${m.l}–${m.o} · ${m.pts} pts` : `${gr.ids.length} game${gr.ids.length===1?"":"s"}`;
+  });
+  applyFilter();
+}
+
+function applyFilter(){
+  const G=byId();
+  document.querySelectorAll(".game").forEach(row=>{
+    const g=G[row.dataset.id], home=g&&g.home===team;
+    const show = filter==="home"?home : filter==="away"?!home : filter==="open"?!picks[row.dataset.id] : true;
+    row.classList.toggle("hidden",!show);
+  });
+  groups.forEach(gr=>gr.el.classList.toggle("hidden",![...gr.el.querySelectorAll(".game")].some(r=>!r.classList.contains("hidden"))));
+}
+
+sheet.addEventListener("click",e=>{
+  const b=e.target.closest(".picks button"); if(!b) return;
+  const row=b.closest(".game"); if(row.classList.contains("locked")) return;
+  const id=row.dataset.id;
+  if(picks[id]===b.dataset.v) delete picks[id]; else picks[id]=b.dataset.v;
+  refresh(); savePick(id);
+});
+document.querySelector(".seg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  filter=b.dataset.f;
+  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  applyFilter();
+});
+
+const clearBtn=document.getElementById("clear");
+let armed=false, armTimer=null;
+function disarm(){ armed=false; clearBtn.textContent="Clear all picks"; clearBtn.classList.remove("armed"); }
+clearBtn.addEventListener("click",()=>{
+  if(!Object.keys(picks).length) return;
+  if(!armed){ armed=true; clearBtn.textContent="Tap again to clear"; clearBtn.classList.add("armed");
+    clearTimeout(armTimer); armTimer=setTimeout(disarm,4000); return; }
+  clearTimeout(armTimer); disarm();
+  picks={}; refresh(); clearCloud();
+});
+
+document.getElementById("dl").addEventListener("click",()=>{
+  const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const rows=[["Game","Date","Home/Away","Opponent","Start","Pick","Result","Score","Correct"]];
+  games.forEach((g,i)=>{
+    const id=String(g.game_id), home=g.home===team, r=resultFor(g), p=picks[id]||"";
+    const us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
+    rows.push([i+1,g.game_date,home?"Home":"Away",TEAMS[home?g.away:g.home]?.name||(home?g.away:g.home),localTime(g.start_utc),p,
+      r||"", r?`${us}-${them}${g.period_type!=="REG"?" "+g.period_type:""}`:"", r&&p?(p===r?"Yes":"No"):""]);
+  });
+  const blob=new Blob([rows.map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=`${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-picks.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+
+/* ───────── Start ───────── */
+buildPicker();
+if(sb){
+  sb.auth.onAuthStateChange((_event, session)=>{
+    const newId=session?.user?.id||null;
+    if(newId===userId) return;
+    userId=newId;
+    showAccount(session?.user?.email);
+    if(userId) setTimeout(loadPicks,0); // defer: don't await Supabase calls inside this callback
+  });
+  const reload=()=>{ if(team) loadGames(); };
+  setInterval(reload, 10*60*1000);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) reload(); });
+}else{
+  document.getElementById("account").innerHTML='<p>Database not connected yet: add your Supabase URL and key near the top of this file.</p>';
+}
+const start=new URL(location.href).searchParams.get("team")?.toUpperCase()
+  || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
+if(start && TEAMS[start]) chooseTeam(start);
+else { applyTheme("SEA"); document.getElementById("picker").classList.remove("hidden"); }
+</script>
+</body>
+</html>
