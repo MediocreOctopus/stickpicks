@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leaderboard · NHL 2026–27 Predictions</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="teams.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="board lb-board">
+    <div class="board-top">
+      <h1 id="title">Leaderboard · 2026–27</h1>
+      <div class="board-nav">
+        <a class="navlink" id="back" href="index.html">My picks</a>
+        <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
+      </div>
+    </div>
+    <div class="lb-headline" id="headline">All teams</div>
+    <div class="lb-sub"><span id="updated">Loading…</span> · 1 point per correct pick · updates automatically</div>
+  </header>
+
+  <div class="you hidden" id="you" aria-live="polite"></div>
+  <p class="lb-note" id="scope"></p>
+
+  <div class="lb-wrap" id="tablewrap">
+    <table class="lb">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Player</th>
+          <th scope="col">Points</th>
+          <th scope="col">Accuracy</th>
+          <th scope="col" class="opt">Picks made</th>
+          <th scope="col" class="opt" id="sheetsCol">Sheets</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div class="empty hidden" id="empty"></div>
+
+  <footer>Only final games count. Correct means the pick (W, L, or OTL) matches the result from that sheet's team's side; shootout losses count as OTL. Players with the same points share a rank. Only usernames and totals are shown here, never anyone's individual picks.</footer>
+</div>
+
+<script>
+const sb = makeClient();
+let team=null, myName=null;
+
+const sel=document.getElementById("teamsel");
+(function buildSelect(){
+  const all=document.createElement("option"); all.value=""; all.textContent="All teams"; sel.appendChild(all);
+  DIVISIONS.forEach(div=>{
+    const og=document.createElement("optgroup"); og.label=`${div} Division`; sel.appendChild(og);
+    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name))
+      .forEach(c=>{ const o=document.createElement("option"); o.value=c; o.textContent=TEAMS[c].name; og.appendChild(o); });
+  });
+})();
+
+function setTeam(code){
+  team = code && TEAMS[code] ? code : null;
+  sel.value = team || "";
+  applyTheme(team || NEUTRAL_THEME);
+  const url=new URL(location.href);
+  team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
+  history.replaceState(null,"",url);
+  const lastSheet = team || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
+  document.getElementById("back").href = lastSheet ? `index.html?team=${lastSheet}` : "index.html";
+  document.getElementById("headline").textContent = team ? TEAMS[team].name : "All teams";
+  document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · NHL 2026–27 Predictions`;
+  document.getElementById("scope").textContent = team
+    ? `Scores from ${TEAMS[team].name} prediction sheets only.`
+    : "Scores combined across every team sheet each player has filled out, so players with more sheets have more chances to score. Choose a team for a head-to-head comparison.";
+  document.getElementById("sheetsCol").classList.toggle("hidden",!!team);
+  load();
+}
+sel.addEventListener("change",()=>setTeam(sel.value));
+
+const rowsEl=document.getElementById("rows"), emptyEl=document.getElementById("empty"),
+      wrapEl=document.getElementById("tablewrap"), youEl=document.getElementById("you");
+
+function showEmpty(msg){ emptyEl.textContent=msg; emptyEl.classList.remove("hidden"); wrapEl.classList.add("hidden"); }
+
+let loading=0;
+async function load(){
+  if(!sb){ showEmpty("Database not connected yet: add your Supabase URL and key to config.js (see README)."); document.getElementById("updated").textContent="Not connected"; return; }
+  const ticket=++loading, want=team;
+  const {data,error}=await sb.rpc("leaderboard",{p_season:SEASON, p_team:team});
+  if(ticket!==loading || want!==team) return; // a newer request replaced this one
+  if(error){ showEmpty(`Couldn’t load the leaderboard: ${error.message}`); return; }
+  document.getElementById("updated").textContent=`Updated ${new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`;
+  render(data||[]);
+}
+
+function render(list){
+  rowsEl.innerHTML="";
+  if(!list.length){
+    showEmpty(team ? `No one has made ${TEAMS[team].name} picks with a username yet.` : "No one is on the leaderboard yet. Make some picks and choose a username on your prediction sheet.");
+  }else{ emptyEl.classList.add("hidden"); wrapEl.classList.remove("hidden"); }
+
+  let rank=0, prevPts=null, mine=null;
+  list.forEach((r,i)=>{
+    const pts=Number(r.points), graded=Number(r.graded), total=Number(r.total_picks);
+    if(pts!==prevPts){ rank=i+1; prevPts=pts; }
+    const tr=document.createElement("tr");
+    const isMe = myName && r.username.toLowerCase()===myName.toLowerCase();
+    if(isMe){ tr.className="me"; mine={rank, pts, graded}; }
+    const acc = graded ? `${Math.round(pts/graded*100)}% <span class="muted frac">(${pts}/${graded})</span>` : "—";
+    tr.innerHTML=`
+      <td class="rank"><span class="rk${rank<=3&&pts>0?" r"+rank:""}">${rank}</span></td>
+      <td class="name"></td>
+      <td class="pts">${pts}</td>
+      <td>${acc}</td>
+      <td class="opt">${total}</td>
+      <td class="opt${team?" hidden":""}">${r.teams}</td>`;
+    tr.querySelector(".name").textContent=r.username;
+    rowsEl.appendChild(tr);
+  });
+
+  if(!myName){
+    youEl.classList.remove("hidden");
+    youEl.textContent = sb && signedIn
+      ? "Choose a username on your prediction sheet to appear on the leaderboard."
+      : "Sign in on your prediction sheet and choose a username to join the leaderboard.";
+  }else if(mine){
+    youEl.classList.remove("hidden");
+    youEl.innerHTML=`You're <b>#${mine.rank}</b> of ${list.length} with <b>${mine.pts}</b> point${mine.pts===1?"":"s"}`+
+      (mine.graded?` from ${mine.graded} graded pick${mine.graded===1?"":"s"}.`:". None of your picks have been graded yet.");
+  }else{
+    youEl.classList.remove("hidden");
+    youEl.textContent = team ? `You haven't made any ${TEAMS[team].name} picks yet.` : "You haven't made any picks yet.";
+  }
+}
+
+let signedIn=false;
+async function start(){
+  if(sb){
+    const {data:{session}}=await sb.auth.getSession();
+    signedIn=!!session;
+    if(session){
+      const {data}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
+      myName=data?.username||null;
+    }
+    setInterval(load, 60*1000);
+    document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load(); });
+  }
+  setTeam(new URL(location.href).searchParams.get("team")?.toUpperCase());
+}
+start();
+</script>
+</body>
+</html>
