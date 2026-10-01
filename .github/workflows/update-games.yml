@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Sync all 32 schedules and final scores to Supabase
+      - name: Sync schedules, final scores, and news headlines to Supabase
         run: node scripts/update-games.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
