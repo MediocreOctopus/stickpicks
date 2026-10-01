@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="home">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NHL 2026–27 Prediction Sheets</title>
+<title>Stick Picks · NHL 2026–27 Predictions</title>
+<meta name="theme-color" content="#0E1A26">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,419 +15,447 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<!-- News ticker (hidden until headlines load) -->
+<div class="ticker hidden" id="ticker" role="region" aria-label="NHL news headlines">
+  <div class="ticker-label">NHL News</div>
+  <div class="ticker-viewport"><div class="ticker-track" id="tickerTrack"></div></div>
+</div>
+
 <div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html">Stick <span>Picks</span> 26–27</a>
+    <div class="topnav">
+      <a href="#today">Today</a>
+      <a href="#teams">Teams</a>
+      <a href="rules.html">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+  </nav>
 
-  <!-- Team picker (shown until a team is chosen) -->
-  <section class="picker hidden" id="picker">
-    <h1>NHL 2026–27 prediction sheets</h1>
-    <p>Choose a team to predict every regular-season game: win, loss, or overtime loss.</p>
-    <div id="tiles"></div>
-  </section>
-
-  <!-- Sheet -->
-  <div id="app" class="hidden">
-    <header class="board" aria-live="polite">
-      <div class="board-top">
-        <h1 id="title">Prediction sheet</h1>
-        <div class="board-nav">
-          <a class="navlink" id="lblink" href="leaderboard.html">Leaderboard</a>
-          <select class="teamsel" id="teamsel" aria-label="Choose a team"></select>
-        </div>
-      </div>
-      <div class="sub"><span id="picked">0 games picked</span><span class="save" id="savestate" data-s="local">Saved in this browser</span></div>
-      <div class="record">
-        <div class="rec" id="rec">0<span class="dash">–</span>0<span class="dash">–</span>0</div>
-        <div class="stat"><b id="pts">0</b><span>standings pts</span></div>
-        <div class="stat"><b id="pace">—</b><span id="pacelabel">full-season pace</span></div>
-      </div>
-      <div class="actual" id="actual">Actual record appears here once games are final.</div>
-      <div class="progress"><i id="bar"></i></div>
-    </header>
-
-    <section class="account" id="account">
-      <p id="accountMsg">Sign in to save your picks to your database and use them on any device.</p>
-      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" aria-label="Email address">
-      <button class="plain primary" id="signin">Email me a sign-in link</button>
-      <button class="plain hidden" id="signout">Sign out</button>
-      <div class="userrow hidden" id="userRow">
-        <span id="unameText"></span>
-        <input type="text" id="uname" class="hidden" placeholder="username" maxlength="20" autocomplete="nickname" aria-label="Leaderboard username">
-        <button class="plain primary hidden" id="unameSave">Save username</button>
-        <button class="plain hidden" id="unameEdit">Change username</button>
-        <span class="unameMsg" id="unameMsg" role="status"></span>
-      </div>
-    </section>
-
-    <div class="controls">
-      <div class="seg" role="group" aria-label="Show games">
-        <button data-f="all" aria-pressed="true">All</button>
-        <button data-f="home" aria-pressed="false">Home</button>
-        <button data-f="away" aria-pressed="false">Away</button>
-        <button data-f="open" aria-pressed="false">Unpicked</button>
-      </div>
-      <div class="right">
-        <button class="plain" id="dl">Download picks (CSV)</button>
-        <button class="plain" id="clear">Clear all picks</button>
+  <section class="hero">
+    <div>
+      <h1>Call every game.<br><em>Climb the board.</em></h1>
+      <p class="lede">For every regular-season game of any NHL team, call a win, loss, or overtime loss and guess the combined goals. Nail both and the game is worth two points. <a href="rules.html">Read the rules</a>.</p>
+      <ol class="steps">
+        <li><b>1</b><span>Choose a team below. You can fill out as many sheets as you like.</span></li>
+        <li><b>2</b><span>Pick W, L, or OTL and the total goals before puck drop. Picks lock when the game starts.</span></li>
+        <li><b>3</b><span>Earn 1 point for the right result and 1 for the exact goal total. Every sheet gets its own spot on the leaderboard.</span></li>
+      </ol>
+      <div class="cta">
+        <a class="btn" href="#teams" id="ctaPrimary">Choose a team</a>
+        <a class="btn ghost" href="leaderboard.html">See the leaderboard</a>
       </div>
     </div>
-    <p class="note">Tap W, L, or OTL for each game; tap again to undo. Shaded rows are home games; times are in your time zone. Picks lock at puck drop. Each correct pick scores 1 point on the leaderboard once the game is final.</p>
 
-    <main id="sheet"></main>
-    <div class="empty hidden" id="empty"></div>
+    <!-- Account card: one of several panels is shown -->
+    <div class="card" id="account" aria-live="polite">
+      <div id="pLoading"><p class="hint">Loading…</p></div>
 
-    <footer>2026–27 NHL regular season. Schedules and scores sync from the NHL's public data feed; start times are subject to change. Standings points use W = 2, OTL = 1; shootout losses count as OTL. Leaderboard scoring: 1 point per correct pick. Team colors are approximations for this fan-made sheet.</footer>
-  </div>
+      <!-- Signed out -->
+      <div id="pSignedOut" class="hidden">
+        <div class="tabs" role="tablist" aria-label="Account">
+          <button role="tab" id="tabIn" aria-selected="true" aria-controls="fIn">Sign in</button>
+          <button role="tab" id="tabUp" aria-selected="false" aria-controls="fUp">Create account</button>
+        </div>
+
+        <form id="fIn" novalidate>
+          <div class="field"><label for="inEmail">Email</label><input id="inEmail" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="inPass">Password</label>
+            <div class="pw"><input id="inPass" type="password" autocomplete="current-password" required><button type="button" class="showpw" aria-label="Show password">Show</button></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn" type="submit">Sign in</button>
+            <button class="linkbtn" type="button" id="toForgot">Forgot password?</button>
+          </div>
+          <p class="formmsg" id="inMsg" role="status"></p>
+          <p class="hint">Signed in with an email link before? Choose “Forgot password?” to set a password once.</p>
+        </form>
+
+        <form id="fUp" class="hidden" novalidate>
+          <div class="field"><label for="upName">Username</label><input id="upName" type="text" autocomplete="nickname" maxlength="20" placeholder="3–20 letters, numbers, or _" required></div>
+          <div class="field"><label for="upEmail">Email</label><input id="upEmail" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="upPass">Password</label>
+            <div class="pw"><input id="upPass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required><button type="button" class="showpw" aria-label="Show password">Show</button></div>
+          </div>
+          <div class="form-actions"><button class="btn" type="submit">Create account</button></div>
+          <p class="formmsg" id="upMsg" role="status"></p>
+        </form>
+      </div>
+
+      <!-- Forgot password -->
+      <form id="pForgot" class="hidden" novalidate>
+        <h2>Reset your password</h2>
+        <p class="hint">We’ll email you a link to choose a new password.</p>
+        <div class="field"><label for="fgEmail">Email</label><input id="fgEmail" type="email" autocomplete="email" required></div>
+        <div class="form-actions">
+          <button class="btn" type="submit">Send reset link</button>
+          <button class="linkbtn" type="button" id="backToIn">Back to sign in</button>
+        </div>
+        <p class="formmsg" id="fgMsg" role="status"></p>
+      </form>
+
+      <!-- Set new password (after following a reset link) -->
+      <form id="pRecover" class="hidden" novalidate>
+        <h2>Choose a new password</h2>
+        <div class="field"><label for="rcPass">New password</label>
+          <div class="pw"><input id="rcPass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required><button type="button" class="showpw" aria-label="Show password">Show</button></div>
+        </div>
+        <div class="form-actions"><button class="btn" type="submit">Save password</button></div>
+        <p class="formmsg" id="rcMsg" role="status"></p>
+      </form>
+
+      <!-- Signed in -->
+      <div id="pSignedIn" class="hidden">
+        <h2 id="welcome">Welcome back</h2>
+        <p class="hint" id="whoami"></p>
+
+        <form id="fName" class="hidden" novalidate>
+          <div class="field"><label for="nmInput" id="nmLabel">Choose a username for the leaderboard</label><input id="nmInput" type="text" maxlength="20" autocomplete="nickname" placeholder="3–20 letters, numbers, or _"></div>
+          <div class="form-actions">
+            <button class="btn" type="submit">Save username</button>
+            <button class="linkbtn hidden" type="button" id="nmCancel">Cancel</button>
+          </div>
+          <p class="formmsg" id="nmMsg" role="status"></p>
+        </form>
+
+        <div class="statrow" id="stats">
+          <div><b id="stPts">0</b><span>total points</span></div>
+          <div><b id="stRank">—</b><span id="stRankLbl">best sheet rank</span></div>
+          <div><b id="stAcc">—</b><span>points per game</span></div>
+        </div>
+        <ul class="mysheets" id="mySheets"></ul>
+        <div class="form-actions">
+          <button class="linkbtn" type="button" id="nmEdit">Change username</button>
+          <button class="btn ghost" type="button" id="signOut">Sign out</button>
+        </div>
+      </div>
+
+      <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="today">
+    <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">Times in your time zone · scores update hourly</span></div>
+    <div class="games" id="gameCards"></div>
+    <div class="empty hidden" id="todayEmpty"></div>
+  </section>
+
+  <section class="section" id="intermission">
+    <div class="section-head"><h2>Intermission: Breakaway</h2><span>Your best: <b id="runHi">0</b></span></div>
+    <div class="rinkwrap">
+      <canvas id="rink" tabindex="0" aria-label="Breakaway, a hockey running game. Press Space or the Up arrow to jump and the Down arrow to duck."></canvas>
+    </div>
+    <div class="runbar">
+      <p class="hint">Click the rink, then press <kbd>Space</kbd> or <kbd>↑</kbd> to jump and <kbd>↓</kbd> to duck. Hold jump for a higher leap. On a phone, tap to jump or use the buttons.</p>
+      <div class="runbtns"><button type="button" class="btn ghost" data-run="duck">▼ Duck</button><button type="button" class="btn" data-run="jump">▲ Jump</button></div>
+    </div>
+  </section>
+
+  <section class="section" id="teams">
+    <div class="section-head"><h2>Choose a team</h2><span>Each sheet uses its team’s colors</span></div>
+    <div id="divisions"></div>
+  </section>
+
+  <footer>
+    Stick Picks is a fan-made prediction game, not affiliated with the NHL or its teams. Schedules and scores come from the NHL’s public data feed; headlines link to ESPN. Team colors are approximations.
+  </footer>
 </div>
 
 <script>
+// Old links like index.html?team=SEA now live at sheet.html
+const oldTeam=new URL(location.href).searchParams.get("team");
+if(oldTeam) location.replace(`sheet.html?team=${encodeURIComponent(oldTeam)}`);
 
-const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-/* ───────── State ───────── */
 const sb = makeClient();
+const $ = id => document.getElementById(id);
+const HOME_URL = location.origin + location.pathname;
 
-let team=null;      // e.g. "SEA"
-let games=[];       // this team's games, in order
-let picks={};       // { game_id: "W" | "L" | "OTL" }
-let userId=null;
-let filter="all";
-const localKey=()=>`nhl-picks-${SEASON}-${team}`;
-function saveLocal(){ try{ localStorage.setItem(localKey(), JSON.stringify(picks)); }catch(e){} }
-function loadLocal(){ try{ return JSON.parse(localStorage.getItem(localKey())||"{}")||{}; }catch(e){ return {}; } }
+function swatch(code){
+  const t=TEAMS[code]; const s=document.createElement("span"); s.className="sw"; s.textContent=code;
+  if(t){ s.style.setProperty("--t-board",t.board); s.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)); }
+  else { s.style.setProperty("--t-board","#555"); s.style.setProperty("--t-stripe","#999"); }
+  return s;
+}
 
-const stateEl=document.getElementById("savestate");
-function setState(s,t){ stateEl.dataset.s=s; stateEl.textContent=t; }
-
-/* ───────── Team picker ───────── */
-function buildPicker(){
-  const tiles=document.getElementById("tiles"), sel=document.getElementById("teamsel");
+/* ───────── Team grid ───────── */
+(function buildTeams(){
+  const root=$("divisions");
   DIVISIONS.forEach(div=>{
-    const codes=Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name));
-    const h=document.createElement("h2"); h.textContent=`${div} Division`; tiles.appendChild(h);
-    const grid=document.createElement("div"); grid.className="tiles"; tiles.appendChild(grid);
-    const og=document.createElement("optgroup"); og.label=`${div} Division`; sel.appendChild(og);
-    codes.forEach(c=>{
-      const t=TEAMS[c], b=document.createElement("button");
-      b.className="tile"; b.textContent=t.name; b.dataset.team=c;
-      b.style.setProperty("--t-board",t.board);
-      b.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
-      grid.appendChild(b);
-      const o=document.createElement("option"); o.value=c; o.textContent=t.name; og.appendChild(o);
+    const h=document.createElement("h3"); h.className="divhead"; h.textContent=`${div} Division`; root.appendChild(h);
+    const grid=document.createElement("div"); grid.className="tiles"; root.appendChild(grid);
+    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
+      const t=TEAMS[c], a=document.createElement("a");
+      a.className="tile"; a.href=`sheet.html?team=${c}`; a.textContent=t.name;
+      a.style.setProperty("--t-board",t.board);
+      a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+      grid.appendChild(a);
     });
   });
-  tiles.addEventListener("click",e=>{ const b=e.target.closest(".tile"); if(b) chooseTeam(b.dataset.team); });
-  sel.addEventListener("change",()=>chooseTeam(sel.value));
+})();
+
+/* ───────── News ticker ───────── */
+function ago(iso){
+  if(!iso) return "";
+  const m=Math.round((Date.now()-new Date(iso))/60000);
+  if(m<60) return `${Math.max(m,1)}m`;
+  const h=Math.round(m/60); if(h<24) return `${h}h`;
+  return `${Math.round(h/24)}d`;
+}
+async function loadNews(){
+  if(!sb) return;
+  const {data,error}=await sb.from("news").select("headline,url,published_at").order("published_at",{ascending:false,nullsFirst:false}).limit(15);
+  if(error || !data?.length){ $("ticker").classList.add("hidden"); return; }
+  const track=$("tickerTrack"); track.innerHTML="";
+  const group=(hidden)=>{
+    const g=document.createElement("div"); g.style.display="inline-flex";
+    if(hidden){ g.setAttribute("aria-hidden","true"); }
+    data.forEach(n=>{
+      const a=document.createElement("a"); a.href=n.url; a.target="_blank"; a.rel="noopener";
+      if(hidden) a.tabIndex=-1;
+      a.textContent=n.headline;
+      const t=document.createElement("time"); t.dateTime=n.published_at||""; t.textContent=ago(n.published_at);
+      a.append(" ", t); g.appendChild(a);
+    });
+    return g;
+  };
+  track.append(group(false), group(true)); // second copy makes the loop seamless
+  $("ticker").classList.remove("hidden");
+  requestAnimationFrame(()=>{ track.style.setProperty("--dur", Math.max(40, track.scrollWidth/2/60)+"s"); });
 }
 
-async function chooseTeam(code){
-  if(!TEAMS[code]) return;
-  team=code;
-  try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){}
-  const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
-  applyTheme(code);
-  document.title=`${TEAMS[code].name} 2026–27 Prediction Sheet`;
-  document.getElementById("title").textContent=`${TEAMS[code].name} · 2026–27 predictions`;
-  document.getElementById("teamsel").value=code;
-  document.getElementById("lblink").href=`leaderboard.html?team=${code}`;
-  document.getElementById("picker").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  window.scrollTo(0,0);
-  picks=loadLocal(); games=[]; renderSheet(); refresh();
-  await loadGames();
-  if(userId) await loadPicks();
-}
-
-/* ───────── Database ───────── */
-async function loadGames(){
-  const empty=document.getElementById("empty");
-  if(!sb){
-    empty.textContent="Database not connected yet: add your Supabase URL and key near the top of index.html (see README).";
-    empty.classList.remove("hidden"); return;
-  }
-  const want=team;
-  const {data,error}=await sb.from("games")
-    .select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,venue,neutral_site")
-    .eq("season",SEASON).or(`home.eq.${team},away.eq.${team}`)
-    .order("game_date").order("start_utc");
-  if(want!==team) return; // user switched teams mid-request
-  if(error){ empty.textContent=`Couldn’t load the schedule: ${error.message}`; empty.classList.remove("hidden"); return; }
-  games=data;
-  if(!games.length){
-    empty.textContent="No schedule in the database yet. Run the “Update NHL games” workflow once from your repository’s Actions tab (see README).";
-    empty.classList.remove("hidden");
-  }else empty.classList.add("hidden");
-  renderSheet(); refresh();
-}
-
-async function savePick(gid, prev){
-  saveLocal();
-  if(!sb||!userId) return;
-  setState("busy","Saving…");
-  const q = picks[gid]
-    ? sb.from("team_picks").upsert({user_id:userId, team, game_id:Number(gid), pick:picks[gid], updated_at:new Date().toISOString()}, {onConflict:"user_id,team,game_id"})
-    : sb.from("team_picks").delete().eq("user_id",userId).eq("team",team).eq("game_id",Number(gid));
-  const {error}=await q;
-  if(!error){ setState("ok","Saved to database"); return; }
-  const g=byId()[gid];
-  if(g && hasStarted(g)){ // the database refused because the game already started
-    if(prev) picks[gid]=prev; else delete picks[gid];
-    saveLocal(); refresh(); setState("err","That game has started, so its pick is locked");
-  }else setState("err","Couldn’t save to database; saved in this browser");
-}
-
-async function clearCloud(){
-  saveLocal();
-  if(!sb||!userId) return;
-  setState("busy","Saving…");
-  const {error}=await sb.from("team_picks").delete().eq("user_id",userId).eq("team",team);
-  error ? setState("err","Couldn’t clear database; cleared in this browser") : setState("ok","Saved to database");
-}
-
-async function loadPicks(){
-  if(!team) return;
-  const want=team;
-  setState("busy","Loading picks…");
-  const {data,error}=await sb.from("team_picks").select("game_id,pick").eq("team",team);
-  if(want!==team) return;
-  if(error){ setState("err","Couldn’t load picks from database"); return; }
-  if(data.length){
-    picks=Object.fromEntries(data.map(r=>[String(r.game_id),r.pick]));
-    saveLocal();
-  }else if(Object.keys(picks).length){
-    // first sign-in for this team: upload picks made in this browser for games that haven't started
-    const G=byId();
-    const rows=Object.entries(picks).filter(([gid])=>G[gid] && !hasStarted(G[gid]))
-      .map(([gid,pick])=>({user_id:userId,team,game_id:Number(gid),pick}));
-    if(rows.length){
-      const {error:e2}=await sb.from("team_picks").upsert(rows,{onConflict:"user_id,team,game_id"});
-      if(e2){ setState("err","Couldn’t upload picks to database"); refresh(); return; }
+/* ───────── Today's games ───────── */
+const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"}); };
+async function loadToday(){
+  if(!sb){ $("todayEmpty").textContent="Connect the database to see today’s games."; $("todayEmpty").classList.remove("hidden"); return; }
+  const today=ymd(new Date());
+  const cols="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type";
+  let {data,error}=await sb.from("games").select(cols).eq("season",SEASON).eq("game_date",today).order("start_utc");
+  let day=today;
+  if(!error && !data.length){
+    const next=await sb.from("games").select("game_date").eq("season",SEASON).gt("game_date",today).order("game_date").limit(1);
+    if(next.data?.length){
+      day=next.data[0].game_date;
+      ({data,error}=await sb.from("games").select(cols).eq("season",SEASON).eq("game_date",day).order("start_utc"));
     }
   }
-  setState("ok","Saved to database");
-  refresh();
+  const box=$("gameCards"), empty=$("todayEmpty"); box.innerHTML="";
+  if(error){ empty.textContent=`Couldn’t load games: ${error.message}`; empty.classList.remove("hidden"); return; }
+  if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
+  empty.classList.add("hidden");
+  $("todayTitle").textContent = day===today ? "Today’s games" : `Next up · ${fmtDay(day)}`;
+  $("todayNote").textContent = `${data.length} game${data.length===1?"":"s"} · times in your time zone · scores update hourly`;
+  data.forEach(g=>{
+    const final=!!g.period_type, started=hasStarted(g);
+    const card=document.createElement("div"); card.className="gcard";
+    [["away",g.away,g.away_score],["home",g.home,g.home_score]].forEach(([side,code,score])=>{
+      const row=document.createElement("div"); row.className="team";
+      const other=side==="away"?g.home_score:g.away_score;
+      if(final && score<other) row.classList.add("lost");
+      const a=document.createElement("a"); a.href=`sheet.html?team=${code}`; a.textContent=TEAMS[code]?.name||code;
+      a.title=`Open the ${TEAMS[code]?.name||code} prediction sheet`;
+      const sc=document.createElement("span"); sc.className="score"; sc.textContent = (final||started) && score!=null ? score : "";
+      row.append(swatch(code), a, sc); card.appendChild(row);
+    });
+    const st=document.createElement("div"); st.className="status";
+    const left=document.createElement("span"), right=document.createElement("span");
+    if(g.schedule_state==="PPD"){ left.textContent="Postponed"; }
+    else if(final){ left.innerHTML=`<b>Final${g.period_type!=="REG"?" · "+g.period_type:""}</b>`; }
+    else if(started){ left.className="live"; left.textContent="In progress"; }
+    else { left.textContent = g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}) : "Time TBD"; }
+    right.textContent = final||started ? "" : "Picks open";
+    st.append(left,right); card.appendChild(st);
+    box.appendChild(card);
+  });
 }
 
-/* ───────── Account ───────── */
-const accountMsg=document.getElementById("accountMsg"), emailEl=document.getElementById("email"),
-      signinBtn=document.getElementById("signin"), signoutBtn=document.getElementById("signout");
-function showAccount(email){
-  const inn=!!email;
-  emailEl.classList.toggle("hidden",inn); signinBtn.classList.toggle("hidden",inn); signoutBtn.classList.toggle("hidden",!inn);
-  accountMsg.textContent = inn ? `Signed in as ${email}. Picks save to your database.` :
-    "Sign in to save your picks, use them on any device, and join the leaderboard.";
-  document.getElementById("userRow").classList.toggle("hidden",!inn);
-  if(!inn){ profile=null; setState("local","Saved in this browser"); }
-}
+/* ───────── Account panels ───────── */
+const PANELS=["pLoading","pSignedOut","pForgot","pRecover","pSignedIn","pOffline"];
+function show(id){ PANELS.forEach(p=>$(p).classList.toggle("hidden",p!==id)); }
+function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className="formmsg"+(kind?" "+kind:""); }
+function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
 
-/* ───────── Username ───────── */
-let profile=null;
-const unameEl=document.getElementById("uname"), unameText=document.getElementById("unameText"),
-      unameSave=document.getElementById("unameSave"), unameEdit=document.getElementById("unameEdit"),
-      unameMsg=document.getElementById("unameMsg");
-function renderUser(editing=false){
-  const edit=editing||!profile;
-  unameEl.classList.toggle("hidden",!edit); unameSave.classList.toggle("hidden",!edit); unameEdit.classList.toggle("hidden",edit);
-  unameText.textContent="";
-  if(edit){
-    unameText.textContent = profile ? "New username:" : "Choose a username to appear on the leaderboard:";
-    unameEl.value = profile ? profile.username : "";
-  }else{
-    unameText.append("Leaderboard name: ");
-    const b=document.createElement("b"); b.textContent=profile.username; unameText.append(b);
+document.querySelectorAll(".showpw").forEach(b=>b.addEventListener("click",()=>{
+  const inp=b.previousElementSibling, vis=inp.type==="password";
+  inp.type=vis?"text":"password"; b.textContent=vis?"Hide":"Show"; b.setAttribute("aria-label",vis?"Hide password":"Show password");
+}));
+
+function setTab(which){
+  const up=which==="up";
+  $("tabIn").setAttribute("aria-selected",String(!up)); $("tabUp").setAttribute("aria-selected",String(up));
+  $("fIn").classList.toggle("hidden",up); $("fUp").classList.toggle("hidden",!up);
+}
+$("tabIn").addEventListener("click",()=>setTab("in"));
+$("tabUp").addEventListener("click",()=>setTab("up"));
+$("toForgot").addEventListener("click",()=>{ $("fgEmail").value=$("inEmail").value; msg("fgMsg",""); show("pForgot"); $("fgEmail").focus(); });
+$("backToIn").addEventListener("click",()=>{ show("pSignedOut"); setTab("in"); });
+
+const friendly=e=>{
+  const m=(e?.message||"").toLowerCase();
+  if(m.includes("invalid login")) return "That email and password don’t match. Try again, or reset your password.";
+  if(m.includes("email not confirmed")) return "Please confirm your email first: open the confirmation link we sent you.";
+  if(m.includes("already registered")||m.includes("already been registered")) return "That email already has an account. Sign in instead, or reset your password.";
+  if(m.includes("rate limit")) return "Too many emails were sent recently. Please wait a few minutes and try again.";
+  return e?.message || "Something went wrong. Please try again.";
+};
+
+$("fIn").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const email=$("inEmail").value.trim(), password=$("inPass").value;
+  if(!email||!password) return msg("inMsg","Enter your email and password.","err");
+  busy(e.target,true); msg("inMsg","Signing in…");
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  busy(e.target,false);
+  if(error) msg("inMsg",friendly(error),"err"); else { msg("inMsg",""); $("inPass").value=""; }
+});
+
+$("fUp").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const username=$("upName").value.trim(), email=$("upEmail").value.trim(), password=$("upPass").value;
+  if(!USERNAME_RULE.test(username)) return msg("upMsg","Usernames are 3–20 letters, numbers, or underscores.","err");
+  if(!email) return msg("upMsg","Enter your email address.","err");
+  if(password.length<8) return msg("upMsg","Use a password of at least 8 characters.","err");
+  busy(e.target,true); msg("upMsg","Checking username…");
+  const {data:free,error:e1}=await sb.rpc("username_available",{p_username:username});
+  if(e1){ busy(e.target,false); return msg("upMsg",friendly(e1),"err"); }
+  if(!free){ busy(e.target,false); return msg("upMsg","That username is taken. Try another.","err"); }
+  msg("upMsg","Creating your account…");
+  const {data,error}=await sb.auth.signUp({email,password,options:{data:{username},emailRedirectTo:HOME_URL}});
+  busy(e.target,false);
+  if(error) return msg("upMsg",friendly(error),"err");
+  if(data.user && data.user.identities && data.user.identities.length===0)
+    return msg("upMsg","That email already has an account. Sign in instead, or reset your password.","err");
+  if(!data.session){
+    msg("upMsg",`Almost done! Check ${email} for a confirmation link. After that, you’ll sign in with your email and password.`,"ok");
+    $("upPass").value="";
   }
-}
-async function loadProfile(){
-  const {data}=await sb.from("profiles").select("username").eq("user_id",userId).maybeSingle();
-  profile=data||null; unameMsg.textContent=""; renderUser();
-}
-unameEdit.addEventListener("click",()=>{ unameMsg.textContent=""; renderUser(true); unameEl.focus(); });
-unameEl.addEventListener("keydown",e=>{ if(e.key==="Enter") unameSave.click(); });
-unameSave.addEventListener("click", async ()=>{
-  const name=unameEl.value.trim();
-  if(!USERNAME_RULE.test(name)){ unameMsg.textContent="Use 3–20 letters, numbers, or underscores."; return; }
-  if(profile && profile.username===name){ renderUser(); return; }
-  unameSave.disabled=true; unameMsg.textContent="Saving…";
-  const {error}=await sb.from("profiles").upsert({user_id:userId, username:name},{onConflict:"user_id"});
-  unameSave.disabled=false;
-  if(error){ unameMsg.textContent = error.code==="23505" ? "That username is taken. Try another." : `Couldn’t save: ${error.message}`; return; }
-  profile={username:name}; unameMsg.textContent="Saved."; renderUser();
 });
-signinBtn.addEventListener("click", async ()=>{
-  const email=emailEl.value.trim();
-  if(!email){ accountMsg.textContent="Enter your email address, then request a sign-in link."; emailEl.focus(); return; }
-  signinBtn.disabled=true;
-  const {error}=await sb.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin+location.pathname+location.search}});
-  signinBtn.disabled=false;
-  accountMsg.textContent = error ? `Sign-in link not sent: ${error.message}` : `Check ${email} for a sign-in link, then open it on this device.`;
-});
-signoutBtn.addEventListener("click", async ()=>{ await sb.auth.signOut(); });
 
-/* ───────── Sheet ───────── */
-const sheet=document.getElementById("sheet");
-let groups=[];
-const pad=n=>String(n).padStart(2,"0");
-const localTime=iso=>iso?new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}):"Time TBD";
-function renderSheet(){
-  sheet.innerHTML=""; groups=[];
-  let cur=null, list=null;
-  games.forEach((g,i)=>{
-    const [y,mo,d]=g.game_date.split("-").map(Number);
-    const k=`${y}-${mo}`;
-    if(k!==cur){
-      cur=k;
-      const sec=document.createElement("section"); sec.className="month";
-      sec.innerHTML=`<div class="month-head"><h2>${MONTHS[mo-1]} ${y}</h2><span class="mrec"></span></div>`;
-      list=document.createElement("div"); sec.appendChild(list); sheet.appendChild(sec);
-      groups.push({el:sec, ids:[]});
+$("pForgot").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const email=$("fgEmail").value.trim();
+  if(!email) return msg("fgMsg","Enter your email address.","err");
+  busy(e.target,true);
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:HOME_URL});
+  busy(e.target,false);
+  error ? msg("fgMsg",friendly(error),"err") : msg("fgMsg",`If ${email} has an account, a reset link is on its way. Open it on this device.`,"ok");
+});
+
+$("pRecover").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const password=$("rcPass").value;
+  if(password.length<8) return msg("rcMsg","Use a password of at least 8 characters.","err");
+  busy(e.target,true);
+  const {error}=await sb.auth.updateUser({password});
+  busy(e.target,false);
+  if(error) return msg("rcMsg",friendly(error),"err");
+  recovering=false; $("rcPass").value="";
+  const {data:{session}}=await sb.auth.getSession();
+  renderSignedIn(session, "Password saved. From now on, sign in with your email and password.");
+});
+
+$("signOut").addEventListener("click", async ()=>{ await sb.auth.signOut(); });
+
+/* ───────── Signed-in view ───────── */
+let profile=null, currentUser=null, recovering=false;
+
+async function ensureProfile(user){
+  let {data}=await sb.from("profiles").select("username").eq("user_id",user.id).maybeSingle();
+  if(!data){
+    const wanted=user.user_metadata?.username; // chosen at sign-up
+    if(wanted && USERNAME_RULE.test(wanted)){
+      const {error}=await sb.from("profiles").insert({user_id:user.id, username:wanted});
+      if(!error) data={username:wanted};
     }
-    const gid=String(g.game_id);
-    groups[groups.length-1].ids.push(gid);
-    const home=g.home===team, oppCode=home?g.away:g.home, opp=TEAMS[oppCode]?.name||oppCode, vs=home?"vs":"at";
-    const tags=[];
-    if(g.neutral_site) tags.push(g.venue?`Neutral site: ${g.venue}`:"Neutral site");
-    if(g.schedule_state && g.schedule_state!=="OK") tags.push(g.schedule_state==="PPD"?"Postponed":g.schedule_state);
-    const row=document.createElement("div");
-    row.className="game"+(home?" home":""); row.dataset.id=gid;
-    row.innerHTML=`
-      <span class="gnum">${i+1}</span>
-      <span class="gdate">${DAYS[new Date(y,mo-1,d).getDay()]} ${MONTHS[mo-1].slice(0,3)} ${d}<small>${localTime(g.start_utc)}</small></span>
-      <span class="opp"><strong></strong><span class="ha">${home?"Home":"Away"}</span>${tags.map(t=>`<span class="tag"></span>`).join("")}<span class="final"></span><span class="verdict"></span></span>
-      <span class="picks" role="group">
-        <button data-v="W" aria-pressed="false" aria-label="Win">W</button>
-        <button data-v="L" aria-pressed="false" aria-label="Loss">L</button>
-        <button data-v="OTL" aria-pressed="false" aria-label="Overtime loss">OTL</button>
-      </span>`;
-    row.querySelector("strong").textContent=`${vs} ${opp}`;
-    row.querySelectorAll(".tag").forEach((el,j)=>el.textContent=tags[j]);
-    row.querySelector(".picks").setAttribute("aria-label",`Prediction for game ${i+1}, ${vs} ${opp}`);
-    list.appendChild(row);
-  });
+  }
+  return data||null;
 }
 
-function tally(ids, src){
-  let w=0,l=0,o=0;
-  ids.forEach(id=>{const p=src(id); if(p==="W")w++; else if(p==="L")l++; else if(p==="OTL")o++;});
-  return {w,l,o,n:w+l+o,pts:w*2+o};
-}
-const byId=()=>Object.fromEntries(games.map(g=>[String(g.game_id),g]));
-const recHTML=t=>`${t.w}<span class="dash">–</span>${t.l}<span class="dash">–</span>${t.o}`;
-
-function refresh(){
-  const G=byId(), total=games.length||84;
-  const actualOf=id=>G[id]?resultFor(G[id],team):null, pickOf=id=>picks[id];
-  document.querySelectorAll(".game").forEach(row=>{
-    const id=row.dataset.id, p=picks[id], g=G[id], r=g?resultFor(g,team):null;
-    row.querySelectorAll(".picks button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===p)));
-    const fin=row.querySelector(".final"), ver=row.querySelector(".verdict");
-    if(r){
-      const home=g.home===team, us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
-      const suffix=g.period_type==="OT"?" OT":g.period_type==="SO"?" SO":"";
-      fin.dataset.r=r; fin.textContent=`Final ${r} ${us}–${them}${suffix}`;
-      ver.textContent = p ? (p===r?"✓ Correct":"✗ Missed") : "";
-      ver.className = "verdict" + (p ? (p===r?" hit":" miss") : "");
-    }else{ fin.textContent=""; ver.textContent=""; }
-    row.classList.toggle("locked", !!g && hasStarted(g));
-  });
-  const ids=games.map(g=>String(g.game_id));
-  const t=tally(ids,pickOf);
-  const rec=document.getElementById("rec");
-  rec.innerHTML=recHTML(t);
-  rec.setAttribute("aria-label",`Predicted record ${t.w} wins, ${t.l} losses, ${t.o} overtime losses`);
-  document.getElementById("pts").textContent=t.pts;
-  document.getElementById("pace").textContent=t.n?Math.round(t.pts/t.n*total):"—";
-  document.getElementById("pacelabel").textContent=`${total}-game pace`;
-  document.getElementById("picked").textContent=`${t.n} of ${total} games picked`;
-  document.getElementById("bar").style.width=(t.n/total*100)+"%";
-
-  const a=tally(ids,actualOf), act=document.getElementById("actual");
-  if(a.n){
-    const graded=ids.filter(id=>actualOf(id)&&picks[id]);
-    const hits=graded.filter(id=>picks[id]===actualOf(id)).length;
-    act.innerHTML=`Actual: <b>${a.w}–${a.l}–${a.o}</b> (${a.pts} standings pts) &nbsp; Your score: <b>${hits} pt${hits===1?"":"s"}</b>`+
-      (graded.length?` (${hits} of ${graded.length} correct, ${Math.round(hits/graded.length*100)}%)`:"");
-  }else act.textContent="Actual record appears here once games are final.";
-  groups.forEach(gr=>{
-    const m=tally(gr.ids,pickOf);
-    gr.el.querySelector(".mrec").textContent = m.n ? `${m.w}–${m.l}–${m.o} · ${m.pts} pts` : `${gr.ids.length} game${gr.ids.length===1?"":"s"}`;
-  });
-  applyFilter();
+async function renderSignedIn(session, note=""){
+  currentUser=session.user;
+  show("pSignedIn");
+  $("whoami").textContent = note || `Signed in as ${currentUser.email}`;
+  profile=await ensureProfile(currentUser);
+  showNameForm(!profile);
+  $("welcome").textContent = profile ? `Welcome back, ${profile.username}` : "Welcome!";
+  await loadMyStats();
 }
 
-function applyFilter(){
-  const G=byId();
-  document.querySelectorAll(".game").forEach(row=>{
-    const g=G[row.dataset.id], home=g&&g.home===team;
-    const show = filter==="home"?home : filter==="away"?!home : filter==="open"?!picks[row.dataset.id] : true;
-    row.classList.toggle("hidden",!show);
-  });
-  groups.forEach(gr=>gr.el.classList.toggle("hidden",![...gr.el.querySelectorAll(".game")].some(r=>!r.classList.contains("hidden"))));
+function showNameForm(on, editing=false){
+  $("fName").classList.toggle("hidden",!on);
+  $("nmEdit").classList.toggle("hidden",on || !profile);
+  $("nmCancel").classList.toggle("hidden",!editing);
+  $("nmLabel").textContent = editing ? "New username" : "Choose a username for the leaderboard";
+  $("nmInput").value = editing && profile ? profile.username : "";
+  msg("nmMsg","");
 }
-
-sheet.addEventListener("click",e=>{
-  const b=e.target.closest(".picks button"); if(!b) return;
-  const row=b.closest(".game"), id=row.dataset.id, g=byId()[id];
-  if(!g || hasStarted(g)){ refresh(); return; }
-  const prev=picks[id];
-  if(prev===b.dataset.v) delete picks[id]; else picks[id]=b.dataset.v;
-  refresh(); savePick(id, prev);
-});
-setInterval(()=>{ if(team && games.length) refresh(); }, 30*1000); // lock games as they start
-document.querySelector(".seg").addEventListener("click",e=>{
-  const b=e.target.closest("button"); if(!b) return;
-  filter=b.dataset.f;
-  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
-  applyFilter();
+$("nmEdit").addEventListener("click",()=>{ showNameForm(true,true); $("nmInput").focus(); });
+$("nmCancel").addEventListener("click",()=>showNameForm(false));
+$("fName").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const name=$("nmInput").value.trim();
+  if(!USERNAME_RULE.test(name)) return msg("nmMsg","Usernames are 3–20 letters, numbers, or underscores.","err");
+  if(profile && profile.username===name) return showNameForm(false);
+  busy(e.target,true);
+  const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
+  busy(e.target,false);
+  if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
+  profile={username:name}; $("welcome").textContent=`Welcome back, ${name}`;
+  showNameForm(false); loadMyStats();
 });
 
-const clearBtn=document.getElementById("clear");
-let armed=false, armTimer=null;
-function disarm(){ armed=false; clearBtn.textContent="Clear all picks"; clearBtn.classList.remove("armed"); }
-clearBtn.addEventListener("click",()=>{
-  if(!Object.keys(picks).length) return;
-  if(!armed){ armed=true; clearBtn.textContent="Tap again to clear"; clearBtn.classList.add("armed");
-    clearTimeout(armTimer); armTimer=setTimeout(disarm,4000); return; }
-  clearTimeout(armTimer); disarm();
-  const G=byId(); // picks for games that have started stay locked
-  picks=Object.fromEntries(Object.entries(picks).filter(([gid])=>G[gid] && hasStarted(G[gid])));
-  refresh(); clearCloud();
-});
-
-document.getElementById("dl").addEventListener("click",()=>{
-  const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const rows=[["Game","Date","Home/Away","Opponent","Start","Pick","Result","Score","Correct"]];
-  games.forEach((g,i)=>{
-    const id=String(g.game_id), home=g.home===team, r=resultFor(g,team), p=picks[id]||"";
-    const us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
-    rows.push([i+1,g.game_date,home?"Home":"Away",TEAMS[home?g.away:g.home]?.name||(home?g.away:g.home),localTime(g.start_utc),p,
-      r||"", r?`${us}-${them}${g.period_type!=="REG"?" "+g.period_type:""}`:"", r&&p?(p===r?"Yes":"No"):""]);
+async function loadMyStats(){
+  const list=$("mySheets"); list.innerHTML="";
+  const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
+  const rows=sheets||[];
+  const pts=rows.reduce((s,r)=>s+Number(r.points),0), graded=rows.reduce((s,r)=>s+Number(r.graded),0);
+  $("stPts").textContent=pts;
+  $("stAcc").textContent=graded?(pts/graded).toFixed(2):"—";
+  $("stRank").textContent="—"; $("stRankLbl").textContent="best sheet rank";
+  if(profile){
+    const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
+    if(board?.length){
+      // every team sheet is ranked on its own; show this player's best one
+      let rank=0, prev=null, mine=null;
+      board.forEach((r,i)=>{ const p=Number(r.points); if(p!==prev){ rank=i+1; prev=p; } if(mine===null && r.username.toLowerCase()===profile.username.toLowerCase()) mine=rank; });
+      if(mine){ $("stRank").textContent=`#${mine}`; $("stRankLbl").textContent=`best sheet, of ${board.length}`; }
+    }
+  }
+  if(!rows.length){
+    const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Choose a team below to start your first sheet.";
+    list.appendChild(li); return;
+  }
+  rows.forEach(r=>{
+    const li=document.createElement("li"), a=document.createElement("a");
+    a.href=`sheet.html?team=${r.team}`;
+    const name=document.createElement("span"); name.textContent=TEAMS[r.team]?.name||r.team;
+    const meta=document.createElement("span"); meta.className="meta";
+    meta.textContent=`${r.points} pt${Number(r.points)===1?"":"s"} · ${r.total_picks} pick${Number(r.total_picks)===1?"":"s"}`;
+    a.append(swatch(r.team), name, meta); li.appendChild(a); list.appendChild(li);
   });
-  const blob=new Blob([rows.map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=`${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-picks.csv`;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-});
+}
 
 /* ───────── Start ───────── */
-buildPicker();
-if(sb){
-  sb.auth.onAuthStateChange((_event, session)=>{
-    const newId=session?.user?.id||null;
-    if(newId===userId) return;
-    userId=newId;
-    showAccount(session?.user?.email);
-    if(userId) setTimeout(()=>{ loadPicks(); loadProfile(); },0); // defer: don't await Supabase calls inside this callback
+if(!sb){ show("pOffline"); }
+else{
+  if(/type=recovery/.test(location.hash)) recovering=true;
+  sb.auth.onAuthStateChange((event, session)=>{
+    setTimeout(()=>{ // defer: don't await Supabase calls inside this callback
+      if(event==="PASSWORD_RECOVERY" || (recovering && session)){ recovering=true; show("pRecover"); $("rcPass").focus(); return; }
+      if(event==="TOKEN_REFRESHED" || event==="USER_UPDATED") return;
+      if(session){ if(currentUser?.id!==session.user.id) renderSignedIn(session); }
+      else { currentUser=null; profile=null; show("pSignedOut"); }
+      if(location.hash.includes("access_token")) history.replaceState(null,"",location.pathname+location.search);
+    },0);
   });
-  const reload=()=>{ if(team) loadGames(); };
-  setInterval(reload, 10*60*1000);
-  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) reload(); });
-}else{
-  document.getElementById("account").innerHTML='<p>Database not connected yet: add your Supabase URL and key near the top of this file.</p>';
+  loadNews(); loadToday();
+  setInterval(loadNews, 10*60*1000);
+  setInterval(loadToday, 5*60*1000);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadToday(); if(currentUser) loadMyStats(); } });
 }
-const start=new URL(location.href).searchParams.get("team")?.toUpperCase()
-  || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
-if(start && TEAMS[start]) chooseTeam(start);
-else { applyTheme("SEA"); document.getElementById("picker").classList.remove("hidden"); }
+if(location.hash==="#signin" || location.hash==="#account"){ document.getElementById("account").scrollIntoView({block:"center"}); setTimeout(()=>$("inEmail")?.focus(),300); }
 </script>
+<script src="game.js"></script>
 </body>
 </html>

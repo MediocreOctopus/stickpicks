@@ -90,3 +90,14 @@ function hasStarted(g, now=Date.now()){
   if(g.start_utc) return new Date(g.start_utc).getTime()<=now;
   return false;
 }
+
+// Score one pick on a finished game: 1 point for the right result, 1 point for
+// the exact combined goals (from the official final score). Returns null until final.
+function scorePick(g, team, pick){
+  const result=resultFor(g, team);
+  if(!result) return null;
+  const goals=g.home_score+g.away_score;
+  const outcomeHit = pick?.o ? pick.o===result : null;
+  const goalsHit = pick?.g!=null ? pick.g===goals : null;
+  return {result, goals, outcomeHit, goalsHit, points:(outcomeHit?1:0)+(goalsHit?1:0)};
+}

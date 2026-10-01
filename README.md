@@ -1,23 +1,34 @@
-# NHL 2026–27 prediction sheets
+# Stick Picks: NHL 2026–27 prediction sheets
 
-Prediction sheets for all 32 NHL teams. Pick a team, then call every regular-season game a win, loss, or overtime loss. Each sheet uses its team's colors, and final scores fill in automatically. It's hosted free on GitHub Pages, with a Supabase database.
+Prediction sheets for all 32 NHL teams. Pick a team, then call every regular-season game a win, loss, or overtime loss, and guess the combined goals. Each sheet uses its team's colors, final scores fill in automatically, and leaderboards rank every sheet by points. A home page handles accounts and shows an NHL news ticker and the day's games. It's hosted free on GitHub Pages, with a Supabase database.
 
 ```
-index.html                                  the sheets and the team picker
+index.html                                  home page: sign-in, news ticker, today's games, team picker
+sheet.html                                  the prediction sheet for one team
+rules.html                                  the rules and scoring explained, with examples
+game.js                                     Breakaway, the hockey mini-game on the home page
+leaderboard.html                            the leaderboard
+config.js                                   your Supabase URL and publishable key
+teams.js                                    team names, colors, and shared helpers
+styles.css                                  shared styles
 supabase/schema.sql                         database tables and security rules
 supabase/migrate-from-kraken-version.sql    optional, only if you set up the Kraken-only version
-scripts/update-games.mjs                    syncs schedules and scores from the NHL feed
+scripts/update-games.mjs                    syncs schedules, scores, and news headlines
 .github/workflows/update-games.yml          runs that sync every hour
 ```
 
 ## How it works
 
-Schedules aren't built into the page anymore. Once an hour, a GitHub Action downloads all 32 team schedules from the NHL's public feed and saves every game into your database, including start times, reschedules, postponements, and final scores. The page reads from that database, so the schedule stays current without you editing anything.
+Once an hour, a GitHub Action downloads all 32 team schedules from the NHL's public feed and saves every game into your database, including start times, reschedules, postponements, and final scores. The same run saves the latest NHL headlines from ESPN's public news feed. The pages read from that database, so everything stays current without you editing anything.
 
-- **Choosing a team:** open the page and pick a team, or switch teams with the menu in the header. The page remembers your last team, and you can link straight to one sheet with `?team=`. For example, `.../nhl-picks/?team=TOR` opens the Maple Leafs sheet.
+- **Home page:** shows a scrolling NHL news ticker (hover over it to pause; each headline opens the full story on ESPN), the day's games with start times or final scores, and the team picker. If there are no games today, it shows the next day that has games. It also has **Breakaway**, a hockey take on the endless-runner game: jump the pucks, cones, and nets, duck the slap shots, and try to beat your best score (saved in your browser). The skater wears the colors of the last team sheet you opened.
+- **Rules page:** explains picks, scoring, shootouts, locking, and leaderboards, with worked examples and a short FAQ. It's linked from the home page, every sheet, and the leaderboard. Players sign in, create accounts, and manage their username here. Once signed in, they see their points, overall rank, and a shortcut to each sheet they've started.
+- **Accounts:** players sign in with an email and password and stay signed in on that device until they sign out. After signing out, they sign back in with their password, with no email needed. "Forgot password?" emails a link to choose a new one.
+
+- **Choosing a team:** pick a team on the home page, or switch teams with the menu in a sheet's header. You can link straight to one sheet with `?team=`. For example, `.../nhl-picks/sheet.html?team=TOR` opens the Maple Leafs sheet. Older links like `.../nhl-picks/?team=TOR` still work.
 - **Picks:** each team's sheet has its own separate picks. The same game can have different picks on two sheets, such as the Kraken's sheet and the Flames' sheet.
 - **Times:** start times are shown in whatever time zone the viewer's device uses.
-- **Colors:** team colors are set in the `TEAMS` list inside `index.html`. Each team has a `board` color (header background), an `accent` color (highlights), and a `brand` color (buttons and row shading). Change any of them there. The page automatically checks contrast and falls back to white or black text where a color wouldn't be readable.
+- **Colors:** team colors are set in the `TEAMS` list inside `teams.js`. Each team has a `board` color (header background), an `accent` color (highlights), and a `brand` color (buttons and row shading). Change any of them there. The page automatically checks contrast and falls back to white or black text where a color wouldn't be readable.
 
 ## Setup (about 20 minutes)
 
@@ -30,9 +41,9 @@ Schedules aren't built into the page anymore. Once an hour, a GitHub Action down
    - the **publishable key**, which starts with `sb_publishable_` (older projects call it the `anon` key)
    - the **secret key**, which starts with `sb_secret_` (older projects call it the `service_role` key). **Keep this one private.** It only goes into GitHub secrets.
 
-### 2. Connect the page
+### 2. Connect the pages
 
-Near the top of `index.html`, replace the placeholders with your Project URL and publishable key. These two values are safe to publish, because the database rules only let each signed-in person read and change their own picks.
+Open `config.js` and replace the placeholders with your Project URL and publishable key. Both pages read from this one file. These two values are safe to publish, because the database rules only let each signed-in person read and change their own picks.
 
 ### 3. Publish on GitHub Pages
 
@@ -45,9 +56,13 @@ Near the top of `index.html`, replace the placeholders with your Project URL and
 In Supabase, go to **Authentication → URL Configuration**:
 
 - Set **Site URL** to your GitHub Pages address.
-- Under **Redirect URLs**, add the same address with `**` on the end, for example `https://YOUR-GITHUB-NAME.github.io/nhl-picks/**`. This lets sign-in links return you to whichever team sheet you were on.
+- Under **Redirect URLs**, add the same address with `**` on the end, for example `https://YOUR-GITHUB-NAME.github.io/nhl-picks/**`. This covers account confirmation and password reset links.
 
-**Optional:** after you've signed in once, you can turn off **Allow new users to sign up** under **Authentication → Sign In / Providers**. Leave it on if you want friends to be able to make their own sheets.
+Then open your home page, choose **Create account**, and enter a username, email, and password. Supabase emails a confirmation link once. After you open it, you sign in with your email and password from then on.
+
+**About emails:** Supabase's built-in email service only sends a few emails per hour, and both account confirmations and password resets count toward that limit. If friends are joining, you have two options. You can turn off **Confirm email** under **Authentication → Sign In / Providers → Email**, so new accounts can sign in right away with no email at all. Or you can connect your own email service under **Authentication → Emails → SMTP Settings** for higher limits.
+
+**Optional:** after you've signed in once, you can turn off **Allow new users to sign up** under **Authentication → Sign In / Providers**. Leave it on if you want friends to be able to join the leaderboard.
 
 ### 5. Load the schedules and turn on score updates
 
@@ -59,17 +74,38 @@ In Supabase, go to **Authentication → URL Configuration**:
 
 From then on, the workflow runs every hour, and scores usually appear within about an hour of the final horn.
 
+### Already set up an earlier version?
+
+1. Run the updated `supabase/schema.sql` again in the SQL Editor. It adds anything new, including the combined-goals column and the new leaderboard, without touching your existing games, picks, or usernames.
+2. Upload the new and changed files to your repository: `index.html`, `sheet.html`, `leaderboard.html`, `styles.css`, `teams.js`, `scripts/update-games.mjs`, and `.github/workflows/update-games.yml`. Keep your existing `config.js`, which already has your Supabase URL and key.
+3. Run the **Update NHL games** workflow once from the **Actions** tab so the news ticker fills in.
+
+If you signed up with emailed sign-in links, you're still signed in. To be able to sign back in after signing out, choose **Forgot password?** on the home page once and set a password.
+
 ### Coming from the Kraken-only version?
 
 Run `schema.sql` first, then run the workflow once so the games are loaded. After that, run `supabase/migrate-from-kraken-version.sql` to copy your existing Kraken picks onto the new Kraken sheet. That file also includes optional lines to remove the old tables once you've checked the copy.
 
-## Scoring
+## Scoring and the leaderboard
 
-- **W:** the team won in regulation, overtime, or a shootout.
-- **L:** the team lost in regulation.
-- **OTL:** the team lost in overtime or a shootout.
+For each game on a sheet, a player makes two predictions: the outcome (W, L, or OTL) and the combined goals for both teams. Once the game is final, each one is worth **1 point**, so a game is worth up to **2 points**. Either prediction can be left blank.
 
-Once a game is final, its row shows the score and marks your pick as correct or missed. The header shows the team's actual record next to your hit rate. Picks lock when a game goes final. To turn that off, change `LOCK_FINAL_GAMES` to `false` in `index.html`.
+- **Outcome:** **W** means the sheet's team won in regulation, overtime, or a shootout. **L** means it lost in regulation. **OTL** means it lost in overtime or a shootout.
+- **Combined goals:** the guess must match the official final score exactly. For example, a 4–2 game has 6 goals. A shootout counts as one goal for the winner, as it does in the official score, so a game that's 2–2 after overtime and ends in a shootout is 3–2, or 5 goals.
+
+On each sheet, every row uses − and + buttons (or typing) to set the goal total. Once a game is final, the row shows the result, the score, the goal total, and how many points the pick earned. The sheet's header shows your score with results and goals counted separately.
+
+To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from the account card on the home page. The leaderboard shows only usernames and totals, never anyone's individual picks.
+
+- **Every sheet is ranked on its own.** A player who fills out the Kraken and Maple Leafs sheets has two separate entries, one for each team. Points are never added together across sheets.
+- **Team leaderboards:** choose a team to see everyone's sheets for that team.
+- **All teams:** shows every sheet for every team in one ranking, with a team column, so the same player can appear more than once. Clicking a team in that column opens that team's leaderboard.
+- **Columns:** points, then correct results and exact goal totals, each shown as hits out of graded picks.
+- **Ties:** sheets with the same points share a rank.
+- **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the hourly job records final results.
+- **Locking:** both predictions lock at **puck drop**. The database enforces this, so nobody can change a pick after a game starts, even by editing the page. "Clear all picks" only clears games that haven't started yet.
+
+The home page account card shows your total points across all your sheets and the rank of your best sheet.
 
 ## Things to know
 

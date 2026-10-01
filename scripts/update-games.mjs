@@ -1,7 +1,9 @@
-// Pulls every team's 2026-27 regular-season schedule from the NHL's public
-// feed and upserts one row per game into the Supabase `games` table:
-// dates, start times, reschedules, and final scores. Node 18+, no dependencies.
-// Safe to run repeatedly.
+// 1) Pulls every team's 2026-27 regular-season schedule from the NHL's public
+//    feed and upserts one row per game into the Supabase `games` table:
+//    dates, start times, reschedules, and final scores.
+// 2) Pulls the latest NHL headlines from ESPN's public news feed into the
+//    `news` table for the home page ticker (failures here never stop step 1).
+// Node 18+, no dependencies. Safe to run repeatedly.
 
 export const SEASON = "20262027";
 export const TEAMS = [
@@ -55,17 +57,18 @@ async function fetchTeam(team) {
   throw new Error("no response");
 }
 
-async function upsert(rows) {
-  const headers = {
-    apikey: SECRET,
-    "Content-Type": "application/json",
-    Prefer: "resolution=merge-duplicates,return=minimal",
-  };
+function dbHeaders(extra = {}) {
+  const headers = { apikey: SECRET, "Content-Type": "application/json", ...extra };
   // Legacy service_role keys are JWTs and also go in Authorization;
   // newer sb_secret_ keys go only in the apikey header.
   if (SECRET.startsWith("eyJ")) headers.Authorization = `Bearer ${SECRET}`;
+  return headers;
+}
+
+async function upsert(rows, table = "games", key = "game_id") {
+  const headers = dbHeaders({ Prefer: "resolution=merge-duplicates,return=minimal" });
   for (let i = 0; i < rows.length; i += 500) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/games?on_conflict=game_id`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?on_conflict=${key}`, {
       method: "POST",
       headers,
       body: JSON.stringify(rows.slice(i, i + 500)),
@@ -99,6 +102,54 @@ async function main() {
   await upsert(rows);
   const finals = rows.filter((r) => r.period_type).length;
   console.log(`Saved ${rows.length} games (${finals} final).`);
+
+  try {
+    await updateNews();
+  } catch (err) {
+    console.warn(`News not updated this run: ${err.message}`);
+  }
+}
+
+/* ───── News ticker ───── */
+const NEWS_FEEDS = [
+  "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=25",
+  "https://site.web.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=25", // backup host
+];
+
+export function toNewsRows(feed) {
+  return (feed.articles || [])
+    .map((a) => ({
+      id: String(a.id ?? a.links?.web?.href ?? ""),
+      headline: (a.headline || "").trim(),
+      url: a.links?.web?.href || "",
+      source: "ESPN",
+      published_at: a.published || null,
+      fetched_at: new Date().toISOString(),
+    }))
+    .filter((r) => r.id && r.headline && /^https:\/\//.test(r.url));
+}
+
+async function updateNews() {
+  let rows = [];
+  for (const url of NEWS_FEEDS) {
+    try {
+      const res = await fetch(url, { headers: { "User-Agent": "nhl-prediction-sheets" } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      rows = toNewsRows(await res.json());
+      if (rows.length) break;
+    } catch (err) {
+      console.warn(`News feed ${new URL(url).host} failed: ${err.message}`);
+    }
+  }
+  if (!rows.length) throw new Error("no headlines returned");
+  await upsert(rows, "news", "id");
+  // keep the table small: drop headlines older than two weeks
+  const cutoff = new Date(Date.now() - 14 * 864e5).toISOString();
+  await fetch(`${SUPABASE_URL}/rest/v1/news?published_at=lt.${encodeURIComponent(cutoff)}`, {
+    method: "DELETE",
+    headers: dbHeaders({ Prefer: "return=minimal" }),
+  });
+  console.log(`Saved ${rows.length} headlines.`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
