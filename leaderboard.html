@@ -49,7 +49,7 @@
   </div>
   <div class="empty hidden" id="empty"></div>
 
-  <footer>Only final games count. Each game is worth 1 point when the W, L, or OTL pick matches the result from that sheet's team's side (shootout losses count as OTL), and 1 point when the combined goals pick matches the official final score exactly (a shootout win counts as one goal for the winner). Every team sheet is ranked on its own, and sheets with the same points share a rank. Only usernames and totals are shown here, never anyone's individual picks. <a href="rules.html">Read the full rules</a>.</footer>
+  <footer>Only final games count. Each game is worth 1 point when the W, L, or OTL pick matches the result from that sheet's team's side (shootout losses count as OTL), and 1 point when the combined goals pick matches the official final score exactly (a shootout win counts as one goal for the winner). Every team sheet is ranked on its own, and sheets with the same points share a rank. Click any player to see their sheet. Picks for games that haven't started stay hidden until puck drop, so nobody can copy them. <a href="rules.html">Read the full rules</a>.</footer>
 </div>
 
 <script>
@@ -78,8 +78,8 @@ function setTeam(code){
   document.getElementById("headline").textContent = team ? TEAMS[team].name : "All teams";
   document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · Stick Picks 2026–27`;
   document.getElementById("scope").textContent = team
-    ? `Everyone’s ${TEAMS[team].name} prediction sheets.`
-    : "Every prediction sheet for every team, each ranked on its own. A player who predicts several teams can appear once for each of them.";
+    ? `Everyone’s ${TEAMS[team].name} prediction sheets. Click a player to see their sheet.`
+    : "Every prediction sheet for every team, each ranked on its own. A player who predicts several teams can appear once for each of them. Click a player to see that sheet.";
   document.getElementById("teamCol").classList.toggle("hidden",!!team);
   load();
 }
@@ -130,7 +130,12 @@ function render(list){
       <td>${frac(Number(r.outcome_points),Number(r.outcome_graded))}</td>
       <td>${frac(Number(r.goals_points),Number(r.goals_graded))}</td>
       <td class="opt">${r.total_picks}</td>`;
-    tr.querySelector(".name").textContent=r.username;
+    const sheetUrl=`sheet.html?team=${r.team}&user=${encodeURIComponent(r.username)}`;
+    const nameLink=document.createElement("a"); nameLink.href=sheetUrl; nameLink.textContent=r.username;
+    nameLink.title=`See ${r.username}’s ${TEAMS[r.team]?.name||r.team} sheet`;
+    tr.querySelector(".name").appendChild(nameLink);
+    tr.classList.add("clickable");
+    tr.addEventListener("click",e=>{ if(!e.target.closest("a")) location.href=sheetUrl; });
     if(!team){
       const cell=tr.querySelector(".teamcell"), a=document.createElement("a");
       a.href=`leaderboard.html?team=${r.team}`; a.className="teamlink"; a.title=`${TEAMS[r.team]?.name||r.team} leaderboard`;

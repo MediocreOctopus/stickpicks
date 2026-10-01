@@ -343,3 +343,59 @@ details p{margin:0;padding:0 14px 14px;color:var(--muted)}
 details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .rules-cta{margin-top:32px}
 @media (max-width:600px){ .points-strip{grid-template-columns:1fr} .defs{grid-template-columns:1fr} }
+
+/* ───── Viewing another player's sheet ───── */
+.viewing{margin:16px 0 0;padding:12px 14px;border:1.5px solid var(--line);border-left:6px solid var(--stripe);border-radius:8px;background:var(--panel);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.viewing p{margin:0;flex:1 1 280px;font-size:.92rem}
+.game.secret .final{color:var(--muted);font-weight:500;font-style:italic}
+.viewmode .game .picks button,.viewmode .gin{cursor:default}
+
+/* clickable leaderboard rows */
+.lb tbody tr.clickable{cursor:pointer}
+.lb tbody tr.clickable:hover td{background:color-mix(in srgb, var(--stripe) 10%, var(--panel))}
+.lb td.name a{color:var(--ink);text-decoration:none}
+.lb td.name a:hover,.lb td.name a:focus-visible{text-decoration:underline}
+
+/* ───── Side-by-side comparison ───── */
+.h2h{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-top:10px}
+.h2h .side{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.h2h .them{text-align:right;align-items:flex-end}
+.h2h .who{font:700 1.05rem "Barlow Condensed",sans-serif;color:rgba(255,255,255,.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.h2h b{font:800 clamp(2.6rem,9vw,4rem)/1 "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.h2h .detail{font-size:.82rem;color:rgba(255,255,255,.7);margin-top:2px}
+.h2h .vs{font:700 1rem "Barlow Condensed",sans-serif;color:var(--stripe);text-transform:uppercase;letter-spacing:.1em}
+.h2h[data-lead="me"] .me b,.h2h[data-lead="them"] .them b{color:var(--title)}
+.h2h-sub{margin-top:10px;font-size:.9rem;color:rgba(255,255,255,.75)}
+
+.cmp-head,.cmp-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
+.cmp-head{margin-top:18px;padding:0 8px 6px;font:600 .8rem "Barlow",sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:2px solid var(--ink)}
+.cmp-head span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comparepage .month{margin-top:20px}
+.cmp-row{padding:8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.cmp-row.home{background:var(--home);box-shadow:inset 3px 0 0 var(--stripe)}
+.cmp-game{display:flex;gap:10px;align-items:center;min-width:0}
+.cmp-game .gdate{flex:none;width:5.6rem}
+.cmp-game .opp{min-width:0}
+.cmp-game .final{margin-left:0;display:block}
+.cmp-cell{display:flex;align-items:center;gap:8px;min-height:2.4rem;padding:4px 8px;border-radius:8px;border:1.5px solid transparent}
+.cmp-cell.diff{border-color:var(--line);border-style:dashed}
+.cmp-row[data-winner="me"] .cmp-cell[data-side="me"],.cmp-row[data-winner="them"] .cmp-cell[data-side="them"]{background:color-mix(in srgb, var(--win) 13%, transparent);border-color:color-mix(in srgb, var(--win) 45%, transparent);border-style:solid}
+.cmp-cell .pill{min-width:2.6rem}
+.pill.none{color:var(--muted);border-color:var(--line)}
+.gpick{font:700 1rem "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hitmark::after{content:" ✓";color:var(--win)}
+.missmark::after{content:" ✗";color:var(--loss)}
+.missmark{opacity:.75}
+.cpts{margin-left:auto;font:800 1.15rem "Barlow Condensed",sans-serif;color:var(--muted)}
+.cpts.got{color:var(--win)}
+.locknote{font-size:.85rem;color:var(--muted);font-style:italic}
+@media (max-width:640px){
+  .cmp-head{grid-template-columns:1fr 1fr}
+  .cmp-head span:first-child{display:none}
+  .cmp-row{grid-template-columns:1fr 1fr;row-gap:6px}
+  .cmp-game{grid-column:1 / -1}
+  .cmp-cell{gap:6px;padding:4px 6px}
+  .gpick{font-size:.95rem}
+}
+.cmp-game .final:not([data-r]){color:var(--muted);font-weight:500}
+.cmp-cell .pill{white-space:nowrap}

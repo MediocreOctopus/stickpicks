@@ -43,6 +43,15 @@
       <button class="plain hidden" id="signout">Sign out</button>
     </section>
 
+    <section class="viewing hidden" id="viewing" aria-live="polite">
+      <p id="viewMsg"></p>
+      <div class="right">
+        <a class="plain" id="backLb" href="leaderboard.html">Back to leaderboard</a>
+        <a class="plain" id="mySheet" href="sheet.html">Open my sheet</a>
+        <a class="plain primary" id="compareLink" href="compare.html">Compare side by side</a>
+      </div>
+    </section>
+
     <div class="controls">
       <div class="seg" role="group" aria-label="Show games">
         <button data-f="all" aria-pressed="true">All</button>
@@ -55,7 +64,7 @@
         <button class="plain" id="clear">Clear all picks</button>
       </div>
     </div>
-    <p class="note">For each game, tap W, L, or OTL (tap again to undo) and set the combined goals for both teams. Shaded rows are home games; times are in your time zone. Picks lock at puck drop. Each game is worth up to 2 points: 1 for the right result and 1 for the exact combined goals. <a href="rules.html">Full rules</a></p>
+    <p class="note" id="note">For each game, tap W, L, or OTL (tap again to undo) and set the combined goals for both teams. Shaded rows are home games; times are in your time zone. Picks lock at puck drop. Each game is worth up to 2 points: 1 for the right result and 1 for the exact combined goals. <a href="rules.html">Full rules</a></p>
 
     <main id="sheet"></main>
     <div class="empty hidden" id="empty"></div>
@@ -78,6 +87,9 @@ let games=[];       // this team's games, in order
 let picks={};       // { game_id: { o: "W" | "L" | "OTL", g: total goals } } (either part optional)
 let userId=null;
 let filter="all";
+// Viewing someone else's sheet from the leaderboard: sheet.html?team=SEA&user=Name
+const VIEW_USER=(()=>{ const u=new URL(location.href).searchParams.get("user"); return u&&USERNAME_RULE.test(u)?u:null; })();
+const viewing=!!VIEW_USER;
 const localKey=()=>`nhl-picks-${SEASON}-${team}`;
 function saveLocal(){ try{ localStorage.setItem(localKey(), JSON.stringify(picks)); }catch(e){} }
 function loadLocal(){
@@ -107,17 +119,22 @@ function buildTeamMenu(){
 async function chooseTeam(code){
   if(!TEAMS[code]) return;
   team=code;
-  try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){}
+  if(!viewing){ try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){} }
   const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
   applyTheme(code);
-  document.title=`${TEAMS[code].name} · Stick Picks 2026–27`;
-  document.getElementById("title").textContent=`${TEAMS[code].name} · 2026–27 predictions`;
+  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks · Stick Picks`:`${TEAMS[code].name} · Stick Picks 2026–27`;
+  document.getElementById("title").textContent=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks`:`${TEAMS[code].name} · 2026–27 predictions`;
+  if(viewing){
+    document.getElementById("backLb").href=`leaderboard.html?team=${code}`;
+    document.getElementById("mySheet").href=`sheet.html?team=${code}`;
+    document.getElementById("compareLink").href=`compare.html?team=${code}&user=${encodeURIComponent(VIEW_USER)}`;
+  }
   document.getElementById("teamsel").value=code;
   document.getElementById("lblink").href=`leaderboard.html?team=${code}`;
   window.scrollTo(0,0);
-  picks=loadLocal(); games=[]; renderSheet(); refresh();
+  picks=viewing?{}:loadLocal(); games=[]; renderSheet(); refresh();
   await loadGames();
-  if(userId) await loadPicks();
+  if(userId && !viewing) await loadPicks();
 }
 
 /* ───────── Database ───────── */
@@ -140,6 +157,28 @@ async function loadGames(){
     empty.classList.remove("hidden");
   }else empty.classList.add("hidden");
   renderSheet(); refresh();
+  if(viewing) loadViewPicks();
+}
+
+// Another player's picks. The database only reveals picks for games that have
+// started; picks for upcoming games come back marked hidden so nobody can copy them.
+let hiddenCount=0;
+async function loadViewPicks(){
+  const want=team;
+  const {data,error}=await sb.rpc("sheet_picks",{p_username:VIEW_USER, p_team:team, p_season:SEASON});
+  if(want!==team) return;
+  const msg=document.getElementById("viewMsg");
+  if(error){ msg.textContent=`Couldn’t load ${VIEW_USER}’s picks: ${error.message}`; return; }
+  picks=Object.fromEntries(data.map(r=>[String(r.game_id), r.revealed?{o:r.pick||undefined,g:r.goals??undefined}:{hidden:true}]));
+  hiddenCount=data.filter(r=>!r.revealed).length;
+  msg.textContent="";
+  if(!data.length){ msg.append(`${VIEW_USER} hasn’t made any ${TEAMS[team].name} picks yet.`); }
+  else{
+    msg.append("You’re viewing ");
+    const b=document.createElement("b"); b.textContent=VIEW_USER; msg.append(b);
+    msg.append(`’s picks. Picks are revealed at puck drop, so upcoming games show only whether a pick was made.`);
+  }
+  refresh();
 }
 
 const rowFor=gid=>({user_id:userId, team, game_id:Number(gid), pick:pickO(gid), goals:pickG(gid), updated_at:new Date().toISOString()});
@@ -204,6 +243,14 @@ async function loadPicks(){
 const accountMsg=document.getElementById("accountMsg"), signinLink=document.getElementById("signinLink"),
       signoutBtn=document.getElementById("signout");
 async function showAccount(session){
+  if(viewing){
+    // looking at your own sheet through the leaderboard? open it normally
+    if(session){
+      const {data}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
+      if(data?.username && data.username.toLowerCase()===VIEW_USER.toLowerCase()) location.replace(`sheet.html?team=${team}`);
+    }
+    return;
+  }
   const inn=!!session;
   signinLink.classList.toggle("hidden",inn); signoutBtn.classList.toggle("hidden",!inn);
   if(!inn){
@@ -288,14 +335,15 @@ function refresh(){
   const actualOf=id=>G[id]?resultFor(G[id],team):null;
   let score=0, oHit=0, oGraded=0, gHit=0, gGraded=0, goalCount=0;
   document.querySelectorAll(".game").forEach(row=>{
-    const id=row.dataset.id, g=G[id], o=pickO(id), gp=pickG(id);
+    const id=row.dataset.id, g=G[id], o=pickO(id), gp=pickG(id), secret=!!picks[id]?.hidden;
     if(gp!=null) goalCount++;
-    row.querySelectorAll(".picks button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===o)));
+    row.querySelectorAll(".picks button").forEach(b=>{ b.setAttribute("aria-pressed",String(b.dataset.v===o)); b.disabled=viewing; });
     const inp=row.querySelector(".gin");
     if(document.activeElement!==inp) inp.value = gp ?? "";
     row.querySelector(".goals").classList.toggle("set", gp!=null);
-    const locked=!!g && hasStarted(g);
+    const locked=viewing || (!!g && hasStarted(g));
     row.classList.toggle("locked", locked);
+    row.classList.toggle("secret", secret);
     row.querySelectorAll(".goals button, .gin").forEach(el=>el.disabled=locked);
     const fin=row.querySelector(".final"), ver=row.querySelector(".verdict");
     const sc=g?scorePick(g,team,picks[id]):null;
@@ -309,7 +357,7 @@ function refresh(){
       score+=sc.points;
       ver.textContent = parts.length ? `${parts.join(" · ")} · +${sc.points}` : "";
       ver.className = "verdict" + (parts.length ? (sc.points?" hit":" miss") : "");
-    }else{ fin.textContent=""; ver.textContent=""; }
+    }else{ fin.textContent = secret ? "Picked · revealed at puck drop" : ""; ver.textContent=""; }
   });
   const ids=games.map(g=>String(g.game_id));
   const t=tally(ids,pickO);
@@ -319,12 +367,13 @@ function refresh(){
   document.getElementById("pts").textContent=t.pts;
   document.getElementById("pace").textContent=t.n?Math.round(t.pts/t.n*total):"—";
   document.getElementById("pacelabel").textContent=`${total}-game pace`;
-  document.getElementById("picked").textContent=`${t.n} of ${total} outcomes · ${goalCount} goal totals`;
+  document.getElementById("picked").textContent=`${t.n} of ${total} outcomes · ${goalCount} goal totals`+
+    (viewing&&hiddenCount?` · ${hiddenCount} hidden until puck drop`:"");
   document.getElementById("bar").style.width=((t.n+goalCount)/(2*total)*100)+"%";
 
   const a=tally(ids,actualOf), act=document.getElementById("actual");
   if(a.n){
-    act.innerHTML=`Actual: <b>${a.w}–${a.l}–${a.o}</b> &nbsp; Your score: <b>${score} pt${score===1?"":"s"}</b>`+
+    act.innerHTML=`Actual: <b>${a.w}–${a.l}–${a.o}</b> &nbsp; ${viewing?"Their score":"Your score"}: <b>${score} pt${score===1?"":"s"}</b>`+
       ((oGraded||gGraded)?` (results ${oHit}/${oGraded}, goals ${gHit}/${gGraded})`:"");
   }else act.textContent="Your score appears once games are final: up to 2 points per game.";
   groups.forEach(gr=>{
@@ -338,13 +387,13 @@ function applyFilter(){
   const G=byId();
   document.querySelectorAll(".game").forEach(row=>{
     const id=row.dataset.id, g=G[id], home=g&&g.home===team;
-    const show = filter==="home"?home : filter==="away"?!home : filter==="open"?(!pickO(id)||pickG(id)==null) : true;
+    const show = filter==="home"?home : filter==="away"?!home : filter==="open"?(!picks[id]?.hidden&&(!pickO(id)||pickG(id)==null)) : true;
     row.classList.toggle("hidden",!show);
   });
   groups.forEach(gr=>gr.el.classList.toggle("hidden",![...gr.el.querySelectorAll(".game")].some(r=>!r.classList.contains("hidden"))));
 }
 
-function editable(id){ const g=byId()[id]; if(!g||hasStarted(g)){ refresh(); return false; } return true; }
+function editable(id){ if(viewing) return false; const g=byId()[id]; if(!g||hasStarted(g)){ refresh(); return false; } return true; }
 function setPart(id, field, value){
   const prev=picks[id]?{...picks[id]}:undefined;
   const next={...(picks[id]||{})};
@@ -366,7 +415,7 @@ sheet.addEventListener("click",e=>{
   refresh(); savePick(id, prev);
 });
 sheet.addEventListener("input",e=>{
-  const inp=e.target.closest(".gin"); if(!inp) return;
+  const inp=e.target.closest(".gin"); if(!inp||viewing) return;
   const id=inp.closest(".game").dataset.id;
   if(!editable(id)) return;
   inp.value=inp.value.replace(/\D/g,"").slice(0,2);
@@ -409,20 +458,31 @@ document.getElementById("dl").addEventListener("click",()=>{
   });
   const blob=new Blob([rows.map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=`${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-stick-picks.csv`;
+  a.download=`${viewing?VIEW_USER.toLowerCase()+"-":""}${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-stick-picks.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 });
 
 /* ───────── Start ───────── */
 buildTeamMenu();
+if(viewing){
+  document.documentElement.classList.add("viewmode");
+  document.getElementById("account").classList.add("hidden");
+  document.getElementById("viewing").classList.remove("hidden");
+  document.getElementById("teamsel").classList.add("hidden");
+  document.getElementById("clear").classList.add("hidden");
+  document.getElementById("savestate").classList.add("hidden");
+  document.getElementById("note").innerHTML='This sheet is view-only. Each game is worth up to 2 points: 1 for the right result and 1 for the exact combined goals. <a href="rules.html">Full rules</a>';
+  document.querySelector('.seg button[data-f="open"]').textContent="Not picked";
+}
 if(sb){
   sb.auth.onAuthStateChange((_event, session)=>{
     const newId=session?.user?.id||null;
     if(newId===userId) return;
     userId=newId;
-    setTimeout(()=>{ showAccount(session); if(userId) loadPicks(); },0); // defer: don't await Supabase calls inside this callback
+    setTimeout(()=>{ showAccount(session); if(userId && !viewing) loadPicks(); },0); // defer: don't await Supabase calls inside this callback
   });
   const reload=()=>{ if(team) loadGames(); };
+  if(viewing) setInterval(()=>{ if(team && games.length) loadViewPicks(); }, 60*1000); // reveal picks as games start
   setInterval(reload, 10*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) reload(); });
 }else{
