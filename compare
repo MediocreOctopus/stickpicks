@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" class="sheetpage comparepage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compare sheets · Stick Picks 2026–27</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="teams.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="board">
+    <div class="board-top">
+      <h1 id="title">Head to head</h1>
+      <div class="board-nav">
+        <a class="navlink" href="index.html">Stick Picks</a>
+        <a class="navlink" id="lbLink" href="leaderboard.html">Leaderboard</a>
+      </div>
+    </div>
+    <div class="h2h" id="h2h">
+      <div class="side me"><span class="who" id="meName">You</span><b id="mePts">0</b><span class="detail" id="meDetail">points</span></div>
+      <div class="vs">vs</div>
+      <div class="side them"><span class="who" id="themName">Them</span><b id="themPts">0</b><span class="detail" id="themDetail">points</span></div>
+    </div>
+    <div class="h2h-sub" id="h2hSub">Loading…</div>
+  </header>
+
+  <section class="viewing" id="banner">
+    <p id="bannerMsg">Comparing sheets. Their picks for games that haven’t started stay hidden until puck drop.</p>
+    <div class="right">
+      <a class="plain" id="theirSheet" href="sheet.html">Their sheet</a>
+      <a class="plain primary" id="mySheet" href="sheet.html">Edit my sheet</a>
+    </div>
+  </section>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Show games">
+      <button data-f="all" aria-pressed="true">All</button>
+      <button data-f="final" aria-pressed="false">Finished</button>
+      <button data-f="upcoming" aria-pressed="false">Upcoming</button>
+      <button data-f="diff" aria-pressed="false">Different picks</button>
+    </div>
+  </div>
+  <p class="note">Each game is worth up to 2 points per sheet: 1 for the right result and 1 for the exact combined goals. Highlighted games are the ones each player won head to head. <a href="rules.html">Full rules</a></p>
+
+  <div class="cmp-head" aria-hidden="true">
+    <span>Game</span><span id="colMe">You</span><span id="colThem">Them</span>
+  </div>
+  <main id="sheet"></main>
+  <div class="empty hidden" id="empty"></div>
+
+  <footer>Combined goals use the official final score, which counts a shootout win as one goal for the winner. Team colors are approximations for this fan-made site.</footer>
+</div>
+
+<script>
+const sb = makeClient();
+const $ = id => document.getElementById(id);
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+const params=new URL(location.href).searchParams;
+const team=(params.get("team")||"").toUpperCase();
+const other=(()=>{ const u=params.get("user"); return u&&USERNAME_RULE.test(u)?u:null; })();
+if(!TEAMS[team] || !other) location.replace(TEAMS[team]?`sheet.html?team=${team}`:"leaderboard.html");
+
+let games=[], mine={}, theirs={}, myName="You", signedIn=false, filter="all";
+
+applyTheme(team);
+document.title=`You vs ${other} · ${TEAMS[team]?.name} · Stick Picks`;
+$("title").textContent=`${TEAMS[team]?.name} · head to head`;
+$("themName").textContent=other; $("colThem").textContent=other;
+$("theirSheet").href=`sheet.html?team=${team}&user=${encodeURIComponent(other)}`;
+$("mySheet").href=`sheet.html?team=${team}`;
+$("lbLink").href=`leaderboard.html?team=${team}`;
+
+function localPicks(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(`nhl-picks-${SEASON}-${team}`)||"{}")||{};
+    return Object.fromEntries(Object.entries(raw).map(([k,v])=>[k, typeof v==="string"?{o:v}:v]));
+  }catch(e){ return {}; }
+}
+
+async function load(){
+  if(!sb){ $("empty").textContent="Database not connected yet: add your Supabase URL and key to config.js."; $("empty").classList.remove("hidden"); return; }
+  const {data:{session}}=await sb.auth.getSession();
+  signedIn=!!session;
+  const jobs=[
+    sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type")
+      .eq("season",SEASON).or(`home.eq.${team},away.eq.${team}`).order("game_date").order("start_utc"),
+    sb.rpc("sheet_picks",{p_username:other, p_team:team, p_season:SEASON}),
+  ];
+  if(session){
+    jobs.push(sb.from("team_picks").select("game_id,pick,goals").eq("team",team));
+    jobs.push(sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle());
+  }
+  const [g,t,m,prof]=await Promise.all(jobs);
+  if(g.error||t.error){ $("empty").textContent=`Couldn’t load the comparison: ${(g.error||t.error).message}`; $("empty").classList.remove("hidden"); return; }
+  if(prof?.data?.username){
+    myName=prof.data.username;
+    if(myName.toLowerCase()===other.toLowerCase()){ location.replace(`sheet.html?team=${team}`); return; }
+  }
+  games=g.data;
+  theirs=Object.fromEntries(t.data.map(r=>[String(r.game_id), r.revealed?{o:r.pick||undefined,g:r.goals??undefined}:{hidden:true}]));
+  mine = session && m && !m.error
+    ? Object.fromEntries(m.data.map(r=>[String(r.game_id),{o:r.pick||undefined,g:r.goals??undefined}]))
+    : localPicks();
+  $("meName").textContent=myName; $("colMe").textContent=myName==="You"?"You":`${myName} (you)`;
+  if(!session) $("bannerMsg").innerHTML='You’re not signed in, so “You” shows picks saved in this browser. <a href="index.html#signin">Sign in</a> to compare your saved sheet. Their picks for games that haven’t started stay hidden until puck drop.';
+  if(!games.length){ $("empty").textContent="No schedule in the database yet."; $("empty").classList.remove("hidden"); }
+  render();
+}
+
+/* ───── Rendering ───── */
+const localTime=iso=>iso?new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"TBD";
+
+function pickCell(p, sc, opts={}){
+  const cell=document.createElement("div"); cell.className="cmp-cell";
+  if(opts.side) cell.dataset.side=opts.side;
+  if(p?.hidden){ cell.innerHTML='<span class="locknote">Picked · hidden until puck drop</span>'; cell.classList.add("secret"); return cell; }
+  if(!p || (!p.o && p.g==null)){ cell.innerHTML='<span class="locknote">No pick</span>'; cell.classList.add("nopick"); return cell; }
+  const o=document.createElement("span");
+  o.className="pill "+(p.o?p.o.toLowerCase():"none"); o.textContent=p.o||"–";
+  if(sc && sc.outcomeHit!==null) o.classList.add(sc.outcomeHit?"hitmark":"missmark");
+  const gl=document.createElement("span"); gl.className="gpick"; gl.textContent=p.g!=null?`${p.g} goals`:"– goals";
+  if(sc && sc.goalsHit!==null) gl.classList.add(sc.goalsHit?"hitmark":"missmark");
+  cell.append(o,gl);
+  if(sc){ const pts=document.createElement("span"); pts.className="cpts"+(sc.points?" got":""); pts.textContent=`+${sc.points}`; cell.appendChild(pts); }
+  if(opts.diff) cell.classList.add("diff");
+  return cell;
+}
+
+function identicalPicks(a,b){ return a && b && !a.hidden && !b.hidden && (a.o===b.o) && ((a.g??null)===(b.g??null)); }
+
+function render(){
+  const sheet=$("sheet"); sheet.innerHTML="";
+  let cur=null, list=null;
+  const T={me:{pts:0,o:0,og:0,g:0,gg:0}, them:{pts:0,o:0,og:0,g:0,gg:0}};
+  let wins=0, losses=0, ties=0, agree=0, comparable=0;
+
+  games.forEach((g,i)=>{
+    const id=String(g.game_id), final=!!resultFor(g,team), started=hasStarted(g);
+    const a=mine[id], b=theirs[id];
+    const sa=final?scorePick(g,team,a):null, sb_=final?scorePick(g,team,b?.hidden?null:b):null;
+    [["me",sa,a],["them",sb_,b]].forEach(([k,sc,p])=>{
+      if(!sc) return;
+      T[k].pts+=sc.points;
+      if(sc.outcomeHit!==null){ T[k].og++; if(sc.outcomeHit) T[k].o++; }
+      if(sc.goalsHit!==null){ T[k].gg++; if(sc.goalsHit) T[k].g++; }
+    });
+    let winner=null;
+    if(final && ((a&&(a.o||a.g!=null)) || (b&&(b.o||b.g!=null)))){
+      if(sa.points>sb_.points){ wins++; winner="me"; } else if(sa.points<sb_.points){ losses++; winner="them"; } else ties++;
+    }
+    const bothVisible=a && b && !b.hidden && (a.o||a.g!=null) && (b.o||b.g!=null);
+    const differs = bothVisible && !identicalPicks(a,b);
+    if(bothVisible){ comparable++; if(!differs) agree++; }
+
+    // filters
+    if(filter==="final" && !final) return;
+    if(filter==="upcoming" && started) return;
+    if(filter==="diff" && !differs) return;
+
+    const [y,mo,d]=g.game_date.split("-").map(Number);
+    const k=`${y}-${mo}`;
+    if(k!==cur){
+      cur=k;
+      const sec=document.createElement("section"); sec.className="month";
+      sec.innerHTML=`<div class="month-head"><h2>${MONTHS[mo-1]} ${y}</h2></div>`;
+      list=document.createElement("div"); sec.appendChild(list); sheet.appendChild(sec);
+    }
+    const home=g.home===team, oppCode=home?g.away:g.home, opp=TEAMS[oppCode]?.name||oppCode;
+    const row=document.createElement("div"); row.className="cmp-row"+(home?" home":"");
+    if(winner) row.dataset.winner=winner;
+
+    const info=document.createElement("div"); info.className="cmp-game";
+    const date=document.createElement("span"); date.className="gdate";
+    date.innerHTML=`${DAYS[new Date(y,mo-1,d).getDay()]} ${MONTHS[mo-1].slice(0,3)} ${d}<small>${localTime(g.start_utc)}</small>`;
+    const what=document.createElement("span"); what.className="opp";
+    const strong=document.createElement("strong"); strong.textContent=`${home?"vs":"at"} ${opp}`; what.appendChild(strong);
+    const fin=document.createElement("span"); fin.className="final";
+    if(final){
+      const us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score, r=resultFor(g,team);
+      fin.dataset.r=r; fin.textContent=`Final ${r} ${us}–${them}${g.period_type!=="REG"?" "+g.period_type:""} · ${g.home_score+g.away_score} goals`;
+    }else fin.textContent = started ? "In progress" : `Game ${i+1}`;
+    what.appendChild(fin);
+    info.append(date,what);
+
+    row.append(info, pickCell(a,sa,{side:"me",diff:differs}), pickCell(b,sb_,{side:"them",diff:differs}));
+    list.appendChild(row);
+  });
+
+  if(!sheet.children.length && games.length){
+    $("empty").textContent = filter==="diff" ? "No differences yet among picks you can both see." : "No games match this filter.";
+    $("empty").classList.remove("hidden");
+  }else if(games.length) $("empty").classList.add("hidden");
+
+  // scoreboard
+  $("mePts").textContent=T.me.pts; $("themPts").textContent=T.them.pts;
+  const det=x=>`results ${x.o}/${x.og} · goals ${x.g}/${x.gg}`;
+  $("meDetail").textContent=det(T.me); $("themDetail").textContent=det(T.them);
+  $("h2h").dataset.lead = T.me.pts>T.them.pts?"me":T.me.pts<T.them.pts?"them":"tie";
+  const played=wins+losses+ties;
+  const parts=[];
+  if(played) parts.push(`Game by game: you won ${wins}, ${other} won ${losses}, ${ties} tied`);
+  if(comparable) parts.push(`identical picks on ${agree} of ${comparable} games you can both see`);
+  $("h2hSub").textContent = parts.length ? parts.join(" · ") : "Scores appear here once games are final.";
+}
+
+document.querySelector(".seg").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  filter=b.dataset.f;
+  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  render();
+});
+
+if(TEAMS[team] && other){
+  load();
+  setInterval(load, 2*60*1000); // reveal their picks as games start
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load(); });
+}
+</script>
+</body>
+</html>
