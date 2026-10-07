@@ -99,8 +99,43 @@ function mountTeamMenu(root){
   document.addEventListener("click",e=>{ if(!root.contains(e.target)) close(); });
   root.addEventListener("keydown",e=>{ if(e.key==="Escape") close(true); });
   root.addEventListener("focusout",e=>{ if(e.relatedTarget && !root.contains(e.relatedTarget)) close(); });
-  return {open,close};
+  return TEAM_MENU={open,close};
 }
+let TEAM_MENU=null;
+
+/* ───────── Phone tab bar (shown under 560px by styles.css) ───────── */
+const TAB_ICONS={
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  teams:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  board:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>',
+  play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/>',
+  rules:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>'
+};
+function mountTabBar(){
+  if(document.querySelector(".tabbar")) return;
+  const page=(location.pathname.split("/").pop()||"index.html").toLowerCase();
+  const items=[
+    ["home","Home","index.html",page==="index.html"],
+    ["teams","Teams","index.html#teams",page==="sheet.html"||page==="compare.html"],
+    ["board","Leaders","leaderboard.html",page==="leaderboard.html"],
+    ["play","Intermission","intermission.html",page==="intermission.html"],
+    ["rules","Rules","rules.html",page==="rules.html"]
+  ];
+  const nav=document.createElement("nav"); nav.className="tabbar"; nav.setAttribute("aria-label","Sections");
+  items.forEach(([icon,label,href,current])=>{
+    const a=document.createElement("a"); a.href=href;
+    if(current) a.setAttribute("aria-current","page");
+    a.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[icon]}</svg>`;
+    a.append(label);
+    if(icon==="teams") a.addEventListener("click",e=>{
+      if(!TEAM_MENU) return; // no menu on this page: go to the home page's menu
+      e.preventDefault(); e.stopPropagation(); window.scrollTo({top:0}); TEAM_MENU.open();
+    });
+    nav.appendChild(a);
+  });
+  document.body.appendChild(nav);
+}
+document.addEventListener("DOMContentLoaded", mountTabBar);
 
 /* ───────── Shared helpers ───────── */
 function makeClient(){

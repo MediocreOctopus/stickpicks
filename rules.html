@@ -6,11 +6,20 @@
 <title>Rules · Stick Picks 2026–27</title>
 <meta name="theme-color" content="#0E1A26">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stick Picks">
+<meta property="og:title" content="Stick Picks · NHL 2026–27 Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Stick Picks">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="teams.js?v=2026-10-07"></script>
-<link rel="stylesheet" href="styles.css?v=2026-10-07">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-08">
 </head>
 <body>
 <div class="wrap">
@@ -35,18 +44,17 @@
     </div>
   </header>
 
-  <nav class="toc" aria-label="On this page">
-    <a href="#picks">Making picks</a>
-    <a href="#scoring">Scoring</a>
-    <a href="#examples">Examples</a>
-    <a href="#locking">Locking</a>
-    <a href="#leaderboards">Leaderboards</a>
-    <a href="#faq">FAQ</a>
-  </nav>
+  <ul class="basics">
+    <li><b>Pick a team.</b> Each team’s sheet lists all its games. Fill out as many sheets as you like.</li>
+    <li><b>Call each game</b> from that team’s side: <span class="pill w">W</span> any win, <span class="pill l">L</span> regulation loss, <span class="pill otl">OTL</span> overtime or shootout loss. Add the combined goals.</li>
+    <li><b>Picks lock at puck drop.</b> Change them as often as you like until then.</li>
+    <li><b>Every sheet ranks on its own</b> on the leaderboard. Ties share a rank.</li>
+  </ul>
 
   <article class="rules">
-    <section id="picks">
-      <h2>Making picks</h2>
+    <h2 class="rules-more">The details</h2>
+    <details id="picks">
+      <summary>Making picks</summary>
       <p>Choose any NHL team to open its prediction sheet, which lists every one of that team’s regular-season games. For each game you can make two predictions, always from that team’s side:</p>
       <dl class="defs">
         <dt>Result</dt>
@@ -56,10 +64,10 @@
       </dl>
       <p>You can make one prediction without the other, and you can change either one as often as you like until the game starts. You can fill out as many team sheets as you want.</p>
       <p>To have your picks count, <a href="index.html#signin">sign in</a> and choose a username. Picks made while signed out are saved only in that browser, and they’re added to your account the next time you open that sheet while signed in, as long as those games haven’t started.</p>
-    </section>
+    </details>
 
-    <section id="scoring">
-      <h2>Scoring</h2>
+    <details id="scoring">
+      <summary>Scoring and shootouts</summary>
       <p>Points are awarded once a game is final, usually within about 15–30 minutes of the final horn.</p>
       <h3>Result: 1 point</h3>
       <p>Your pick earns a point when it matches how the game ended for the sheet’s team:</p>
@@ -76,10 +84,10 @@
       <h3>Combined goals: 1 point</h3>
       <p>Your number must match the total of both teams’ goals in the official final score exactly. Being off by one earns nothing. Empty-net goals count.</p>
       <p class="callout"><b>Shootouts:</b> the official final score gives the shootout winner one extra goal, and Stick Picks uses that same score. A game tied 2–2 after overtime and won in a shootout goes in the books as 3–2, so the combined goals are <b>5</b>.</p>
-    </section>
+    </details>
 
-    <section id="examples">
-      <h2>Examples</h2>
+    <details id="examples">
+      <summary>Scoring examples</summary>
       <p>All from the Seattle Kraken’s sheet.</p>
       <div class="tablewrap">
         <table class="rtable examples">
@@ -95,16 +103,16 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </details>
 
-    <section id="locking">
-      <h2>Locking</h2>
+    <details id="locking">
+      <summary>Locking and schedule changes</summary>
       <p>Both predictions for a game lock at <b>puck drop</b>, the scheduled start time. After that, they can’t be added, changed, or cleared, and the site enforces this, not just the buttons. “Clear all picks” only clears games that haven’t started.</p>
       <p>If the NHL moves a game, its picks follow the new start time. A game with no final score never awards points.</p>
-    </section>
+    </details>
 
-    <section id="leaderboards">
-      <h2>Leaderboards</h2>
+    <details id="leaderboards">
+      <summary>Leaderboards and viewing other sheets</summary>
       <ul class="bullets">
         <li><b>Every sheet is ranked on its own.</b> Points are never added together across sheets. If you fill out the Kraken and the Maple Leafs, you have two separate entries.</li>
         <li><b>Team leaderboards</b> rank everyone’s sheets for one team, head to head.</li>
@@ -112,7 +120,7 @@
         <li><b>Ties:</b> sheets with the same points share a rank.</li>
         <li><b>Viewing other sheets:</b> click any player on a leaderboard to see that sheet. Picks are revealed at puck drop, so for games that haven’t started you can only see <i>whether</i> a pick was made, not what it is. From any player’s sheet, <b>Compare side by side</b> lines up your picks against theirs for the same team. Your email address is never shown.</li>
       </ul>
-    </section>
+    </details>
 
     <section id="faq">
       <h2>FAQ</h2>
@@ -133,6 +141,12 @@
 
   <footer>Stick Picks is a fan-made prediction game, not affiliated with the NHL or its teams.</footer>
 </div>
-<script>mountTeamMenu(document.getElementById("teamMenu"));</script>
+<script src="teams.js?v=2026-10-08"></script>
+<script>
+mountTeamMenu(document.getElementById("teamMenu"));
+// Links like rules.html#scoring open that section
+function openFromHash(){ const d=document.getElementById(decodeURIComponent(location.hash.slice(1))); if(d && d.tagName==="DETAILS"){ d.open=true; d.scrollIntoView(); } }
+openFromHash(); addEventListener("hashchange",openFromHash);
+</script>
 </body>
 </html>

@@ -5,13 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Leaderboard · Stick Picks 2026–27</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stick Picks">
+<meta property="og:title" content="Stick Picks · NHL 2026–27 Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Stick Picks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-07"></script>
-<script src="teams.js?v=2026-10-07"></script>
-<link rel="stylesheet" href="styles.css?v=2026-10-07">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-08">
 </head>
 <body>
 <div class="wrap">
@@ -49,9 +57,12 @@
   </div>
   <div class="empty hidden" id="empty"></div>
 
-  <footer>Only final games count. Each game is worth 1 point when the W, L, or OTL pick matches the result from that sheet's team's side (shootout losses count as OTL), and 1 point when the combined goals pick matches the official final score exactly (a shootout win counts as one goal for the winner). Every team sheet is ranked on its own, and sheets with the same points share a rank. Click any player to see their sheet. Picks for games that haven't started stay hidden until puck drop, so nobody can copy them. <a href="rules.html">Read the full rules</a>.</footer>
+  <footer>Only final games count: 1 point for the right result, 1 for the exact combined goals. Each team sheet is ranked on its own; ties share a rank. Upcoming picks stay hidden until puck drop. <a href="rules.html">Rules</a></footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-10-08"></script>
+<script src="teams.js?v=2026-10-08"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;

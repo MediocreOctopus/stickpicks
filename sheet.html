@@ -5,13 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Prediction Sheet · Stick Picks 2026–27</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stick Picks">
+<meta property="og:title" content="Stick Picks · NHL 2026–27 Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Stick Picks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-07"></script>
-<script src="teams.js?v=2026-10-07"></script>
-<link rel="stylesheet" href="styles.css?v=2026-10-07">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-08">
 </head>
 <body>
 <div class="wrap">
@@ -64,15 +72,18 @@
         <button class="plain" id="clear">Clear all picks</button>
       </div>
     </div>
-    <p class="note" id="note">For each game, tap W, L, or OTL (tap again to undo) and set the combined goals for both teams. Shaded rows are home games; times are in your time zone. Picks lock at puck drop. Each game is worth up to 2 points: 1 for the right result and 1 for the exact combined goals. <a href="rules.html">Full rules</a></p>
+    <p class="note" id="note">Tap W, L, or OTL and set the combined goals. Shaded rows are home games. Picks lock at puck drop. <a href="rules.html">Rules</a></p>
 
     <main id="sheet"></main>
     <div class="empty hidden" id="empty"></div>
 
-    <footer>2026–27 NHL regular season. Schedules and scores sync from the NHL's public data feed; start times are subject to change. Standings points use W = 2, OTL = 1; shootout losses count as OTL. Scoring: 1 point for the correct result, 1 point for the exact combined goals. Combined goals use the official final score, which counts a shootout win as one goal for the winner. Team colors are approximations for this fan-made sheet.</footer>
+    <footer>Fan-made, not affiliated with the NHL. Start times can change; times are in your time zone. Standings points: W = 2, OTL = 1.</footer>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-10-08"></script>
+<script src="teams.js?v=2026-10-08"></script>
 <script>
 
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -158,6 +169,20 @@ async function loadGames(){
   }else empty.classList.add("hidden");
   renderSheet(); refresh();
   if(viewing) loadViewPicks();
+  jumpToGame();
+}
+
+// Home page "Pick" buttons link to sheet.html?team=X&game=ID: scroll to that game once.
+let jumpGame=new URL(location.href).searchParams.get("game");
+function jumpToGame(){
+  if(!jumpGame) return;
+  const row=sheet.querySelector(`.game[data-id="${CSS.escape(jumpGame)}"]`);
+  jumpGame=null;
+  const url=new URL(location.href); url.searchParams.delete("game"); history.replaceState(null,"",url);
+  if(!row) return;
+  row.scrollIntoView({block:"center"});
+  row.classList.add("flash");
+  row.querySelector(".picks button:not(:disabled)")?.focus({preventScroll:true});
 }
 
 // Another player's picks. The database only reveals picks for games that have

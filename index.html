@@ -6,13 +6,21 @@
 <title>Stick Picks · NHL 2026–27 Predictions</title>
 <meta name="theme-color" content="#0E1A26">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stick Picks">
+<meta property="og:title" content="Stick Picks · NHL 2026–27 Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Stick Picks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-07"></script>
-<script src="teams.js?v=2026-10-07"></script>
-<link rel="stylesheet" href="styles.css?v=2026-10-07">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-08">
 </head>
 <body>
 
@@ -31,11 +39,12 @@
       <a href="intermission.html">Intermission</a>
       <a href="rules.html">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
+      <a href="#account" class="navaccount" id="navAccount">Sign in</a>
     </div>
   </nav>
 
-  <section class="hero">
-    <div>
+  <main class="homegrid">
+    <section class="intro">
       <h1>Call every game.<br><em>Climb the board.</em></h1>
       <p class="lede">Pick the result and the combined goals for any team’s games.</p>
       <ul class="chips" aria-label="How scoring works">
@@ -44,17 +53,33 @@
         <li>Locks at puck drop</li>
       </ul>
       <div class="cta">
+        <a class="btn teambtn hidden" id="ctaContinue" href="sheet.html"></a>
         <button class="btn" type="button" id="ctaPrimary">Choose Team</button>
-        <a class="btn ghost" href="leaderboard.html">Leaderboard</a>
         <a class="ctalink" href="rules.html">How it works</a>
       </div>
-    </div>
+    </section>
+
+    <section class="section" id="today">
+      <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">Times in your time zone · scores update every 15 min</span></div>
+      <div class="games" id="gameCards"></div>
+      <div class="empty hidden" id="todayEmpty"></div>
+    </section>
 
     <!-- Account card: one of several panels is shown -->
-    <div class="card" id="account" aria-live="polite">
+    <aside class="card" id="account" aria-live="polite">
       <div id="pLoading"><p class="hint">Loading…</p></div>
 
-      <!-- Signed out -->
+      <!-- Signed out: a short pitch; the forms open on request -->
+      <div id="pWelcome" class="hidden">
+        <h2>Play for the leaderboard</h2>
+        <p class="hint">A free account saves your picks on every device and puts you in the rankings.</p>
+        <div class="form-actions">
+          <button class="btn" type="button" id="goUp">Create account</button>
+          <button class="btn ghost" type="button" id="goIn">Sign in</button>
+        </div>
+      </div>
+
+      <!-- Sign in / create account forms -->
       <div id="pSignedOut" class="hidden">
         <div class="tabs" role="tablist" aria-label="Account">
           <button role="tab" id="tabIn" aria-selected="true" aria-controls="fIn">Sign in</button>
@@ -134,25 +159,22 @@
       </div>
 
       <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
-    </div>
-  </section>
+    </aside>
 
-  <section class="section" id="today">
-    <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">Times in your time zone · scores update every 15 min</span></div>
-    <div class="games" id="gameCards"></div>
-    <div class="empty hidden" id="todayEmpty"></div>
-  </section>
-
-  <a class="promo" href="intermission.html">
-    <span><b>Intermission</b> Play Breakaway while you wait for puck drop</span>
-    <span aria-hidden="true">→</span>
-  </a>
+    <a class="promo" href="intermission.html">
+      <span><b>Intermission</b> Play Breakaway while you wait for puck drop</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </main>
 
   <footer>
     Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN.
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-10-08"></script>
+<script src="teams.js?v=2026-10-08"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -175,6 +197,18 @@ const openTeams=()=>{ window.scrollTo({top:0}); teamMenu.open(); };
 $("ctaPrimary").addEventListener("click",e=>{ e.stopPropagation(); openTeams(); });
 // Older links (and other pages) point at index.html#teams
 if(location.hash==="#teams"){ history.replaceState(null,"",location.pathname+location.search); setTimeout(openTeams,0); }
+
+/* ───────── Continue where you left off ───────── */
+(function continueButton(){
+  let code=null; try{ code=localStorage.getItem("nhl-picks-last-team"); }catch(e){}
+  const t=code && TEAMS[code]; if(!t) return;
+  const a=$("ctaContinue");
+  a.href=`sheet.html?team=${code}`; a.textContent=`Continue: ${t.name}`;
+  a.style.setProperty("--t-board",t.board);
+  a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+  a.classList.remove("hidden");
+  $("ctaPrimary").classList.add("ghost"); // Continue becomes the main button
+})();
 
 /* ───────── News ticker ───────── */
 function ago(iso){
@@ -231,14 +265,24 @@ async function loadToday(){
   data.forEach(g=>{
     const final=!!g.period_type, started=hasStarted(g);
     const card=document.createElement("div"); card.className="gcard";
+    const open=!started && g.schedule_state!=="PPD";
     [["away",g.away,g.away_score],["home",g.home,g.home_score]].forEach(([side,code,score])=>{
       const row=document.createElement("div"); row.className="team";
       const other=side==="away"?g.home_score:g.away_score;
       if(final && score<other) row.classList.add("lost");
-      const a=document.createElement("a"); a.href=`sheet.html?team=${code}`; a.textContent=TEAMS[code]?.name||code;
-      a.title=`Open the ${TEAMS[code]?.name||code} prediction sheet`;
-      const sc=document.createElement("span"); sc.className="score"; sc.textContent = (final||started) && score!=null ? score : "";
-      row.append(swatch(code), a, sc); card.appendChild(row);
+      const name=TEAMS[code]?.name||code, href=`sheet.html?team=${code}&game=${g.game_id}`;
+      const a=document.createElement("a"); a.href=href; a.textContent=name;
+      a.title=`Open the ${name} prediction sheet`;
+      row.append(swatch(code), a);
+      if(open){
+        const pk=document.createElement("a"); pk.className="pickbtn"; pk.href=href; pk.textContent="Pick";
+        pk.setAttribute("aria-label",`Pick this game on the ${name} sheet`);
+        row.append(pk);
+      }else{
+        const sc=document.createElement("span"); sc.className="score"; sc.textContent = score!=null ? score : "";
+        row.append(sc);
+      }
+      card.appendChild(row);
     });
     const st=document.createElement("div"); st.className="status";
     const left=document.createElement("span"), right=document.createElement("span");
@@ -246,15 +290,30 @@ async function loadToday(){
     else if(final){ left.innerHTML=`<b>Final${g.period_type!=="REG"?" · "+g.period_type:""}</b>`; }
     else if(started){ left.className="live"; left.textContent="In progress"; }
     else { left.textContent = g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}) : "Time TBD"; }
-    right.textContent = final||started ? "" : "Picks open";
+    right.textContent = open ? "Picks open" : started && !final ? "Picks locked" : "";
     st.append(left,right); card.appendChild(st);
     box.appendChild(card);
   });
 }
 
 /* ───────── Account panels ───────── */
-const PANELS=["pLoading","pSignedOut","pForgot","pRecover","pSignedIn","pOffline"];
+const PANELS=["pLoading","pWelcome","pSignedOut","pForgot","pRecover","pSignedIn","pOffline"];
 function show(id){ PANELS.forEach(p=>$(p).classList.toggle("hidden",p!==id)); }
+// Signed-out visitors see a short pitch; the forms open when they ask for them.
+function openForms(which){
+  show("pSignedOut"); setTab(which);
+  $("account").scrollIntoView({block:"center",behavior:"smooth"});
+  setTimeout(()=>$(which==="up"?"upName":"inEmail").focus({preventScroll:true}),250);
+}
+let wantSignin = location.hash==="#signin" || location.hash==="#account";
+$("goUp").addEventListener("click",()=>openForms("up"));
+$("goIn").addEventListener("click",()=>openForms("in"));
+$("navAccount").addEventListener("click",e=>{
+  e.preventDefault();
+  if(currentUser || !sb) $("account").scrollIntoView({block:"center",behavior:"smooth"});
+  else openForms("in");
+});
+function setNavAccount(){ $("navAccount").textContent = currentUser ? (profile?.username || "My account") : "Sign in"; }
 function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className="formmsg"+(kind?" "+kind:""); }
 function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
 
@@ -358,7 +417,9 @@ async function renderSignedIn(session, note=""){
   currentUser=session.user;
   show("pSignedIn");
   $("whoami").textContent = note || `Signed in as ${currentUser.email}`;
+  wantSignin=false; setNavAccount();
   profile=await ensureProfile(currentUser);
+  setNavAccount();
   showNameForm(!profile);
   $("welcome").textContent = profile ? `Welcome back, ${profile.username}` : "Welcome!";
   await loadMyStats();
@@ -383,7 +444,7 @@ $("fName").addEventListener("submit", async e=>{
   const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
   if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
-  profile={username:name}; $("welcome").textContent=`Welcome back, ${name}`;
+  profile={username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount();
   showNameForm(false); loadMyStats();
 });
 
@@ -427,7 +488,10 @@ else{
       if(event==="PASSWORD_RECOVERY" || (recovering && session)){ recovering=true; show("pRecover"); $("rcPass").focus(); return; }
       if(event==="TOKEN_REFRESHED" || event==="USER_UPDATED") return;
       if(session){ if(currentUser?.id!==session.user.id) renderSignedIn(session); }
-      else { currentUser=null; profile=null; show("pSignedOut"); }
+      else {
+        currentUser=null; profile=null; setNavAccount();
+        if(wantSignin){ wantSignin=false; openForms("in"); } else show("pWelcome");
+      }
       if(location.hash.includes("access_token")) history.replaceState(null,"",location.pathname+location.search);
     },0);
   });
@@ -436,7 +500,7 @@ else{
   setInterval(loadToday, 5*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadToday(); if(currentUser) loadMyStats(); } });
 }
-if(location.hash==="#signin" || location.hash==="#account"){ document.getElementById("account").scrollIntoView({block:"center"}); setTimeout(()=>$("inEmail")?.focus(),300); }
+if(wantSignin) $("account").scrollIntoView({block:"center"});
 </script>
 </body>
 </html>

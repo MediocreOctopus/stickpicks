@@ -6,7 +6,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 
 ## Stack and constraints
 
-- **No build step, no framework, no npm dependencies for the site.** Plain HTML, CSS, and vanilla JS. Pages load `supabase-js` v2 (UMD) from jsDelivr, then `config.js`, then `teams.js`.
+- **No build step, no framework, no npm dependencies for the site.** Plain HTML, CSS, and vanilla JS. Pages load `supabase-js` v2 (UMD) from jsDelivr, then `config.js`, then `teams.js`. These script tags sit at the **end of `<body>`**, just before each page's inline script (so the page paints before they download); only the stylesheet and fonts load in `<head>`.
 - **Hosting:** GitHub Pages serves the repo root from `main`. Pushing to `main` deploys.
 - **Database:** Supabase. All schema lives in `supabase/schema.sql`, which must stay **idempotent** (safe to re-run on an existing database): `create table if not exists`, `drop policy if exists` before `create policy`, `create or replace function`. If a function's return columns change, `drop function if exists` first.
 - **Data sync:** `.github/workflows/update-games.yml` runs `scripts/update-games.mjs` every 15 minutes (Node 20, no dependencies) with repo secrets `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
@@ -15,15 +15,17 @@ Owner is not a professional developer: explain changes in plain language, and sa
 
 | File | Purpose |
 |---|---|
-| `index.html` | Home: news ticker, short hero, sign-in / create account / password reset, account card (points, best sheet rank, my sheets), today's games, link to Intermission. Redirects old `index.html?team=X` links to `sheet.html`; `index.html#teams` opens the Choose Team menu. |
+| `index.html` | Home: news ticker, short intro with a "Continue: <last team>" button, today's games (each upcoming team has a **Pick** button → `sheet.html?team=X&game=ID`), account card, link to Intermission. Layout is a CSS grid (`.homegrid`): on phones, today's games come before the account card. Signed-out visitors see a short pitch (`pWelcome`); the sign-in/create forms open from it, from the nav "Sign in" button, or via `#signin`/`#account`. Redirects old `index.html?team=X` links to `sheet.html`; `index.html#teams` opens the Choose Team menu. |
 | `intermission.html` | Intermission page hosting the Breakaway game (`game.js`). |
-| `sheet.html` | One team's prediction sheet (`?team=SEA`). Editable for the owner; view-only for others with `&user=Name`. |
+| `sheet.html` | One team's prediction sheet (`?team=SEA`). Editable for the owner; view-only for others with `&user=Name`. `&game=ID` scrolls to and highlights that game once, then is removed from the URL. |
 | `compare.html` | Side-by-side: signed-in user vs another player for one team (`?team=SEA&user=Name`). |
 | `leaderboard.html` | Per-team boards and an All teams board. Rows link to `sheet.html?team=…&user=…`. |
-| `rules.html` | Scoring rules, examples, FAQ. Keep it in sync with any scoring change. |
+| `rules.html` | Four-point "basics" list, then collapsible `<details>` sections (picks, scoring, examples, locking, leaderboards) and the FAQ. `rules.html#scoring` etc. opens that section. Keep it in sync with any scoring change. |
 | `game.js` | Breakaway, a canvas endless-runner on `intermission.html`. Self-contained IIFE. |
-| `teams.js` | Shared: `TEAMS` (32 teams: name, division, `board`/`accent`/`brand` colors, optional `stripe`), `DIVISIONS`, contrast helpers, `applyTheme()`, `mountTeamMenu()` (the "Choose Team" nav dropdown on index/rules/intermission), `makeClient()`, `SEASON`, `USERNAME_RULE`, `resultFor()`, `hasStarted()`, `scorePick()`. |
+| `teams.js` | Shared: `TEAMS` (32 teams: name, division, `board`/`accent`/`brand` colors, optional `stripe`), `DIVISIONS`, contrast helpers, `applyTheme()`, `mountTeamMenu()` (the "Choose Team" nav dropdown on index/rules/intermission), `mountTabBar()` (phone bottom tab bar, added to every page automatically on `DOMContentLoaded`), `makeClient()`, `SEASON`, `USERNAME_RULE`, `resultFor()`, `hasStarted()`, `scorePick()`. |
 | `config.js` | Supabase URL and publishable key (safe to publish). Never put the secret key here. |
+| `manifest.webmanifest`, `icon-180/192/512.png` | Lets phones/desktops install the site as an app. No service worker (deliberately, to avoid stale-cache problems). |
+| `og-image.png` | Link-preview image. Every page's `og:image` uses the absolute URL `https://mediocreoctopus.github.io/nhl-picks/og-image.png`; update it if the site moves. |
 | `styles.css` | All styles for every page. Theme colors are CSS custom properties set per team by `applyTheme()`. |
 | `scripts/update-games.mjs` | Syncs all 32 schedules + scores from the NHL feed into `games`, and ESPN headlines into `news`. |
 | `supabase/schema.sql` | Entire database: tables, row-level security, grants, functions. |
