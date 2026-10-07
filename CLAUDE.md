@@ -54,6 +54,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - Supabase auth: email + password, sessions persist. Don't `await` Supabase calls inside `onAuthStateChange`; defer with `setTimeout(…, 0)`.
 - Build DOM with `textContent` for any user-supplied text (usernames). Don't interpolate it into `innerHTML`.
 - Fonts: Barlow Condensed (display) and Barlow (body). Colors come from CSS variables; don't hard-code team colors outside `teams.js`.
+- Cache busting: pages link shared files as `styles.css?v=YYYY-MM-DD` (also `teams.js`, `config.js`, `game.js`). Whenever any of those files change, bump the `?v=` date in **every** HTML page, or browsers may mix new pages with stale cached files.
 - Accessibility: keep `aria-pressed`, labels, focus outlines, and the `prefers-reduced-motion` handling.
 
 ## Known gotchas
