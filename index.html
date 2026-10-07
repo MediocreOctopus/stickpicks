@@ -26,8 +26,9 @@
   <nav class="topbar" aria-label="Main">
     <a class="brand" href="index.html">Stick <span>Picks</span> 26–27</a>
     <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
       <a href="#today">Today</a>
-      <a href="#teams">Teams</a>
+      <a href="intermission.html">Intermission</a>
       <a href="rules.html">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
     </div>
@@ -36,15 +37,16 @@
   <section class="hero">
     <div>
       <h1>Call every game.<br><em>Climb the board.</em></h1>
-      <p class="lede">For every regular-season game of any NHL team, call a win, loss, or overtime loss and guess the combined goals. Nail both and the game is worth two points. <a href="rules.html">Read the rules</a>.</p>
-      <ol class="steps">
-        <li><b>1</b><span>Choose a team below. You can fill out as many sheets as you like.</span></li>
-        <li><b>2</b><span>Pick W, L, or OTL and the total goals before puck drop. Picks lock when the game starts.</span></li>
-        <li><b>3</b><span>Earn 1 point for the right result and 1 for the exact goal total. Every sheet gets its own spot on the leaderboard.</span></li>
-      </ol>
+      <p class="lede">Pick the result and the combined goals for any team’s games.</p>
+      <ul class="chips" aria-label="How scoring works">
+        <li><b>+1</b> right result</li>
+        <li><b>+1</b> exact goals</li>
+        <li>Locks at puck drop</li>
+      </ul>
       <div class="cta">
-        <a class="btn" href="#teams" id="ctaPrimary">Choose a team</a>
-        <a class="btn ghost" href="leaderboard.html">See the leaderboard</a>
+        <button class="btn" type="button" id="ctaPrimary">Choose Team</button>
+        <a class="btn ghost" href="leaderboard.html">Leaderboard</a>
+        <a class="ctalink" href="rules.html">How it works</a>
       </div>
     </div>
 
@@ -141,24 +143,13 @@
     <div class="empty hidden" id="todayEmpty"></div>
   </section>
 
-  <section class="section" id="intermission">
-    <div class="section-head"><h2>Intermission: Breakaway</h2><span>Your best: <b id="runHi">0</b></span></div>
-    <div class="rinkwrap">
-      <canvas id="rink" tabindex="0" aria-label="Breakaway, a hockey running game. Press Space or the Up arrow to jump and the Down arrow to duck."></canvas>
-    </div>
-    <div class="runbar">
-      <p class="hint">Click the rink, then press <kbd>Space</kbd> or <kbd>↑</kbd> to jump and <kbd>↓</kbd> to duck. Hold jump for a higher leap. On a phone, tap to jump or use the buttons.</p>
-      <div class="runbtns"><button type="button" class="btn ghost" data-run="duck">▼ Duck</button><button type="button" class="btn" data-run="jump">▲ Jump</button></div>
-    </div>
-  </section>
-
-  <section class="section" id="teams">
-    <div class="section-head"><h2>Choose a team</h2><span>Each sheet uses its team’s colors</span></div>
-    <div id="divisions"></div>
-  </section>
+  <a class="promo" href="intermission.html">
+    <span><b>Intermission</b> Play Breakaway while you wait for puck drop</span>
+    <span aria-hidden="true">→</span>
+  </a>
 
   <footer>
-    Stick Picks is a fan-made prediction game, not affiliated with the NHL or its teams. Schedules and scores come from the NHL’s public data feed; headlines link to ESPN. Team colors are approximations.
+    Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN.
   </footer>
 </div>
 
@@ -178,21 +169,12 @@ function swatch(code){
   return s;
 }
 
-/* ───────── Team grid ───────── */
-(function buildTeams(){
-  const root=$("divisions");
-  DIVISIONS.forEach(div=>{
-    const h=document.createElement("h3"); h.className="divhead"; h.textContent=`${div} Division`; root.appendChild(h);
-    const grid=document.createElement("div"); grid.className="tiles"; root.appendChild(grid);
-    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
-      const t=TEAMS[c], a=document.createElement("a");
-      a.className="tile"; a.href=`sheet.html?team=${c}`; a.textContent=t.name;
-      a.style.setProperty("--t-board",t.board);
-      a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
-      grid.appendChild(a);
-    });
-  });
-})();
+/* ───────── Choose Team menu ───────── */
+const teamMenu=mountTeamMenu($("teamMenu"));
+const openTeams=()=>{ window.scrollTo({top:0}); teamMenu.open(); };
+$("ctaPrimary").addEventListener("click",e=>{ e.stopPropagation(); openTeams(); });
+// Older links (and other pages) point at index.html#teams
+if(location.hash==="#teams"){ history.replaceState(null,"",location.pathname+location.search); setTimeout(openTeams,0); }
 
 /* ───────── News ticker ───────── */
 function ago(iso){
@@ -423,7 +405,7 @@ async function loadMyStats(){
     }
   }
   if(!rows.length){
-    const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Choose a team below to start your first sheet.";
+    const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Choose Team to start your first sheet.";
     list.appendChild(li); return;
   }
   rows.forEach(r=>{
@@ -456,6 +438,5 @@ else{
 }
 if(location.hash==="#signin" || location.hash==="#account"){ document.getElementById("account").scrollIntoView({block:"center"}); setTimeout(()=>$("inEmail")?.focus(),300); }
 </script>
-<script src="game.js"></script>
 </body>
 </html>

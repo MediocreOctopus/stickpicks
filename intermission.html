@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" class="home intermissionpage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intermission · Stick Picks 2026–27</title>
+<meta name="theme-color" content="#0E1A26">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="teams.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html">Stick <span>Picks</span> 26–27</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="index.html#today">Today</a>
+      <a href="intermission.html" aria-current="page">Intermission</a>
+      <a href="rules.html">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+  </nav>
+
+  <section class="section intermission">
+    <div class="section-head"><h1>Intermission: <em>Breakaway</em></h1><span>Your best: <b id="runHi">0</b></span></div>
+    <div class="rinkwrap">
+      <canvas id="rink" tabindex="0" aria-label="Breakaway, a hockey running game. Press Space or the Up arrow to jump and the Down arrow to duck."></canvas>
+    </div>
+    <div class="runbar">
+      <p class="hint"><kbd>Space</kbd> / <kbd>↑</kbd> jump · <kbd>↓</kbd> duck · hold jump to leap higher. On a phone, tap or use the buttons.</p>
+      <div class="runbtns"><button type="button" class="btn ghost" data-run="duck">▼ Duck</button><button type="button" class="btn" data-run="jump">▲ Jump</button></div>
+    </div>
+  </section>
+
+  <footer>Fan-made, not affiliated with the NHL.</footer>
+</div>
+<script>mountTeamMenu(document.getElementById("teamMenu"));</script>
+<script src="game.js"></script>
+</body>
+</html>

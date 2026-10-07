@@ -1,4 +1,4 @@
-// Shared by index.html and leaderboard.html: team list, colors, and theming.
+// Shared by every page: team list, colors, theming, and the "Choose Team" menu.
 /* board = scoreboard background, accent = team highlight, brand = main color for tints and buttons,
    stripe (optional) = forces the edge stripe color when the automatic pick isn't right */
 const TEAMS = {
@@ -67,6 +67,39 @@ function applyTheme(code){
   s.setProperty("--ctl-dark",ctlDark);   s.setProperty("--ctl-ink-dark",inkOn(ctlDark));
   document.querySelector('meta[name="theme-color"]')?.remove();
   const m=document.createElement("meta"); m.name="theme-color"; m.content=t.board; document.head.appendChild(m);
+}
+
+/* ───────── "Choose Team" dropdown in the top nav ───────── */
+// Fills <div class="teammenu" id="teamMenu"></div> with a button and a panel of
+// all 32 teams grouped by division. Returns {open, close} so pages can open it.
+function mountTeamMenu(root){
+  if(!root) return null;
+  const btn=document.createElement("button");
+  btn.type="button"; btn.className="teammenu-btn"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","teamMenuPanel");
+  btn.textContent="Choose Team";
+  const panel=document.createElement("div");
+  panel.className="teammenu-panel"; panel.id="teamMenuPanel"; panel.hidden=true;
+  DIVISIONS.forEach(div=>{
+    const col=document.createElement("div"); col.className="teammenu-div";
+    const h=document.createElement("h3"); h.textContent=div; col.appendChild(h);
+    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
+      const t=TEAMS[c], a=document.createElement("a");
+      a.href=`sheet.html?team=${c}`;
+      const sw=document.createElement("span"); sw.className="sw"; sw.textContent=c;
+      sw.style.setProperty("--t-board",t.board); sw.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+      const nm=document.createElement("span"); nm.textContent=t.name;
+      a.append(sw,nm); col.appendChild(a);
+    });
+    panel.appendChild(col);
+  });
+  root.append(btn,panel);
+  const open=()=>{ panel.hidden=false; btn.setAttribute("aria-expanded","true"); panel.querySelector("a")?.focus(); };
+  const close=(refocus)=>{ if(panel.hidden) return; panel.hidden=true; btn.setAttribute("aria-expanded","false"); if(refocus) btn.focus(); };
+  btn.addEventListener("click",()=>panel.hidden?open():close());
+  document.addEventListener("click",e=>{ if(!root.contains(e.target)) close(); });
+  root.addEventListener("keydown",e=>{ if(e.key==="Escape") close(true); });
+  root.addEventListener("focusout",e=>{ if(e.relatedTarget && !root.contains(e.relatedTarget)) close(); });
+  return {open,close};
 }
 
 /* ───────── Shared helpers ───────── */

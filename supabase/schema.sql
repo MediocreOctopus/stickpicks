@@ -238,3 +238,25 @@ as $$
   order by count(*) desc, s.team;
 $$;
 grant execute on function public.my_sheets(text) to authenticated;
+
+-- 8) View another player's sheet from the leaderboard. Picks are only revealed
+--    for games that have started (or finished), so upcoming picks can't be
+--    copied: those rows come back with revealed = false and no pick or goals.
+create or replace function public.sheet_picks(p_username text, p_team text, p_season text default '20262027')
+returns table (game_id bigint, pick text, goals smallint, revealed boolean)
+language sql stable security definer set search_path = ''
+as $$
+  select tp.game_id,
+         case when r.revealed then tp.pick end,
+         case when r.revealed then tp.goals end,
+         r.revealed
+  from public.profiles p
+  join public.team_picks tp on tp.user_id = p.user_id and tp.team = p_team
+  join public.games g on g.game_id = tp.game_id and g.season = p_season
+  cross join lateral (
+    select coalesce(g.period_type is not null or g.start_utc <= now(), false) as revealed
+  ) r
+  where lower(p.username) = lower(p_username);
+$$;
+revoke all on function public.sheet_picks(text, text, text) from public;
+grant execute on function public.sheet_picks(text, text, text) to anon, authenticated;

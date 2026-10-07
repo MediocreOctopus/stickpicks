@@ -3,10 +3,12 @@
 Prediction sheets for all 32 NHL teams. Pick a team, then call every regular-season game a win, loss, or overtime loss, and guess the combined goals. Each sheet uses its team's colors, final scores fill in automatically, and leaderboards rank every sheet by points. A home page handles accounts and shows an NHL news ticker and the day's games. It's hosted free on GitHub Pages, with a Supabase database.
 
 ```
-index.html                                  home page: sign-in, news ticker, today's games, team picker
+index.html                                  home page: sign-in, news ticker, today's games
 sheet.html                                  the prediction sheet for one team
 rules.html                                  the rules and scoring explained, with examples
-game.js                                     Breakaway, the hockey mini-game on the home page
+compare.html                                your sheet and another player's, side by side
+intermission.html                           the Intermission page with the Breakaway game
+game.js                                     Breakaway, the hockey mini-game
 leaderboard.html                            the leaderboard
 config.js                                   your Supabase URL and publishable key
 teams.js                                    team names, colors, and shared helpers
@@ -21,7 +23,8 @@ scripts/update-games.mjs                    syncs schedules, scores, and news he
 
 Once an hour, a GitHub Action downloads all 32 team schedules from the NHL's public feed and saves every game into your database, including start times, reschedules, postponements, and final scores. The same run saves the latest NHL headlines from ESPN's public news feed. The pages read from that database, so everything stays current without you editing anything.
 
-- **Home page:** shows a scrolling NHL news ticker (hover over it to pause; each headline opens the full story on ESPN), the day's games with start times or final scores, and the team picker. If there are no games today, it shows the next day that has games. It also has **Breakaway**, a hockey take on the endless-runner game: jump the pucks, cones, and nets, duck the slap shots, and try to beat your best score (saved in your browser). The skater wears the colors of the last team sheet you opened.
+- **Home page:** shows a scrolling NHL news ticker (hover over it to pause; each headline opens the full story on ESPN) and the day's games with start times or final scores. If there are no games today, it shows the next day that has games. The **Choose Team** menu at the top of the page lists all 32 teams by division.
+- **Intermission page:** has **Breakaway**, a hockey take on the endless-runner game: jump the pucks, cones, and nets, duck the slap shots, and try to beat your best score (saved in your browser). The skater wears the colors of the last team sheet you opened.
 - **Rules page:** explains picks, scoring, shootouts, locking, and leaderboards, with worked examples and a short FAQ. It's linked from the home page, every sheet, and the leaderboard. Players sign in, create accounts, and manage their username here. Once signed in, they see their points, overall rank, and a shortcut to each sheet they've started.
 - **Accounts:** players sign in with an email and password and stay signed in on that device until they sign out. After signing out, they sign back in with their password, with no email needed. "Forgot password?" emails a link to choose a new one.
 
@@ -95,12 +98,13 @@ For each game on a sheet, a player makes two predictions: the outcome (W, L, or 
 
 On each sheet, every row uses − and + buttons (or typing) to set the goal total. Once a game is final, the row shows the result, the score, the goal total, and how many points the pick earned. The sheet's header shows your score with results and goals counted separately.
 
-To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from the account card on the home page. The leaderboard shows only usernames and totals, never anyone's individual picks.
+To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from the account card on the home page. Leaderboards show usernames, never email addresses.
 
 - **Every sheet is ranked on its own.** A player who fills out the Kraken and Maple Leafs sheets has two separate entries, one for each team. Points are never added together across sheets.
 - **Team leaderboards:** choose a team to see everyone's sheets for that team.
 - **All teams:** shows every sheet for every team in one ranking, with a team column, so the same player can appear more than once. Clicking a team in that column opens that team's leaderboard.
 - **Columns:** points, then correct results and exact goal totals, each shown as hits out of graded picks.
+- **Viewing sheets:** click any player on a leaderboard to open that sheet in view-only mode. Picks for games that have started are shown, along with the points each one earned. Picks for upcoming games stay hidden until puck drop, and the sheet shows only that a pick was made. The database enforces this, so it can't be worked around from the page. Clicking your own entry opens your normal, editable sheet. From someone else's sheet, **Compare side by side** opens `compare.html`, which lines up your picks and theirs for the same team, game by game. It shows both point totals, the result and goals hit rates, who won each finished game, and how many picks you agree on. It can filter to finished games, upcoming games, or only the games where your picks differ. Their upcoming picks stay hidden there too.
 - **Ties:** sheets with the same points share a rank.
 - **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the hourly job records final results.
 - **Locking:** both predictions lock at **puck drop**. The database enforces this, so nobody can change a pick after a game starts, even by editing the page. "Clear all picks" only clears games that haven't started yet.
