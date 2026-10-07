@@ -1,6 +1,6 @@
 # Stick Picks
 
-A fan-made NHL 2026–27 prediction game. Players pick each team's games (W / L / OTL plus combined goals), earn up to 2 points per game, and compete on per-sheet leaderboards. Static site on GitHub Pages + Supabase (Postgres, auth) + an hourly GitHub Action that syncs data.
+A fan-made NHL 2026–27 prediction game. Players pick each team's games (W / L / OTL plus combined goals), earn up to 2 points per game, and compete on per-sheet leaderboards. Static site on GitHub Pages + Supabase (Postgres, auth) + a GitHub Action (every 15 minutes) that syncs data.
 
 Owner is not a professional developer: explain changes in plain language, and say exactly which files changed and whether `supabase/schema.sql` must be re-run.
 
@@ -9,7 +9,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - **No build step, no framework, no npm dependencies for the site.** Plain HTML, CSS, and vanilla JS. Pages load `supabase-js` v2 (UMD) from jsDelivr, then `config.js`, then `teams.js`.
 - **Hosting:** GitHub Pages serves the repo root from `main`. Pushing to `main` deploys.
 - **Database:** Supabase. All schema lives in `supabase/schema.sql`, which must stay **idempotent** (safe to re-run on an existing database): `create table if not exists`, `drop policy if exists` before `create policy`, `create or replace function`. If a function's return columns change, `drop function if exists` first.
-- **Data sync:** `.github/workflows/update-games.yml` runs `scripts/update-games.mjs` hourly (Node 20, no dependencies) with repo secrets `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
+- **Data sync:** `.github/workflows/update-games.yml` runs `scripts/update-games.mjs` every 15 minutes (Node 20, no dependencies) with repo secrets `SUPABASE_URL` and `SUPABASE_SECRET_KEY`.
 
 ## Files
 

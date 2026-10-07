@@ -2,9 +2,9 @@ name: Update NHL games
 
 on:
   schedule:
-    # Every hour at :15 (UTC). Late West Coast games finish around 06:00 UTC,
-    # so scores land within about an hour of the final horn.
-    - cron: "15 * * * *"
+    # Every 15 minutes, offset from :00 when GitHub's scheduler is busiest.
+    # Scores usually land within about 15–30 minutes of the final horn.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch: # adds a "Run workflow" button for manual updates
 
 jobs:

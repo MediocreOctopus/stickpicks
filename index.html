@@ -138,7 +138,7 @@
   </section>
 
   <section class="section" id="today">
-    <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">Times in your time zone · scores update hourly</span></div>
+    <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">Times in your time zone · scores update every 15 min</span></div>
     <div class="games" id="gameCards"></div>
     <div class="empty hidden" id="todayEmpty"></div>
   </section>
@@ -227,7 +227,7 @@ async function loadToday(){
   if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
   $("todayTitle").textContent = day===today ? "Today’s games" : `Next up · ${fmtDay(day)}`;
-  $("todayNote").textContent = `${data.length} game${data.length===1?"":"s"} · times in your time zone · scores update hourly`;
+  $("todayNote").textContent = `${data.length} game${data.length===1?"":"s"} · times in your time zone · scores update every 15 min`;
   data.forEach(g=>{
     const final=!!g.period_type, started=hasStarted(g);
     const card=document.createElement("div"); card.className="gcard";

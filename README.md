@@ -16,12 +16,12 @@ styles.css                                  shared styles
 supabase/schema.sql                         database tables and security rules
 supabase/migrate-from-kraken-version.sql    optional, only if you set up the Kraken-only version
 scripts/update-games.mjs                    syncs schedules, scores, and news headlines
-.github/workflows/update-games.yml          runs that sync every hour
+.github/workflows/update-games.yml          runs that sync every 15 minutes
 ```
 
 ## How it works
 
-Once an hour, a GitHub Action downloads all 32 team schedules from the NHL's public feed and saves every game into your database, including start times, reschedules, postponements, and final scores. The same run saves the latest NHL headlines from ESPN's public news feed. The pages read from that database, so everything stays current without you editing anything.
+Every 15 minutes, a GitHub Action downloads all 32 team schedules from the NHL's public feed and saves every game into your database, including start times, reschedules, postponements, and final scores. The same run saves the latest NHL headlines from ESPN's public news feed. The pages read from that database, so everything stays current without you editing anything.
 
 - **Home page:** shows a scrolling NHL news ticker (hover over it to pause; each headline opens the full story on ESPN) and the day's games with start times or final scores. If there are no games today, it shows the next day that has games. The **Choose Team** menu at the top of the page lists all 32 teams by division.
 - **Intermission page:** has **Breakaway**, a hockey take on the endless-runner game: jump the pucks, cones, and nets, duck the slap shots, and try to beat your best score (saved in your browser). The skater wears the colors of the last team sheet you opened.
@@ -75,7 +75,7 @@ Then open your home page, choose **Create account**, and enter a username, email
 2. Open the **Actions** tab, enable workflows if GitHub asks, select **Update NHL games**, and click **Run workflow**.
 3. When the run shows a green check, its log should say something like "Saved 1344 games." Reload your page and every team's schedule will be there.
 
-From then on, the workflow runs every hour, and scores usually appear within about an hour of the final horn.
+From then on, the workflow runs every 15 minutes, and scores usually appear within about 15–30 minutes of the final horn.
 
 ### Already set up an earlier version?
 
@@ -106,14 +106,14 @@ To appear on the leaderboard, a player needs a username (3–20 letters, numbers
 - **Columns:** points, then correct results and exact goal totals, each shown as hits out of graded picks.
 - **Viewing sheets:** click any player on a leaderboard to open that sheet in view-only mode. Picks for games that have started are shown, along with the points each one earned. Picks for upcoming games stay hidden until puck drop, and the sheet shows only that a pick was made. The database enforces this, so it can't be worked around from the page. Clicking your own entry opens your normal, editable sheet. From someone else's sheet, **Compare side by side** opens `compare.html`, which lines up your picks and theirs for the same team, game by game. It shows both point totals, the result and goals hit rates, who won each finished game, and how many picks you agree on. It can filter to finished games, upcoming games, or only the games where your picks differ. Their upcoming picks stay hidden there too.
 - **Ties:** sheets with the same points share a rank.
-- **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the hourly job records final results.
+- **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the 15-minute job records final results.
 - **Locking:** both predictions lock at **puck drop**. The database enforces this, so nobody can change a pick after a game starts, even by editing the page. "Clear all picks" only clears games that haven't started yet.
 
 The home page account card shows your total points across all your sheets and the rank of your best sheet.
 
 ## Things to know
 
-- **The NHL feed isn't official.** Schedules and scores come from `api-web.nhle.com`, which the NHL's own website uses but doesn't document publicly, so it could change without notice. If sheets stop updating, check the latest run in the **Actions** tab. If one team's schedule fails to download, the job skips it for that run, logs a warning, and tries again the next hour.
+- **The NHL feed isn't official.** Schedules and scores come from `api-web.nhle.com`, which the NHL's own website uses but doesn't document publicly, so it could change without notice. If sheets stop updating, check the latest run in the **Actions** tab. If one team's schedule fails to download, the job skips it for that run, logs a warning, and tries again on the next run.
 - **Keep the repository active.** GitHub pauses scheduled workflows in a public repository after 60 days without a commit. It emails you when that happens, and you can re-enable the workflow with one click from the **Actions** tab.
-- **Supabase pauses idle projects.** Free projects pause after a week of inactivity. The hourly job should keep the database active during the season.
+- **Supabase pauses idle projects.** Free projects pause after a week of inactivity. The 15-minute job should keep the database active during the season.
 - **The team colors are approximate.** They're a best effort at each team's colors, not official brand values. No logos are used.
