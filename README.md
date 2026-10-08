@@ -103,7 +103,7 @@ For each game on a sheet, a player makes two predictions: the outcome (W, L, or 
 
 On each sheet, every row uses − and + buttons (or typing) to set the goal total. Once a game is final, the row shows the result, the score, the goal total, and how many points the pick earned. The sheet's header shows your score with results and goals counted separately.
 
-To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from the account card on the home page. Leaderboards show usernames, never email addresses.
+To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from Settings on their profile page. Leaderboards show usernames, never email addresses.
 
 - **Every sheet is ranked on its own.** A player who fills out the Kraken and Maple Leafs sheets has two separate entries, one for each team. Points are never added together across sheets.
 - **Team leaderboards:** choose a team to see everyone's sheets for that team.
@@ -114,7 +114,7 @@ To appear on the leaderboard, a player needs a username (3–20 letters, numbers
 - **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the 15-minute job records final results.
 - **Locking:** both predictions lock at **puck drop**. The database enforces this, so nobody can change a pick after a game starts, even by editing the page. "Clear all picks" only clears games that haven't started yet.
 
-The home page account card shows your total points across all your sheets and the rank of your best sheet.
+When you're signed in, the home page account box lists your **Current Picks** (each sheet you've started, with its points) and a **Continue** button for the last sheet you opened. Your total points, best rank, and settings (including sign out) are on your profile page.
 
 ## Things to know
 

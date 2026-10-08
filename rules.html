@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-20">
+<link rel="stylesheet" href="styles.css?v=2026-10-21">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -138,7 +138,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <details><summary>When do points show up?</summary><p>Scores are checked every 15 minutes, so points usually appear within about half an hour of a game ending. The leaderboard refreshes on its own.</p></details>
       <details><summary>What are the W–L–OTL record and “standings pts” on my sheet?</summary><p>That’s your predicted season record for the team, using NHL standings points (2 for a win, 1 for an overtime loss). It’s just for fun and doesn’t affect your stickpicks score.</p></details>
       <details><summary>Can other players see my picks?</summary><p>Yes, once each game starts. Anyone can open your sheet from the leaderboard, but your picks for upcoming games stay hidden until puck drop, so nobody can copy them.</p></details>
-      <details><summary>Can I change my username?</summary><p>Yes, from the account card on the <a href="index.html#account">home page</a>. Your points stay with you.</p></details>
+      <details><summary>Can I change my username?</summary><p>Yes, from Settings on your <a href="profile.html">profile</a> (the Me tab, or your name in the top bar). Your points stay with you.</p></details>
     </section>
   </article>
 
@@ -150,7 +150,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams.</footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-10-20"></script>
+<script src="teams.js?v=2026-10-21"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section

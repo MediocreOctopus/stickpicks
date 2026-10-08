@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-20">
+<link rel="stylesheet" href="styles.css?v=2026-10-21">
 </head>
 <body>
 
@@ -53,9 +53,6 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <main class="homegrid">
     <section class="intro">
       <h1>Pick the game.<br>Pick the goals.<br><em>Climb the board.</em></h1>
-      <div class="cta hidden" id="ctaRow">
-        <a class="btn teambtn" id="ctaContinue" href="sheet.html"></a>
-      </div>
       <!-- "Get the stickpicks app": filled in by mountInstall() in teams.js when installing is possible -->
       <div class="installbar hidden" id="installBar"></div>
     </section>
@@ -136,7 +133,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <!-- Signed in -->
       <div id="pSignedIn" class="hidden">
         <h2 id="welcome">Welcome back</h2>
-        <p class="hint" id="whoami"></p>
+        <p class="hint hidden" id="acctNote"></p>
 
         <form id="fName" class="hidden" novalidate>
           <div class="field"><label for="nmInput" id="nmLabel">Choose a username for the leaderboard</label><input id="nmInput" type="text" maxlength="20" autocomplete="nickname" placeholder="3–20 letters, numbers, or _"></div>
@@ -147,16 +144,13 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
           <p class="formmsg" id="nmMsg" role="status"></p>
         </form>
 
-        <div class="statrow" id="stats">
-          <div><b id="stPts">0</b><span>total points</span></div>
-          <div><b id="stRank">—</b><span id="stRankLbl">best sheet rank</span></div>
-          <div><b id="stAcc">—</b><span>points per game</span></div>
-        </div>
+        <h3 class="acct-label">Current Picks</h3>
         <ul class="mysheets" id="mySheets"></ul>
-        <div class="form-actions">
-          <button class="linkbtn" type="button" id="nmEdit">Change username</button>
-          <button class="btn ghost" type="button" id="signOut">Sign out</button>
-        </div>
+      </div>
+
+      <!-- Continue: the last sheet opened on this device (signed in, or the signed-out pitch) -->
+      <div class="cta acct-cta hidden" id="ctaRow">
+        <a class="btn teambtn" id="ctaContinue" href="sheet.html"></a>
       </div>
 
       <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
@@ -175,8 +169,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-20"></script>
-<script src="teams.js?v=2026-10-20"></script>
+<script src="config.js?v=2026-10-21"></script>
+<script src="teams.js?v=2026-10-21"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -204,7 +198,7 @@ if(location.hash==="#teams") location.replace("teams.html");
   const a=$("ctaContinue");
   a.href=`sheet.html?team=${code}`; a.textContent=`Continue: ${t.name}`;
   teamStyle(a,code);
-  $("ctaRow").classList.remove("hidden");
+  $("ctaRow").dataset.ready="1";   // shown by show() under the account panel
 })();
 
 /* ───────── News ticker ───────── */
@@ -308,7 +302,11 @@ async function loadToday(){
 
 /* ───────── Account panels ───────── */
 const PANELS=["pLoading","pWelcome","pSignedOut","pForgot","pRecover","pSignedIn","pOffline"];
-function show(id){ PANELS.forEach(p=>$(p).classList.toggle("hidden",p!==id)); }
+function show(id){
+  PANELS.forEach(p=>$(p).classList.toggle("hidden",p!==id));
+  // Continue sits in the account box, under the welcome pitch or your current picks (not under the forms)
+  $("ctaRow").classList.toggle("hidden", !($("ctaRow").dataset.ready && (id==="pSignedIn" || id==="pWelcome")));
+}
 // Signed-out visitors see a short pitch; the forms open when they ask for them.
 function openForms(which){
   show("pSignedOut"); setTab(which);
@@ -413,8 +411,6 @@ $("pRecover").addEventListener("submit", async e=>{
   renderSignedIn(session, "Password saved. From now on, sign in with your email and password.");
 });
 
-$("signOut").addEventListener("click", async ()=>{ await sb.auth.signOut(); });
-
 /* ───────── Signed-in view ───────── */
 let profile=null, currentUser=null, recovering=false;
 
@@ -433,7 +429,7 @@ async function ensureProfile(user){
 async function renderSignedIn(session, note=""){
   currentUser=session.user;
   show("pSignedIn");
-  $("whoami").textContent = note || `Signed in as ${currentUser.email}`;
+  $("acctNote").textContent = note; $("acctNote").classList.toggle("hidden", !note);
   wantSignin=false; setNavAccount();
   profile=await ensureProfile(currentUser);
   setNavAccount();
@@ -443,15 +439,14 @@ async function renderSignedIn(session, note=""){
   await loadMyStats();
 }
 
+// Only for players without a username yet; changing it lives on the profile page.
 function showNameForm(on, editing=false){
   $("fName").classList.toggle("hidden",!on);
-  $("nmEdit").classList.toggle("hidden",on || !profile);
   $("nmCancel").classList.toggle("hidden",!editing);
   $("nmLabel").textContent = editing ? "New username" : "Choose a username for the leaderboard";
   $("nmInput").value = editing && profile ? profile.username : "";
   msg("nmMsg","");
 }
-$("nmEdit").addEventListener("click",()=>{ showNameForm(true,true); $("nmInput").focus(); });
 $("nmCancel").addEventListener("click",()=>showNameForm(false));
 $("fName").addEventListener("submit", async e=>{
   e.preventDefault();
@@ -470,19 +465,7 @@ async function loadMyStats(){
   const list=$("mySheets"); list.innerHTML="";
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const rows=sheets||[];
-  const pts=rows.reduce((s,r)=>s+Number(r.points),0), graded=rows.reduce((s,r)=>s+Number(r.graded),0);
-  $("stPts").textContent=pts;
-  $("stAcc").textContent=graded?(pts/graded).toFixed(2):"—";
-  $("stRank").textContent="—"; $("stRankLbl").textContent="best sheet rank";
-  if(profile){
-    const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
-    if(board?.length){
-      // every team sheet is ranked on its own; show this player's best one
-      let rank=0, prev=null, mine=null;
-      board.forEach((r,i)=>{ const p=Number(r.points); if(p!==prev){ rank=i+1; prev=p; } if(mine===null && r.username.toLowerCase()===profile.username.toLowerCase()) mine=rank; });
-      if(mine){ $("stRank").textContent=`#${mine}`; $("stRankLbl").textContent=`best sheet, of ${board.length}`; }
-    }
-  }
+  list.innerHTML="";   // cleared again: two refreshes can overlap
   if(!rows.length){
     const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Pick Team to start your first sheet.";
     list.appendChild(li); return;
