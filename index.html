@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-12">
+<link rel="stylesheet" href="styles.css?v=2026-10-13">
 </head>
 <body>
 
@@ -51,6 +51,8 @@
         <a class="btn teambtn hidden" id="ctaContinue" href="sheet.html"></a>
         <a class="ctalink" href="rules.html">How it works</a>
       </div>
+      <!-- "Get the stickpicks app": filled in by mountInstall() in teams.js when installing is possible -->
+      <div class="installbar hidden" id="installBar"></div>
     </section>
 
     <section class="section" id="today">
@@ -168,8 +170,8 @@
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-12"></script>
-<script src="teams.js?v=2026-10-12"></script>
+<script src="config.js?v=2026-10-13"></script>
+<script src="teams.js?v=2026-10-13"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -250,7 +252,7 @@ async function loadToday(){
     }
   }
   const box=$("gameCards"), empty=$("todayEmpty"); box.innerHTML="";
-  if(error){ empty.textContent=`Couldn’t load games: ${error.message}`; empty.classList.remove("hidden"); return; }
+  if(error){ empty.textContent = navigator.onLine ? `Couldn’t load games: ${error.message}` : "You’re offline. Today’s games will show up when you reconnect."; empty.classList.remove("hidden"); return; }
   if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
   $("todayTitle").textContent = day===today ? "Today’s games" : `Next up · ${fmtDay(day)}`;
@@ -499,6 +501,7 @@ else{
   setInterval(loadNews, 10*60*1000);
   setInterval(loadToday, 5*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadToday(); if(currentUser) loadMyStats(); } });
+  addEventListener("online",()=>{ loadNews(); loadToday(); }); // back from offline
 }
 if(wantSignin) $("account").scrollIntoView({block:"center"});
 </script>

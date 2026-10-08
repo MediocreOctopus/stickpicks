@@ -141,14 +141,71 @@ document.addEventListener("DOMContentLoaded", mountTabBar);
 // Swaps the "stickpicks" text in each <a class="brand"> for logo.svg (script + hockey stick).
 // The SVG is inlined so it can use the page's Yellowtail font and the --logo-* colours,
 // which switch between the home (light) and road (dark) sweaters.
+// The ?v= date this page loaded teams.js with; the logo uses the same one (and so does sw.js).
+const ASSET_V = new URL(document.currentScript?.src || location.href).searchParams.get("v") || "";
 function mountLogo(){
   const spots=document.querySelectorAll("a.brand");
   if(!spots.length) return;
-  fetch("logo.svg?v=2026-10-09").then(r=>r.ok?r.text():Promise.reject()).then(svg=>{
+  fetch(`logo.svg?v=${ASSET_V}`).then(r=>r.ok?r.text():Promise.reject()).then(svg=>{
     spots.forEach(a=>{ a.innerHTML=svg; a.classList.add("has-logo"); });
   }).catch(()=>{}); // keep the text fallback
 }
 document.addEventListener("DOMContentLoaded", mountLogo);
+
+/* ───────── App: offline support, install button, offline notice ───────── */
+// sw.js keeps a copy of the site on the device so it opens fast and works offline.
+if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")){
+  addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+const IS_APP = matchMedia("(display-mode: standalone)").matches || navigator.standalone===true;
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+let installPrompt=null;   // Chrome/Edge/Android hand us this so our own button can show the install dialog
+addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); installPrompt=e; mountInstall(); });
+addEventListener("appinstalled", ()=>{ installPrompt=null; document.getElementById("installBar")?.classList.add("hidden"); });
+
+const INSTALL_HIDE_KEY="stickpicks-install-dismissed";
+function installDismissed(){ try{ return Date.now() - Number(localStorage.getItem(INSTALL_HIDE_KEY)||0) < 30*864e5; }catch(e){ return false; } }
+
+// Fills <div id="installBar"> (home page only): an Install button where the browser supports it,
+// or Add to Home Screen steps on iPhone/iPad. Hidden once installed, or for 30 days after "Not now".
+function mountInstall(){
+  const bar=document.getElementById("installBar");
+  if(!bar || IS_APP || installDismissed()) return;
+  if(!installPrompt && !IS_IOS) return;
+  bar.innerHTML="";
+  const txt=document.createElement("div"); txt.className="installbar-text";
+  const h=document.createElement("b"); h.textContent="Get the stickpicks app";
+  const p=document.createElement("span");
+  if(installPrompt) p.textContent="Opens full screen from your home screen, and works offline.";
+  else p.innerHTML='Tap <svg class="ios-share" viewBox="0 0 24 24" aria-label="Share"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg> Share, then <b>Add to Home Screen</b>.';
+  txt.append(h,p); bar.appendChild(txt);
+  const actions=document.createElement("div"); actions.className="installbar-actions";
+  if(installPrompt){
+    const go=document.createElement("button"); go.type="button"; go.className="btn"; go.textContent="Install";
+    go.addEventListener("click", async ()=>{
+      const e=installPrompt; if(!e) return;
+      e.prompt(); const choice=await e.userChoice.catch(()=>null);
+      if(choice?.outcome==="accepted") bar.classList.add("hidden");
+      installPrompt=null;
+    });
+    actions.appendChild(go);
+  }
+  const no=document.createElement("button"); no.type="button"; no.className="linkbtn"; no.textContent="Not now";
+  no.addEventListener("click", ()=>{ try{ localStorage.setItem(INSTALL_HIDE_KEY,String(Date.now())); }catch(e){} bar.classList.add("hidden"); });
+  actions.appendChild(no); bar.appendChild(actions);
+  bar.classList.remove("hidden");
+}
+document.addEventListener("DOMContentLoaded", mountInstall);
+
+// A small notice while the device is offline.
+function mountOffline(){
+  const el=document.createElement("div"); el.className="offline"; el.setAttribute("role","status");
+  el.textContent="You’re offline. Showing your last saved version; picks you make are kept on this device until you’re back online.";
+  document.body.prepend(el);
+  const sync=()=>el.classList.toggle("on", !navigator.onLine);
+  addEventListener("online",sync); addEventListener("offline",sync); sync();
+}
+document.addEventListener("DOMContentLoaded", mountOffline);
 
 /* ───────── Shared helpers ───────── */
 function makeClient(){

@@ -27,7 +27,8 @@ Owner is not a professional developer: explain changes in plain language, and sa
 | `teams.js` | Shared: `TEAMS` (32 teams: name, division, `board`/`accent`/`brand` colors, optional `stripe`), `DIVISIONS`, contrast helpers, `applyTheme()`, `mountTeamMenu()` (the "Choose Team" nav dropdown on index/rules/intermission), `mountTabBar()` (phone bottom tab bar, added to every page automatically on `DOMContentLoaded`), `makeClient()`, `SEASON`, `USERNAME_RULE`, `resultFor()`, `hasStarted()`, `scorePick()`. |
 | `config.js` | Supabase URL and publishable key (safe to publish). Never put the secret key here. |
 | `logo.svg` | The wordmark: "stickpicks" in Yellowtail script over a wooden hockey stick (blade right, ~135° lie, "p" hangs over the shaft, final "s" in the crook). Inlined into every `a.brand` by `mountLogo()` in `teams.js`; its colours are the `--logo-*` CSS variables so it switches for dark mode. It uses a `<text>` element, so the page must load the Yellowtail font. |
-| `manifest.webmanifest`, `icon-32/180/192/512.png` | App icons: script "sp" on cream knit with red/navy hem stripes, the "p" tail over the stripes. `icon-32.png` is the favicon. No service worker (deliberately, to avoid stale-cache problems). |
+| `manifest.webmanifest`, `icon-32/180/192/512.png` | Installable app: name, colours, shortcuts (Leaderboard, Breakaway, Rules). App icons are script "sp" on cream knit with red/navy hem stripes, the "p" tail over the stripes. `icon-32.png` is the favicon. |
+| `sw.js` | Service worker (registered by `teams.js`). Pages are **network-first** (fresh after every deploy; the saved copy is used only offline). Versioned files, icons, fonts and the Supabase library are cache-first. Supabase API calls are never cached. Its `VERSION` must match the pages' `?v=` date; changing it clears the old cache. |
 | `og-image.png` | Link-preview image (logo on knit with hem stripes). Every page's `og:image` uses the absolute URL `https://mediocreoctopus.github.io/nhl-picks/og-image.png`; update it if the site moves. |
 | `styles.css` | All styles for every page. Theme colors are CSS custom properties set per team by `applyTheme()`. |
 | `scripts/update-games.mjs` | Syncs all 32 schedules + scores from the NHL feed into `games`, and ESPN headlines into `news`. |
@@ -54,13 +55,14 @@ Owner is not a professional developer: explain changes in plain language, and sa
 ## Conventions
 
 - Picks in the browser: `{ [game_id]: { o: "W"|"L"|"OTL", g: number } }`. Older saved data may be a bare string; `loadLocal()` normalizes it.
-- localStorage keys (don't rename; users have data in them): `nhl-picks-${SEASON}-${team}`, `nhl-picks-last-team`, `stickpicks-breakaway-hi`.
+- localStorage keys (don't rename; users have data in them): `nhl-picks-${SEASON}-${team}`, `nhl-picks-last-team`, `stickpicks-breakaway-hi`. Also `nhl-picks-games-${SEASON}-${team}` (last schedule, so a sheet opens offline) and `stickpicks-install-dismissed` (hides the install bar for 30 days).
+- App behaviour (`teams.js`): `mountInstall()` fills `#installBar` on the home page with an Install button (from the browser's `beforeinstallprompt`) or, on iPhone/iPad, Add to Home Screen steps; it never shows inside the installed app. `mountOffline()` adds a notice while offline.
 - Constants declared with `const` in `teams.js` are script-level globals, **not** `window` properties. Check them with `typeof TEAMS !== "undefined"`, not `window.TEAMS`.
 - Supabase auth: email + password, sessions persist. Don't `await` Supabase calls inside `onAuthStateChange`; defer with `setTimeout(…, 0)`.
 - Build DOM with `textContent` for any user-supplied text (usernames). Don't interpolate it into `innerHTML`.
 - Brand ("Barnstormer", old-school hockey sweater): cream wool knit (`--wool #EFE6D2`), navy (`--navy #1C2B45`), cardinal red (`--red #9B1C1F`, brighter `#E8463F` in dark mode), gold accent. Light mode is the cream **home sweater**; dark mode is the navy **road sweater** (`.home` pages swap `--bg/--panel/--ink/--btn…`). Recurring motifs: knit texture on `body`, `.hem`/`.hem-top` stripe bands, team-colour sleeve stripes on game cards (`--away-*`/`--home-*` set in `index.html`) and on sheet headers (`.board::after`).
 - Fonts: Oswald (`--display`: headings, buttons, labels, uppercase + letter-spaced), Barlow (body and form text), Libre Caslon Text italic (`--serif`: small notes, times, footers), Yellowtail (logo and script accents only). Colors come from CSS variables; don't hard-code team colors outside `teams.js`.
-- Cache busting: pages link shared files as `styles.css?v=YYYY-MM-DD` (also `teams.js`, `config.js`, `game.js`), and `mountLogo()` fetches `logo.svg?v=…`. Whenever any of those files change, bump the `?v=` date in **every** HTML page (and in `teams.js` for the logo), or browsers may mix new pages with stale cached files.
+- Cache busting: pages link shared files as `styles.css?v=YYYY-MM-DD` (also `teams.js`, `config.js`, `game.js`); `mountLogo()` fetches `logo.svg` with the same date (read from `teams.js`'s own URL). Whenever any shared file, icon or the manifest changes, bump the `?v=` date in **every** HTML page **and** `VERSION` in `sw.js`, or browsers (and the installed app) may keep stale copies.
 - Accessibility: keep `aria-pressed`, labels, focus outlines, and the `prefers-reduced-motion` handling.
 
 ## Known gotchas
