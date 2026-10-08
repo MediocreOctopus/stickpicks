@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" class="home profilepage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profile · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=2026-10-18">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="profile.html" class="navaccount" data-me aria-current="page">Sign in</a>
+    </div>
+  </nav>
+
+  <main id="pf">
+    <p class="hint" id="pfLoading">Loading…</p>
+
+    <!-- Signed out -->
+    <section class="card pf-signedout hidden" id="pfOut">
+      <h2>Your profile</h2>
+      <p class="hint" id="pfOutMsg">Sign in to see your stats and change your settings.</p>
+      <div class="form-actions">
+        <a class="btn" href="index.html#signin">Sign in</a>
+        <a class="btn ghost" href="index.html#signin">Create account</a>
+      </div>
+      <div class="pf-row" style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px;border-bottom:0">
+        <div class="pf-label">Look</div>
+        <div class="lookseg" role="group" aria-label="Look">
+          <button type="button" data-look="auto">Auto</button><button type="button" data-look="home">Home</button><button type="button" data-look="road">Road</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Signed in -->
+    <div class="hidden" id="pfIn">
+      <section class="pf-banner" aria-label="Player">
+        <div class="pf-banner-in">
+          <div class="pf-avatar" id="pfAvatar" aria-hidden="true"></div>
+          <div>
+            <h1 class="pf-name" id="pfName"></h1>
+            <div class="pf-est" id="pfEst"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="pf-grid">
+        <div>
+          <div class="pf-stats">
+            <div class="pf-stat"><span class="pf-label">Total points</span><b id="stPts">0</b><small id="stSheets"></small></div>
+            <div class="pf-stat"><span class="pf-label">Best rank</span><b id="stRank">—</b><small id="stRankOf"></small></div>
+            <div class="pf-stat"><span class="pf-label">Points / game</span><b id="stPpg">—</b><small>max 2.00</small></div>
+          </div>
+          <section class="pf-card" style="margin-top:14px">
+            <h2>Your sheets</h2>
+            <ul class="mysheets" id="pfSheets"></ul>
+          </section>
+        </div>
+
+        <div>
+          <section class="pf-card" aria-label="Settings">
+            <h2>Settings</h2>
+
+            <div class="pf-row">
+              <div class="pf-label">Username</div>
+              <div class="pf-value" id="unValue"></div>
+              <button class="linkbtn" type="button" id="unEdit">Change username</button>
+              <form id="unForm" class="hidden" novalidate>
+                <div class="field"><label for="unInput">New username</label><input id="unInput" type="text" maxlength="20" autocomplete="nickname" placeholder="3–20 letters, numbers, or _"></div>
+                <div class="form-actions"><button class="btn" type="submit">Save</button><button class="linkbtn" type="button" id="unCancel">Cancel</button></div>
+              </form>
+              <p class="formmsg" id="unMsg" role="status"></p>
+            </div>
+
+            <div class="pf-row">
+              <div class="pf-label">Password</div>
+              <form id="pwForm" novalidate>
+                <div class="field"><label for="pwNew">New password</label><div class="pw"><input id="pwNew" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"><button type="button" class="showpw" aria-label="Show password">Show</button></div></div>
+                <div class="field"><label for="pwAgain">Confirm new password</label><input id="pwAgain" type="password" autocomplete="new-password" minlength="8"></div>
+                <div class="form-actions"><button class="btn ghost" type="submit">Change password</button></div>
+              </form>
+              <p class="formmsg" id="pwMsg" role="status"></p>
+            </div>
+
+            <div class="pf-row">
+              <div class="pf-label">Look</div>
+              <div class="lookseg" role="group" aria-label="Look">
+                <button type="button" data-look="auto">Auto</button><button type="button" data-look="home">Home</button><button type="button" data-look="road">Road</button>
+              </div>
+              <p class="hint" style="margin:6px 0 0">Road sweater is dark mode. Auto follows your device.</p>
+              <p class="formmsg" id="lookMsg" role="status"></p>
+            </div>
+
+            <div class="pf-row">
+              <div class="pf-label">Email</div>
+              <div class="pf-value" id="emValue"></div>
+              <button class="linkbtn" type="button" id="emEdit">Change email</button>
+              <form id="emForm" class="hidden" novalidate>
+                <div class="field"><label for="emInput">New email</label><input id="emInput" type="email" autocomplete="email"></div>
+                <div class="form-actions"><button class="btn" type="submit">Send confirmation</button><button class="linkbtn" type="button" id="emCancel">Cancel</button></div>
+              </form>
+              <p class="formmsg" id="emMsg" role="status"></p>
+            </div>
+
+            <div class="pf-row">
+              <a class="pf-link" href="rules.html">How to play (rules) <span aria-hidden="true">›</span></a>
+            </div>
+
+            <div class="pf-row">
+              <div class="form-actions">
+                <button class="btn ghost" type="button" id="signOut">Sign out</button>
+                <button class="linkbtn pf-danger" type="button" id="delStart">Delete account</button>
+              </div>
+              <form id="delForm" class="hidden" novalidate>
+                <p class="hint" style="margin:12px 0 6px">This permanently deletes your account, username, and every pick. It can’t be undone. Type your username to confirm.</p>
+                <div class="field"><label for="delInput">Username</label><input id="delInput" type="text" autocomplete="off"></div>
+                <div class="form-actions"><button class="btn" type="submit" style="background:var(--loss);border-color:var(--loss);color:#fff">Delete forever</button><button class="linkbtn" type="button" id="delCancel">Cancel</button></div>
+              </form>
+              <p class="formmsg" id="delMsg" role="status"></p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>Fan-made, not affiliated with the NHL. Your email is never shown to other players. <a href="rules.html">Rules</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-10-18"></script>
+<script src="teams.js?v=2026-10-18"></script>
+<script>
+const sb = makeClient();
+const $ = id => document.getElementById(id);
+mountTeamMenu($("teamMenu"));
+
+let user=null, username=null;
+const HOME_URL = location.href.replace(/profile\.html.*$/,"index.html");
+function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className="formmsg"+(kind?" "+kind:""); }
+function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
+const friendly=e=>{
+  const m=(e?.message||"").toLowerCase();
+  if(m.includes("should be different")) return "That’s already your password. Choose a new one.";
+  if(m.includes("reauthentication")||m.includes("recent")) return "For security, sign out and back in, then try again.";
+  if(m.includes("rate limit")) return "Too many emails were sent recently. Please wait a few minutes and try again.";
+  if(m.includes("already been registered")||m.includes("already registered")) return "That email already has an account.";
+  if(m.includes("could not find the function")||m.includes("does not exist")) return "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again.";
+  return e?.message || "Something went wrong. Please try again.";
+};
+
+/* ───────── Look: Auto / Home / Road ───────── */
+function markLook(){ const v=window.stickpicksLook?.get()||"auto"; document.querySelectorAll(".lookseg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.look===v))); }
+document.querySelectorAll(".lookseg button").forEach(b=>b.addEventListener("click", async ()=>{
+  const error=await saveLook(sb, b.dataset.look); markLook();
+  if($("lookMsg")) error ? msg("lookMsg","Saved on this device, but couldn’t save to your account: "+friendly(error),"err") : msg("lookMsg","");
+}));
+markLook();
+
+/* ───────── Show the right panel ───────── */
+function showOut(text){ $("pfLoading").classList.add("hidden"); $("pfIn").classList.add("hidden"); $("pfOut").classList.remove("hidden"); if(text) $("pfOutMsg").textContent=text; }
+function showIn(){ $("pfLoading").classList.add("hidden"); $("pfOut").classList.add("hidden"); $("pfIn").classList.remove("hidden"); }
+
+function setName(name){
+  username=name;
+  $("pfName").textContent = name || "New player";
+  $("unValue").textContent = name || "Not set yet";
+  $("pfAvatar").textContent = (name||"?")[0].toUpperCase();   // stage 2: sweater avatar or photo
+  $("delInput").placeholder = name || "";
+  if(name) rememberMe(name);
+}
+function mask(email){ const [u,d]=String(email).split("@"); return d ? `${u[0]}${"•".repeat(Math.max(3,Math.min(u.length-1,8)))}@${d}` : email; }
+
+async function load(session){
+  user=session.user; showIn();
+  $("pfEst").textContent = "Est. " + new Date(user.created_at).toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"});
+  $("emValue").textContent = mask(user.email);
+  const {data:prof}=await sb.from("profiles").select("username").eq("user_id",user.id).maybeSingle();
+  setName(prof?.username||null);
+  if(!prof) openUsername();
+  syncLook(sb).then(markLook);
+  loadStats();
+}
+
+async function loadStats(){
+  const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
+  const rows=sheets||[];
+  const pts=rows.reduce((s,r)=>s+Number(r.points),0), graded=rows.reduce((s,r)=>s+Number(r.graded),0);
+  $("stPts").textContent=pts;
+  $("stSheets").textContent = `across ${rows.length} sheet${rows.length===1?"":"s"}`;
+  $("stPpg").textContent = graded ? (pts/graded).toFixed(2) : "—";
+  const list=$("pfSheets"); list.innerHTML="";
+  const ranks={};
+  if(username){
+    const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
+    if(board?.length){
+      let rank=0, prev=null, best=null;
+      board.forEach((r,i)=>{ const p=Number(r.points); if(p!==prev){ rank=i+1; prev=p; }
+        if(r.username.toLowerCase()===username.toLowerCase()){ ranks[r.team]=rank; if(best===null) best={rank,team:r.team}; } });
+      if(best){ $("stRank").textContent=`#${best.rank}`; $("stRankOf").textContent=`of ${board.length} · ${TEAMS[best.team]?.name||best.team}`; }
+    }
+  }
+  if(!rows.length){ const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Pick Team to start your first sheet."; list.appendChild(li); return; }
+  rows.forEach(r=>{
+    const li=document.createElement("li"), a=document.createElement("a"); a.href=`sheet.html?team=${r.team}`;
+    const sw=teamStyle(document.createElement("span"),r.team); sw.className="sw"; sw.textContent=r.team;
+    const nm=document.createElement("span"); nm.textContent=TEAMS[r.team]?.name||r.team;
+    const meta=document.createElement("span"); meta.className="meta";
+    meta.textContent=`${ranks[r.team]?"#"+ranks[r.team]+" · ":""}${r.points} pt${Number(r.points)===1?"":"s"} · ${r.total_picks} pick${Number(r.total_picks)===1?"":"s"}`;
+    a.append(sw,nm,meta); li.appendChild(a); list.appendChild(li);
+  });
+}
+
+/* ───────── Username ───────── */
+function openUsername(){ $("unForm").classList.remove("hidden"); $("unEdit").classList.add("hidden"); $("unInput").value=username||""; msg("unMsg",""); $("unInput").focus(); }
+function closeUsername(){ $("unForm").classList.add("hidden"); $("unEdit").classList.remove("hidden"); }
+$("unEdit").addEventListener("click",openUsername);
+$("unCancel").addEventListener("click",closeUsername);
+$("unForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const name=$("unInput").value.trim();
+  if(!USERNAME_RULE.test(name)) return msg("unMsg","Usernames are 3–20 letters, numbers, or underscores.","err");
+  if(name===username) return closeUsername();
+  busy(e.target,true); msg("unMsg","Saving…");
+  const {error}=await sb.from("profiles").upsert({user_id:user.id, username:name},{onConflict:"user_id"});
+  busy(e.target,false);
+  if(error) return msg("unMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
+  setName(name); closeUsername(); msg("unMsg","Username saved.","ok"); loadStats();
+});
+
+/* ───────── Password ───────── */
+document.querySelectorAll(".showpw").forEach(b=>b.addEventListener("click",()=>{
+  const inp=b.previousElementSibling, vis=inp.type==="password";
+  inp.type=vis?"text":"password"; b.textContent=vis?"Hide":"Show"; b.setAttribute("aria-label",vis?"Hide password":"Show password");
+}));
+$("pwForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const pw=$("pwNew").value, again=$("pwAgain").value;
+  if(pw.length<8) return msg("pwMsg","Use a password of at least 8 characters.","err");
+  if(pw!==again) return msg("pwMsg","The two passwords don’t match.","err");
+  busy(e.target,true); msg("pwMsg","Saving…");
+  const {error}=await sb.auth.updateUser({password:pw});
+  busy(e.target,false);
+  if(error) return msg("pwMsg",friendly(error),"err");
+  $("pwNew").value=""; $("pwAgain").value="";
+  msg("pwMsg","Password changed. Use it next time you sign in.","ok");
+});
+
+/* ───────── Email ───────── */
+$("emEdit").addEventListener("click",()=>{ $("emForm").classList.remove("hidden"); $("emEdit").classList.add("hidden"); msg("emMsg",""); $("emInput").focus(); });
+$("emCancel").addEventListener("click",()=>{ $("emForm").classList.add("hidden"); $("emEdit").classList.remove("hidden"); });
+$("emForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const email=$("emInput").value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(email)) return msg("emMsg","Enter a valid email address.","err");
+  busy(e.target,true); msg("emMsg","Sending…");
+  const {error}=await sb.auth.updateUser({email},{emailRedirectTo:HOME_URL});
+  busy(e.target,false);
+  if(error) return msg("emMsg",friendly(error),"err");
+  $("emForm").classList.add("hidden"); $("emEdit").classList.remove("hidden");
+  msg("emMsg",`Almost done: open the confirmation link sent to ${email}. Your old address may get one too.`,"ok");
+});
+
+/* ───────── Sign out / delete account ───────── */
+$("signOut").addEventListener("click", async ()=>{ await sb.auth.signOut(); forgetMe(); location.href="index.html"; });
+$("delStart").addEventListener("click",()=>{ $("delForm").classList.remove("hidden"); $("delStart").classList.add("hidden"); $("delInput").value=""; $("delInput").focus(); });
+$("delCancel").addEventListener("click",()=>{ $("delForm").classList.add("hidden"); $("delStart").classList.remove("hidden"); msg("delMsg",""); });
+$("delForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const typed=$("delInput").value.trim();
+  if(!username || typed.toLowerCase()!==username.toLowerCase()) return msg("delMsg","Type your username exactly to confirm.","err");
+  busy(e.target,true); msg("delMsg","Deleting…");
+  const {error}=await sb.rpc("delete_my_account");
+  busy(e.target,false);
+  if(error) return msg("delMsg",friendly(error),"err");
+  await sb.auth.signOut().catch(()=>{});
+  forgetMe();
+  location.href="index.html";
+});
+
+/* ───────── Start ───────── */
+if(!sb) showOut("Database not connected yet: add your Supabase URL and key to config.js (see README).");
+else{
+  sb.auth.getSession().then(({data:{session}})=>{ session ? load(session) : (forgetMe(), showOut()); });
+  sb.auth.onAuthStateChange((event)=>{ if(event==="SIGNED_OUT") setTimeout(()=>{ forgetMe(); showOut(); },0); });
+}
+</script>
+</body>
+</html>

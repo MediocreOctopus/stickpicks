@@ -19,7 +19,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-17">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=2026-10-18">
 </head>
 <body>
 <div class="wrap">
@@ -28,6 +34,7 @@
       <div class="board-nav">
         <a class="navlink scriptlink" href="index.html">stickpicks</a>
         <a class="navlink" id="back" href="sheet.html">My picks</a>
+        <a class="navlink" href="rules.html">Rules</a>
       </div>
       <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
     </div>
@@ -63,8 +70,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-17"></script>
-<script src="teams.js?v=2026-10-17"></script>
+<script src="config.js?v=2026-10-18"></script>
+<script src="teams.js?v=2026-10-18"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;

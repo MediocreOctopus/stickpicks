@@ -122,7 +122,7 @@ const TAB_ICONS={
   teams:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   board:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>',
   play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/>',
-  rules:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>'
+  me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'
 };
 function mountTabBar(){
   if(document.querySelector(".tabbar")) return;
@@ -132,19 +132,62 @@ function mountTabBar(){
     ["teams","Pick Team","teams.html",page==="teams.html"||page==="sheet.html"||page==="compare.html"],
     ["board","Leaders","leaderboard.html",page==="leaderboard.html"],
     ["play","Intermission","intermission.html",page==="intermission.html"],
-    ["rules","Rules","rules.html",page==="rules.html"]
+    ["me","Me","profile.html",page==="profile.html"]
   ];
   const nav=document.createElement("nav"); nav.className="tabbar"; nav.setAttribute("aria-label","Sections");
   items.forEach(([icon,label,href,current])=>{
     const a=document.createElement("a"); a.href=href;
     if(current) a.setAttribute("aria-current","page");
-    a.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[icon]}</svg>`;
+    if(icon==="me"){ a.classList.add("tab-me"); a.appendChild(meBadge()); }
+    else a.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[icon]}</svg>`;
     a.append(label);
     nav.appendChild(a);
   });
   document.body.appendChild(nav);
 }
 document.addEventListener("DOMContentLoaded", mountTabBar);
+
+/* ───────── "Me": who's signed in on this device ───────── */
+// Each page signs in on its own, so the username is remembered here (just on this device)
+// to show the Me tab picture and the top-bar account button right away.
+// Stage 2 adds the profile picture; for now the badge shows the first letter of the username.
+const ME_KEY="stickpicks-me";
+function readMe(){ try{ return JSON.parse(localStorage.getItem(ME_KEY)||"null"); }catch(e){ return null; } }
+function rememberMe(name){ try{ localStorage.setItem(ME_KEY, JSON.stringify({name})); }catch(e){} refreshMe(); }
+function forgetMe(){ try{ localStorage.removeItem(ME_KEY); }catch(e){} refreshMe(); }
+function meBadge(){
+  const me=readMe(), b=document.createElement("span"); b.className="me-badge";
+  if(me?.name) b.textContent=me.name[0].toUpperCase();
+  else b.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS.me}</svg>`;
+  return b;
+}
+// Top-bar account buttons marked data-me: your username (to your profile) or "Sign in".
+function refreshMe(){
+  const me=readMe();
+  document.querySelectorAll("a.navaccount[data-me]").forEach(a=>{
+    a.textContent = me?.name || "Sign in";
+    a.href = me?.name ? "profile.html" : "index.html#signin";
+  });
+  document.querySelectorAll(".tab-me .me-badge").forEach(old=>old.replaceWith(meBadge()));
+}
+document.addEventListener("DOMContentLoaded", refreshMe);
+
+/* ───────── Look (Auto / Home sweater / Road sweater) ───────── */
+// The <head> script on every page applies the choice saved on this device (window.stickpicksLook).
+// Signed-in players also keep it in their private user_settings row so it follows them to other devices.
+async function syncLook(sb){
+  if(!sb || !window.stickpicksLook) return;
+  const {data:{session}}=await sb.auth.getSession(); if(!session) return;
+  const {data}=await sb.from("user_settings").select("look").eq("user_id",session.user.id).maybeSingle();
+  if(data?.look && data.look!==stickpicksLook.get()) stickpicksLook.set(data.look);
+}
+async function saveLook(sb, look){
+  window.stickpicksLook?.set(look);
+  if(!sb) return null;
+  const {data:{session}}=await sb.auth.getSession(); if(!session) return null;
+  const {error}=await sb.from("user_settings").upsert({user_id:session.user.id, look, updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  return error;
+}
 
 /* ───────── Logo ───────── */
 // Swaps the "stickpicks" text in each <a class="brand"> for logo.svg (script + hockey stick).

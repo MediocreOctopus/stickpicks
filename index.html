@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>stickpicks · NHL 2026–27 Predictions</title>
-<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
@@ -21,7 +21,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-17">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=2026-10-18">
 </head>
 <body>
 
@@ -38,9 +44,9 @@
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
       <a href="intermission.html">Intermission</a>
-      <a href="rules.html">Rules</a>
+      <a href="rules.html" class="navrules">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
-      <a href="#account" class="navaccount" id="navAccount">Sign in</a>
+      <a href="#account" class="navaccount" id="navAccount" data-me>Sign in</a>
     </div>
   </nav>
 
@@ -163,14 +169,14 @@
   </main>
 
   <footer>
-    Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN.
+    Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN. <a href="rules.html">Rules</a>
   </footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-17"></script>
-<script src="teams.js?v=2026-10-17"></script>
+<script src="config.js?v=2026-10-18"></script>
+<script src="teams.js?v=2026-10-18"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -313,11 +319,17 @@ let wantSignin = location.hash==="#signin" || location.hash==="#account";
 $("goUp").addEventListener("click",()=>openForms("up"));
 $("goIn").addEventListener("click",()=>openForms("in"));
 $("navAccount").addEventListener("click",e=>{
+  if(currentUser){ location.href="profile.html"; e.preventDefault(); return; } // signed in: your profile
   e.preventDefault();
-  if(currentUser || !sb) $("account").scrollIntoView({block:"center",behavior:"smooth"});
+  if(!sb) $("account").scrollIntoView({block:"center",behavior:"smooth"});
   else openForms("in");
 });
-function setNavAccount(){ $("navAccount").textContent = currentUser ? (profile?.username || "My account") : "Sign in"; }
+// Remember who's signed in on this device (Me tab, account buttons on other pages)
+function setNavAccount(){
+  if(currentUser && profile?.username) rememberMe(profile.username);
+  else if(!currentUser) forgetMe();
+  $("navAccount").textContent = currentUser ? (profile?.username || "My account") : "Sign in";
+}
 function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className="formmsg"+(kind?" "+kind:""); }
 function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
 
@@ -424,6 +436,7 @@ async function renderSignedIn(session, note=""){
   wantSignin=false; setNavAccount();
   profile=await ensureProfile(currentUser);
   setNavAccount();
+  syncLook(sb); // apply the Look saved to this account (Auto / Home / Road)
   showNameForm(!profile);
   $("welcome").textContent = profile ? `Welcome back, ${profile.username}` : "Welcome!";
   await loadMyStats();

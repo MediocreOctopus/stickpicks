@@ -260,3 +260,46 @@ as $$
 $$;
 revoke all on function public.sheet_picks(text, text, text) from public;
 grant execute on function public.sheet_picks(text, text, text) to anon, authenticated;
+
+-- 9) Private settings for each player (profile page). Unlike profiles, nobody
+--    else can read these. look = auto (follow the device), home (light) or road (dark).
+create table if not exists public.user_settings (
+  user_id     uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  look        text not null default 'auto' check (look in ('auto','home','road')),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.user_settings enable row level security;
+
+drop policy if exists "Read own settings" on public.user_settings;
+create policy "Read own settings" on public.user_settings
+  for select to authenticated using ((select auth.uid()) = user_id);
+
+drop policy if exists "Create own settings" on public.user_settings;
+create policy "Create own settings" on public.user_settings
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+
+drop policy if exists "Change own settings" on public.user_settings;
+create policy "Change own settings" on public.user_settings
+  for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+grant select, insert, update on public.user_settings to authenticated;
+
+-- 10) "Delete account" on the profile page. Removes the signed-in player's
+--     sign-in, and with it (through on delete cascade) their username, picks
+--     and settings. Only ever acts on the person calling it.
+create or replace function public.delete_my_account()
+returns void
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Not signed in';
+  end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+revoke all on function public.delete_my_account() from public;
+grant execute on function public.delete_my_account() to authenticated;
