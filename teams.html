@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-16">
+<link rel="stylesheet" href="styles.css?v=2026-10-17">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -42,7 +42,7 @@
   <footer>Fan-made, not affiliated with the NHL. Team colors are approximations.</footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-10-16"></script>
+<script src="teams.js?v=2026-10-17"></script>
 <script>
 // All 32 teams by division, as tiles in team colours. Marks the sheet you opened last
 // and any sheets with picks saved in this browser.
@@ -57,9 +57,7 @@
     Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
       const t=TEAMS[c], a=document.createElement("a");
       a.className="tile"; a.href=`sheet.html?team=${c}`;
-      a.style.setProperty("--t-board",t.board);
-      a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
-      a.style.setProperty("--t-ink",inkOn(t.board));
+      teamStyle(a,c);
       const code=document.createElement("span"); code.className="tile-code"; code.textContent=c;
       const name=document.createElement("span"); name.className="tile-name"; name.textContent=t.name;
       a.append(code,name);

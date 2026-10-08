@@ -1,36 +1,39 @@
 // Shared by every page: team list, colors, theming, the "Pick Team" menu, tab bar, logo, and app setup.
-/* board = scoreboard background, accent = team highlight, brand = main color for tints and buttons,
-   stripe (optional) = forces the edge stripe color when the automatic pick isn't right */
+/* board = the team's PRIMARY colour (header, tiles; text on it switches between white and black automatically),
+   accent = secondary highlight, brand = colour for tints and buttons,
+   stripe (optional) = forces the edge stripe colour when the automatic pick isn't right.
+   Primaries follow the teams' official palettes (e.g. Chicago/New Jersey/Washington red, Nashville gold,
+   Philadelphia and Anaheim orange). */
 const TEAMS = {
   // Atlantic
   BOS:{name:"Boston Bruins",         div:"Atlantic",     board:"#000000", accent:"#FFB81C", brand:"#FFB81C"},
   BUF:{name:"Buffalo Sabres",        div:"Atlantic",     board:"#003087", accent:"#FFB81C", brand:"#003087"},
   DET:{name:"Detroit Red Wings",     div:"Atlantic",     board:"#CE1126", accent:"#FFFFFF", brand:"#CE1126"},
-  FLA:{name:"Florida Panthers",      div:"Atlantic",     board:"#041E42", accent:"#C8102E", brand:"#C8102E"},
-  MTL:{name:"Montreal Canadiens",    div:"Atlantic",     board:"#192168", accent:"#AF1E2D", brand:"#AF1E2D"},
+  FLA:{name:"Florida Panthers",      div:"Atlantic",     board:"#C8102E", accent:"#B9975B", brand:"#041E42"},
+  MTL:{name:"Montreal Canadiens",    div:"Atlantic",     board:"#AF1E2D", accent:"#FFFFFF", brand:"#192168", stripe:"#192168"},
   OTT:{name:"Ottawa Senators",       div:"Atlantic",     board:"#000000", accent:"#DA1A32", brand:"#DA1A32"},
   TBL:{name:"Tampa Bay Lightning",   div:"Atlantic",     board:"#002868", accent:"#FFFFFF", brand:"#002868"},
   TOR:{name:"Toronto Maple Leafs",   div:"Atlantic",     board:"#00205B", accent:"#FFFFFF", brand:"#00205B"},
   // Metropolitan
   CAR:{name:"Carolina Hurricanes",   div:"Metropolitan", board:"#CE1126", accent:"#A4A9AD", brand:"#CE1126"},
   CBJ:{name:"Columbus Blue Jackets", div:"Metropolitan", board:"#002654", accent:"#CE1126", brand:"#002654"},
-  NJD:{name:"New Jersey Devils",     div:"Metropolitan", board:"#000000", accent:"#CE1126", brand:"#CE1126"},
+  NJD:{name:"New Jersey Devils",     div:"Metropolitan", board:"#CE1126", accent:"#FFFFFF", brand:"#CE1126", stripe:"#000000"},
   NYI:{name:"New York Islanders",    div:"Metropolitan", board:"#00539B", accent:"#F47D30", brand:"#00539B"},
   NYR:{name:"New York Rangers",      div:"Metropolitan", board:"#0038A8", accent:"#CE1126", brand:"#0038A8", stripe:"#CE1126"},
-  PHI:{name:"Philadelphia Flyers",   div:"Metropolitan", board:"#000000", accent:"#F74902", brand:"#F74902"},
+  PHI:{name:"Philadelphia Flyers",   div:"Metropolitan", board:"#F74902", accent:"#000000", brand:"#F74902"},
   PIT:{name:"Pittsburgh Penguins",   div:"Metropolitan", board:"#000000", accent:"#FCB514", brand:"#FCB514"},
-  WSH:{name:"Washington Capitals",   div:"Metropolitan", board:"#041E42", accent:"#C8102E", brand:"#C8102E"},
+  WSH:{name:"Washington Capitals",   div:"Metropolitan", board:"#C8102E", accent:"#FFFFFF", brand:"#041E42", stripe:"#041E42"},
   // Central
-  CHI:{name:"Chicago Blackhawks",    div:"Central",      board:"#000000", accent:"#CF0A2C", brand:"#CF0A2C"},
-  COL:{name:"Colorado Avalanche",    div:"Central",      board:"#6F263D", accent:"#A2AAAD", brand:"#236192"},
+  CHI:{name:"Chicago Blackhawks",    div:"Central",      board:"#CF0A2C", accent:"#FFFFFF", brand:"#CF0A2C", stripe:"#000000"},
+  COL:{name:"Colorado Avalanche",    div:"Central",      board:"#6F263D", accent:"#236192", brand:"#236192", stripe:"#A2AAAD"},
   DAL:{name:"Dallas Stars",          div:"Central",      board:"#006847", accent:"#8F8F8C", brand:"#006847"},
   MIN:{name:"Minnesota Wild",        div:"Central",      board:"#154734", accent:"#EAAA00", brand:"#A6192E"},
-  NSH:{name:"Nashville Predators",   div:"Central",      board:"#041E42", accent:"#FFB81C", brand:"#FFB81C"},
+  NSH:{name:"Nashville Predators",   div:"Central",      board:"#FFB81C", accent:"#041E42", brand:"#041E42"},
   STL:{name:"St. Louis Blues",       div:"Central",      board:"#002F87", accent:"#FCB514", brand:"#002F87"},
   UTA:{name:"Utah Mammoth",          div:"Central",      board:"#000000", accent:"#6CACE4", brand:"#6CACE4"},
-  WPG:{name:"Winnipeg Jets",         div:"Central",      board:"#041E42", accent:"#AC162C", brand:"#004C97"},
+  WPG:{name:"Winnipeg Jets",         div:"Central",      board:"#041E42", accent:"#A2AAAD", brand:"#004C97"},
   // Pacific
-  ANA:{name:"Anaheim Ducks",         div:"Pacific",      board:"#000000", accent:"#FC4C02", brand:"#FC4C02"},
+  ANA:{name:"Anaheim Ducks",         div:"Pacific",      board:"#FC4C02", accent:"#000000", brand:"#FC4C02"},
   CGY:{name:"Calgary Flames",        div:"Pacific",      board:"#C8102E", accent:"#F1BE48", brand:"#C8102E"},
   EDM:{name:"Edmonton Oilers",       div:"Pacific",      board:"#041E42", accent:"#FF4C00", brand:"#FF4C00"},
   LAK:{name:"Los Angeles Kings",     div:"Pacific",      board:"#111111", accent:"#A2AAAD", brand:"#A2AAAD"},
@@ -51,6 +54,15 @@ function contrast(a,b){ const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p); return (x+
 const inkOn=bg=>contrast(bg,"#FFFFFF")>=Math.min(4.5,contrast(bg,"#000000"))?"#FFFFFF":"#000000";
 function firstReadable(bg,candidates,min=3){ return candidates.find(c=>contrast(c,bg)>=min)||candidates[candidates.length-1]; }
 
+// Colours a team chip/tile/button: --t-board (fill), --t-stripe (edge stripe), --t-ink (readable text).
+function teamStyle(el, code){
+  const t=TEAMS[code];
+  el.style.setProperty("--t-board", t ? t.board : "#555");
+  el.style.setProperty("--t-stripe", t ? (t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)) : "#999");
+  el.style.setProperty("--t-ink", t ? inkOn(t.board) : "#FFFFFF");
+  return el;
+}
+
 // Neutral league-wide look, used by the leaderboard's "All teams" view: the navy road sweater.
 const NEUTRAL_THEME = {board:"#1C2B45", accent:"#EFE6D2", brand:"#9B1C1F"};
 
@@ -62,7 +74,9 @@ function applyTheme(code){
   const ctlDark  = firstReadable("#10171C",[t.brand,t.accent,"#E6EEF1"],3);
   s.setProperty("--board",t.board); s.setProperty("--accent",t.accent); s.setProperty("--brand",t.brand);
   s.setProperty("--stripe",stripe);
-  s.setProperty("--title",firstReadable(t.board,[t.accent,"#FFFFFF"],3));
+  // text on the header: white on dark team colours, black on light ones (e.g. Nashville gold)
+  s.setProperty("--board-ink",inkOn(t.board));
+  s.setProperty("--title",firstReadable(t.board,[t.accent,inkOn(t.board)],3));
   s.setProperty("--ctl-light",ctlLight); s.setProperty("--ctl-ink-light",inkOn(ctlLight));
   s.setProperty("--ctl-dark",ctlDark);   s.setProperty("--ctl-ink-dark",inkOn(ctlDark));
   document.querySelector('meta[name="theme-color"]')?.remove();
@@ -86,7 +100,7 @@ function mountTeamMenu(root){
       const t=TEAMS[c], a=document.createElement("a");
       a.href=`sheet.html?team=${c}`;
       const sw=document.createElement("span"); sw.className="sw"; sw.textContent=c;
-      sw.style.setProperty("--t-board",t.board); sw.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+      teamStyle(sw,c);
       const nm=document.createElement("span"); nm.textContent=t.name;
       a.append(sw,nm); col.appendChild(a);
     });

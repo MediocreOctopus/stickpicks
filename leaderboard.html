@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-16">
+<link rel="stylesheet" href="styles.css?v=2026-10-17">
 </head>
 <body>
 <div class="wrap">
@@ -63,8 +63,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-16"></script>
-<script src="teams.js?v=2026-10-16"></script>
+<script src="config.js?v=2026-10-17"></script>
+<script src="teams.js?v=2026-10-17"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -122,8 +122,7 @@ async function load(){
 
 function swatch(code){
   const t=TEAMS[code], sw=document.createElement("span"); sw.className="sw"; sw.textContent=code;
-  sw.style.setProperty("--t-board",t?t.board:"#555");
-  sw.style.setProperty("--t-stripe",t?(t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)):"#999");
+  teamStyle(sw,code);
   return sw;
 }
 const frac=(hit,of)=>of?`${hit}<span class="muted frac">/${of}</span>`:"—";

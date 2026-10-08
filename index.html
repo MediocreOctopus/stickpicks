@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-16">
+<link rel="stylesheet" href="styles.css?v=2026-10-17">
 </head>
 <body>
 
@@ -169,8 +169,8 @@
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-16"></script>
-<script src="teams.js?v=2026-10-16"></script>
+<script src="config.js?v=2026-10-17"></script>
+<script src="teams.js?v=2026-10-17"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -182,8 +182,7 @@ const HOME_URL = location.origin + location.pathname;
 
 function swatch(code){
   const t=TEAMS[code]; const s=document.createElement("span"); s.className="sw"; s.textContent=code;
-  if(t){ s.style.setProperty("--t-board",t.board); s.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)); }
-  else { s.style.setProperty("--t-board","#555"); s.style.setProperty("--t-stripe","#999"); }
+  teamStyle(s,code);
   return s;
 }
 
@@ -198,8 +197,7 @@ if(location.hash==="#teams") location.replace("teams.html");
   const t=code && TEAMS[code]; if(!t) return;
   const a=$("ctaContinue");
   a.href=`sheet.html?team=${code}`; a.textContent=`Continue: ${t.name}`;
-  a.style.setProperty("--t-board",t.board);
-  a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+  teamStyle(a,code);
   $("ctaRow").classList.remove("hidden");
 })();
 
