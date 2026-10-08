@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-18">
+<link rel="stylesheet" href="styles.css?v=2026-10-19">
 </head>
 <body>
 
@@ -175,8 +175,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-18"></script>
-<script src="teams.js?v=2026-10-18"></script>
+<script src="config.js?v=2026-10-19"></script>
+<script src="teams.js?v=2026-10-19"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -326,9 +326,10 @@ $("navAccount").addEventListener("click",e=>{
 });
 // Remember who's signed in on this device (Me tab, account buttons on other pages)
 function setNavAccount(){
-  if(currentUser && profile?.username) rememberMe(profile.username);
-  else if(!currentUser) forgetMe();
-  $("navAccount").textContent = currentUser ? (profile?.username || "My account") : "Sign in";
+  if(currentUser && profile?.username) return rememberMe(profile.username, avatarFromProfile(profile));   // picture + name
+  if(!currentUser) forgetMe();
+  const a=$("navAccount"); a.classList.remove("has-avatar");
+  a.textContent = currentUser ? "My account" : "Sign in";
 }
 function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className="formmsg"+(kind?" "+kind:""); }
 function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
@@ -418,7 +419,7 @@ $("signOut").addEventListener("click", async ()=>{ await sb.auth.signOut(); });
 let profile=null, currentUser=null, recovering=false;
 
 async function ensureProfile(user){
-  let {data}=await sb.from("profiles").select("username").eq("user_id",user.id).maybeSingle();
+  let {data}=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle();
   if(!data){
     const wanted=user.user_metadata?.username; // chosen at sign-up
     if(wanted && USERNAME_RULE.test(wanted)){
@@ -461,7 +462,7 @@ $("fName").addEventListener("submit", async e=>{
   const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
   if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
-  profile={username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount();
+  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount();
   showNameForm(false); loadMyStats();
 });
 

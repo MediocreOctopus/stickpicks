@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-18">
+<link rel="stylesheet" href="styles.css?v=2026-10-19">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -90,6 +90,32 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <div>
           <section class="pf-card" aria-label="Settings">
             <h2>Settings</h2>
+
+            <div class="pf-row">
+              <div class="pf-label">Profile picture</div>
+              <div class="av-pick">
+                <div class="av-preview" id="avPreview"></div>
+                <div>
+                  <div class="avseg" role="group" aria-label="Picture type">
+                    <button type="button" data-av="sweater" aria-pressed="true">Sweater</button><button type="button" data-av="photo" aria-pressed="false">Photo</button>
+                  </div>
+                  <form id="avSweater" novalidate>
+                    <div class="av-fields">
+                      <div class="field"><label for="avTeam">Team</label><select id="avTeam"></select></div>
+                      <div class="field"><label for="avNum">Number</label><input id="avNum" type="number" inputmode="numeric" min="0" max="99" step="1"></div>
+                    </div>
+                    <div class="form-actions"><button class="btn" type="submit">Save sweater</button></div>
+                  </form>
+                  <div class="av-photo hidden" id="avPhoto">
+                    <p class="hint">Pick a photo from your device. It’s cropped square and shrunk before it’s uploaded. Other players can see it.</p>
+                    <input id="avFile" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" hidden>
+                    <div class="form-actions"><button class="btn" type="button" id="avChoose">Choose photo</button></div>
+                  </div>
+                  <button class="linkbtn hidden" type="button" id="avReset">Use my initial instead</button>
+                </div>
+              </div>
+              <p class="formmsg" id="avMsg" role="status"></p>
+            </div>
 
             <div class="pf-row">
               <div class="pf-label">Username</div>
@@ -159,14 +185,14 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-18"></script>
-<script src="teams.js?v=2026-10-18"></script>
+<script src="config.js?v=2026-10-19"></script>
+<script src="teams.js?v=2026-10-19"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
 mountTeamMenu($("teamMenu"));
 
-let user=null, username=null;
+let user=null, username=null, avatar=null;
 const HOME_URL = location.href.replace(/profile\.html.*$/,"index.html");
 function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className="formmsg"+(kind?" "+kind:""); }
 function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
@@ -196,9 +222,14 @@ function setName(name){
   username=name;
   $("pfName").textContent = name || "New player";
   $("unValue").textContent = name || "Not set yet";
-  $("pfAvatar").textContent = (name||"?")[0].toUpperCase();   // stage 2: sweater avatar or photo
   $("delInput").placeholder = name || "";
-  if(name) rememberMe(name);
+  showAvatar();
+}
+// The banner picture, the Me tab and the top-bar button all follow the saved picture.
+function showAvatar(){
+  $("pfAvatar").replaceChildren(avatarEl(avatar, username||"?", 88));
+  $("avReset").classList.toggle("hidden", !avatar?.kind);
+  if(username) rememberMe(username, avatar);
 }
 function mask(email){ const [u,d]=String(email).split("@"); return d ? `${u[0]}${"•".repeat(Math.max(3,Math.min(u.length-1,8)))}@${d}` : email; }
 
@@ -206,8 +237,10 @@ async function load(session){
   user=session.user; showIn();
   $("pfEst").textContent = "Est. " + new Date(user.created_at).toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"});
   $("emValue").textContent = mask(user.email);
-  const {data:prof}=await sb.from("profiles").select("username").eq("user_id",user.id).maybeSingle();
+  const {data:prof}=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle();
+  avatar=avatarFromProfile(prof);
   setName(prof?.username||null);
+  startPicker();
   if(!prof) openUsername();
   syncLook(sb).then(markLook);
   loadStats();
@@ -241,6 +274,102 @@ async function loadStats(){
     a.append(sw,nm,meta); li.appendChild(a); list.appendChild(li);
   });
 }
+
+/* ───────── Profile picture ───────── */
+// Sweater: a team jersey with your number. Photo: stored in the "avatars" storage space under your own folder.
+const AV_PATH = () => `${user.id}/avatar`;
+let avMode="sweater";
+(function fillTeams(){
+  const sel=$("avTeam");
+  DIVISIONS.forEach(d=>{
+    const g=document.createElement("optgroup"); g.label=d;
+    Object.entries(TEAMS).filter(([,t])=>t.div===d).sort((a,b)=>a[1].name.localeCompare(b[1].name))
+      .forEach(([code,t])=>g.appendChild(new Option(t.name,code)));
+    sel.appendChild(g);
+  });
+})();
+function draftSweater(){ return {kind:"sweater", team:$("avTeam").value, number:Math.max(0,Math.min(99,parseInt($("avNum").value,10)||0))}; }
+function showPreview(av){ $("avPreview").replaceChildren(avatarEl(av, username||"?", 72)); }
+function setMode(mode){
+  avMode=mode;
+  document.querySelectorAll(".avseg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.av===mode)));
+  $("avSweater").classList.toggle("hidden", mode!=="sweater");
+  $("avPhoto").classList.toggle("hidden", mode!=="photo");
+  showPreview(mode==="sweater" ? draftSweater() : (avatar?.kind==="photo" ? avatar : null));
+  msg("avMsg","");
+}
+function startPicker(){
+  let last=null; try{ last=localStorage.getItem("nhl-picks-last-team"); }catch(e){}
+  $("avTeam").value = avatar?.team || (TEAMS[last] ? last : "SEA");
+  $("avNum").value = avatar?.number ?? 1;
+  setMode(avatar?.kind==="photo" ? "photo" : "sweater");
+}
+document.querySelectorAll(".avseg button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.av)));
+["input","change"].forEach(ev=>{ $("avTeam").addEventListener(ev,()=>showPreview(draftSweater())); $("avNum").addEventListener(ev,()=>showPreview(draftSweater())); });
+
+async function savePicture(fields){
+  if(!username){ msg("avMsg","Choose a username first, then add your picture.","err"); return false; }
+  const {error}=await sb.from("profiles").update(fields).eq("user_id",user.id);
+  if(error){ msg("avMsg", /avatar_|column/.test(error.message||"") ? "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : friendly(error), "err"); return false; }
+  avatar=avatarFromProfile(fields); showAvatar(); return true;
+}
+const removePhotoFile = () => sb.storage.from("avatars").remove([AV_PATH()]).catch(()=>{});
+
+$("avSweater").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const n=$("avNum").value.trim();
+  if(!/^\d{1,2}$/.test(n)) return msg("avMsg","Numbers go from 0 to 99.","err");
+  const d=draftSweater(); busy(e.target,true); msg("avMsg","Saving…");
+  const hadPhoto=avatar?.kind==="photo";
+  const ok=await savePicture({avatar_kind:"sweater", avatar_team:d.team, avatar_number:d.number, avatar_url:null});
+  busy(e.target,false);
+  if(ok){ msg("avMsg","Sweater saved.","ok"); if(hadPhoto) removePhotoFile(); }
+});
+
+// Crop the middle square, shrink to 256×256, and save as WebP (or JPEG where WebP isn't supported).
+function loadImage(file){
+  return new Promise((res,rej)=>{ const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{ URL.revokeObjectURL(url); res(img); }; img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error("unreadable")); }; img.src=url; });
+}
+const toBlob=(c,type,q)=>new Promise(r=>c.toBlob(r,type,q));
+async function squarePhoto(file){
+  const img=await loadImage(file), w=img.naturalWidth, h=img.naturalHeight, s=Math.min(w,h), SIZE=256;
+  const c=document.createElement("canvas"); c.width=c.height=SIZE;
+  const ctx=c.getContext("2d"); ctx.fillStyle="#FFFFFF"; ctx.fillRect(0,0,SIZE,SIZE); ctx.imageSmoothingQuality="high";
+  ctx.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE);
+  let blob=await toBlob(c,"image/webp",.85);
+  if(!blob || blob.type!=="image/webp") blob=await toBlob(c,"image/jpeg",.85);
+  return blob;
+}
+$("avChoose").addEventListener("click",()=>$("avFile").click());
+$("avFile").addEventListener("change", async e=>{
+  const file=e.target.files?.[0]; e.target.value="";
+  if(!file) return;
+  if(!username) return msg("avMsg","Choose a username first, then add your picture.","err");
+  if(file.size>25*1024*1024) return msg("avMsg","That file is too big. Pick a photo under 25 MB.","err");
+  $("avChoose").disabled=true; msg("avMsg","Preparing your photo…");
+  try{
+    let blob;
+    try{ blob=await squarePhoto(file); }catch(err){ throw new Error("This browser can’t read that file. Try a JPG or PNG."); }
+    // Show the cropped photo right away (avatarEl only trusts uploaded URLs, so build this one by hand)
+    const pv=avatarEl(null,"",72), img=document.createElement("img"); img.src=URL.createObjectURL(blob); img.alt="";
+    pv.className="avatar avatar-photo"; pv.replaceChildren(img); $("avPreview").replaceChildren(pv);
+    msg("avMsg","Uploading…");
+    const {error:upErr}=await sb.storage.from("avatars").upload(AV_PATH(), blob, {upsert:true, contentType:blob.type, cacheControl:"3600"});
+    if(upErr) throw new Error(/bucket|not found/i.test(upErr.message||"") ? "Photo storage isn’t set up yet. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : friendly(upErr));
+    const url=sb.storage.from("avatars").getPublicUrl(AV_PATH()).data.publicUrl+"?v="+Date.now();
+    if(await savePicture({avatar_kind:"photo", avatar_team:null, avatar_number:null, avatar_url:url})){ showPreview(avatar); msg("avMsg","Photo saved.","ok"); }
+  }catch(err){ msg("avMsg",err.message||"Couldn’t upload that photo.","err"); showPreview(avatar?.kind==="photo"?avatar:null); }
+  $("avChoose").disabled=false;
+});
+
+$("avReset").addEventListener("click", async ()=>{
+  msg("avMsg","Saving…");
+  const hadPhoto=avatar?.kind==="photo";
+  if(await savePicture({avatar_kind:null, avatar_team:null, avatar_number:null, avatar_url:null})){
+    msg("avMsg","Back to your initial.","ok"); if(hadPhoto) removePhotoFile(); setMode(avMode);
+  }
+});
 
 /* ───────── Username ───────── */
 function openUsername(){ $("unForm").classList.remove("hidden"); $("unEdit").classList.add("hidden"); $("unInput").value=username||""; msg("unMsg",""); $("unInput").focus(); }
@@ -301,6 +430,7 @@ $("delForm").addEventListener("submit", async e=>{
   const typed=$("delInput").value.trim();
   if(!username || typed.toLowerCase()!==username.toLowerCase()) return msg("delMsg","Type your username exactly to confirm.","err");
   busy(e.target,true); msg("delMsg","Deleting…");
+  await removePhotoFile();   // photos live in storage, which the database can't clear on its own
   const {error}=await sb.rpc("delete_my_account");
   busy(e.target,false);
   if(error) return msg("delMsg",friendly(error),"err");

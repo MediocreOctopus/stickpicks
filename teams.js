@@ -147,26 +147,72 @@ function mountTabBar(){
 }
 document.addEventListener("DOMContentLoaded", mountTabBar);
 
+/* ───────── Avatars: sweater (team + number), photo, or initial ───────── */
+// The jersey is drawn once per page (hidden <svg> with a <symbol>) and reused at any size.
+// Sleeves have two equal bands parallel to the cuff, matching the two hem stripes.
+const JERSEY_DEFS='<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>'
+ +'<clipPath id="spSlR" clipPathUnits="userSpaceOnUse"><polygon points="69,12 93,31 82,47 74,41"/></clipPath>'
+ +'<clipPath id="spSlL" clipPathUnits="userSpaceOnUse"><polygon points="31,12 7,31 18,47 26,41"/></clipPath>'
+ +'<symbol id="spJersey" viewBox="0 0 100 100">'
+ +'<path d="M31 12 L44 7 Q50 15 56 7 L69 12 L93 31 L82 47 L74 41 L74 93 L26 93 L26 41 L18 47 L7 31 Z" style="fill:var(--j1)"/>'
+ +'<g clip-path="url(#spSlR)" style="fill:var(--j2)"><polygon points="95.06,22.71 75,51.89 72.53,50.19 92.59,21.01"/><polygon points="90.94,19.88 70.88,49.06 68.41,47.36 88.47,18.18"/></g>'
+ +'<g clip-path="url(#spSlL)" style="fill:var(--j2)"><polygon points="4.94,22.71 25,51.89 27.47,50.19 7.41,21.01"/><polygon points="9.06,19.88 29.12,49.06 31.59,47.36 11.53,18.18"/></g>'
+ +'<rect x="26" y="82" width="48" height="3" style="fill:var(--j2)"/><rect x="26" y="87" width="48" height="3" style="fill:var(--j2)"/>'
+ +'<path d="M44 7 Q50 15 56 7" fill="none" style="stroke:var(--j2)" stroke-width="3"/>'
+ +'</symbol></defs></svg>';
+function ensureJerseyDefs(){
+  if(document.getElementById("spJersey")) return;
+  const host=document.createElement("div"); host.innerHTML=JERSEY_DEFS; document.body.prepend(host.firstChild);
+}
+// Photos are only shown from this project's own "avatars" storage.
+const AVATAR_BASE=((window.PICKS_CONFIG||{}).SUPABASE_URL||"").replace(/\/$/,"")+"/storage/v1/object/public/avatars/";
+// A profile row (from Supabase) → the avatar settings the pages pass around.
+function avatarFromProfile(p){ return p ? {kind:p.avatar_kind||null, team:p.avatar_team||null, number:p.avatar_number??null, url:p.avatar_url||null} : null; }
+// Builds a round avatar <span>: av = {kind, team, number, url}; falls back to the username's initial.
+function avatarEl(av, name, px){
+  const el=document.createElement("span"); el.className="avatar"; el.setAttribute("aria-hidden","true");
+  el.style.setProperty("--av-size", px+"px");
+  const team=av?.kind==="sweater" ? TEAMS[av.team] : null;
+  if(av?.kind==="photo" && av.url && AVATAR_BASE.length>40 && av.url.startsWith(AVATAR_BASE)){
+    const img=document.createElement("img"); img.src=av.url; img.alt=""; img.loading="lazy"; img.decoding="async";
+    el.classList.add("avatar-photo"); el.appendChild(img);
+  }else if(team){
+    ensureJerseyDefs();
+    const stripe=team.stripe||firstReadable(team.board,[team.accent,team.brand,"#FFFFFF"],2);
+    const num=Math.max(0,Math.min(99,parseInt(av.number,10)||0));
+    el.classList.add("avatar-sweater");
+    el.style.setProperty("--j1",team.board); el.style.setProperty("--j2",stripe); el.style.setProperty("--av-ring",firstReadable("#F4EDDC",[stripe,team.board],1.5));   // white stripes would vanish on the cream ring
+    el.innerHTML=`<svg viewBox="0 0 100 100"><use href="#spJersey"/><text x="50" y="70"text-anchor="middle" fill="${inkOn(team.board)}">${num}</text></svg>`;
+  }else if(name){
+    el.textContent=name[0].toUpperCase();
+  }else{
+    el.classList.add("avatar-empty");
+    el.innerHTML=`<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>`;
+  }
+  return el;
+}
+
 /* ───────── "Me": who's signed in on this device ───────── */
-// Each page signs in on its own, so the username is remembered here (just on this device)
-// to show the Me tab picture and the top-bar account button right away.
-// Stage 2 adds the profile picture; for now the badge shows the first letter of the username.
+// Each page signs in on its own, so the username and picture are remembered here (just on this
+// device) to show the Me tab and the top-bar account button right away.
 const ME_KEY="stickpicks-me";
 function readMe(){ try{ return JSON.parse(localStorage.getItem(ME_KEY)||"null"); }catch(e){ return null; } }
-function rememberMe(name){ try{ localStorage.setItem(ME_KEY, JSON.stringify({name})); }catch(e){} refreshMe(); }
-function forgetMe(){ try{ localStorage.removeItem(ME_KEY); }catch(e){} refreshMe(); }
-function meBadge(){
-  const me=readMe(), b=document.createElement("span"); b.className="me-badge";
-  if(me?.name) b.textContent=me.name[0].toUpperCase();
-  else b.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS.me}</svg>`;
-  return b;
+function rememberMe(name, avatar){
+  const keep = avatar===undefined ? readMe()?.avatar||null : avatar;   // keep the saved picture if none given
+  try{ localStorage.setItem(ME_KEY, JSON.stringify({name, avatar:keep})); }catch(e){}
+  refreshMe();
 }
-// Top-bar account buttons marked data-me: your username (to your profile) or "Sign in".
+function forgetMe(){ try{ localStorage.removeItem(ME_KEY); }catch(e){} refreshMe(); }
+function meBadge(){ const me=readMe(); const b=avatarEl(me?.avatar, me?.name, 24); b.classList.add("me-badge"); return b; }
+// Top-bar account buttons marked data-me: your picture + username (to your profile), or "Sign in".
 function refreshMe(){
   const me=readMe();
   document.querySelectorAll("a.navaccount[data-me]").forEach(a=>{
-    a.textContent = me?.name || "Sign in";
     a.href = me?.name ? "profile.html" : "index.html#signin";
+    if(me?.name){
+      const nm=document.createElement("span"); nm.className="navaccount-name"; nm.textContent=me.name;
+      a.replaceChildren(avatarEl(me.avatar, me.name, 22), nm); a.classList.add("has-avatar");
+    }else{ a.textContent="Sign in"; a.classList.remove("has-avatar"); }
   });
   document.querySelectorAll(".tab-me .me-badge").forEach(old=>old.replaceWith(meBadge()));
 }

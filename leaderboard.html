@@ -25,7 +25,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-18">
+<link rel="stylesheet" href="styles.css?v=2026-10-19">
 </head>
 <body>
 <div class="wrap">
@@ -70,8 +70,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-18"></script>
-<script src="teams.js?v=2026-10-18"></script>
+<script src="config.js?v=2026-10-19"></script>
+<script src="teams.js?v=2026-10-19"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -123,6 +123,8 @@ async function load(){
   const {data,error}=await sb.rpc("leaderboard",{p_season:SEASON, p_team:team});
   if(ticket!==loading || want!==team) return; // a newer request replaced this one
   if(error){ showEmpty(`Couldn’t load the leaderboard: ${error.message}`); return; }
+  await loadFaces((data||[]).map(r=>r.username));
+  if(ticket!==loading) return;
   document.getElementById("updated").textContent=`Updated ${new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"})}`;
   render(data||[]);
 }
@@ -131,6 +133,17 @@ function swatch(code){
   const t=TEAMS[code], sw=document.createElement("span"); sw.className="sw"; sw.textContent=code;
   teamStyle(sw,code);
   return sw;
+}
+// Profile pictures for the names on the board, fetched once per page visit (lower-case username → picture).
+const faces=new Map();
+async function loadFaces(names){
+  const need=[...new Set(names)].filter(n=>!faces.has(n.toLowerCase()));
+  for(let i=0;i<need.length;i+=100){
+    const chunk=need.slice(i,i+100);
+    const {data}=await sb.from("profiles").select("*").in("username",chunk);
+    chunk.forEach(n=>faces.set(n.toLowerCase(),null));
+    (data||[]).forEach(p=>faces.set(p.username.toLowerCase(),avatarFromProfile(p)));
+  }
 }
 const frac=(hit,of)=>of?`${hit}<span class="muted frac">/${of}</span>`:"—";
 
@@ -156,7 +169,9 @@ function render(list){
       <td>${frac(Number(r.goals_points),Number(r.goals_graded))}</td>
       <td class="opt">${r.total_picks}</td>`;
     const sheetUrl=`sheet.html?team=${r.team}&user=${encodeURIComponent(r.username)}`;
-    const nameLink=document.createElement("a"); nameLink.href=sheetUrl; nameLink.textContent=r.username;
+    const nameLink=document.createElement("a"); nameLink.href=sheetUrl; nameLink.className="lb-who";
+    const nm=document.createElement("span"); nm.textContent=r.username;
+    nameLink.append(avatarEl(faces.get(r.username.toLowerCase()), r.username, 28), nm);
     nameLink.title=`See ${r.username}’s ${TEAMS[r.team]?.name||r.team} sheet`;
     tr.querySelector(".name").appendChild(nameLink);
     tr.classList.add("clickable");
@@ -210,8 +225,9 @@ async function start(){
     const {data:{session}}=await sb.auth.getSession();
     signedIn=!!session;
     if(session){
-      const {data}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
+      const {data}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
       myName=data?.username||null;
+      if(myName) rememberMe(myName, avatarFromProfile(data));
     }
     setInterval(load, 60*1000);
     document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load(); });

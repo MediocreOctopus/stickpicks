@@ -303,3 +303,51 @@ end;
 $$;
 revoke all on function public.delete_my_account() from public;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- 11) Profile pictures, shown next to usernames (so they're public like usernames).
+--     avatar_kind = 'sweater' (a jersey in avatar_team's colours with avatar_number)
+--     or 'photo' (an image in this project's "avatars" storage, in the player's own folder),
+--     or null for the plain initial.
+alter table public.profiles add column if not exists avatar_kind text;
+alter table public.profiles add column if not exists avatar_team text;
+alter table public.profiles add column if not exists avatar_number smallint;
+alter table public.profiles add column if not exists avatar_url text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_avatar_valid') then
+    alter table public.profiles add constraint profiles_avatar_valid check (
+      avatar_kind is null
+      or (avatar_kind = 'sweater' and avatar_team ~ '^[A-Z]{3}$' and avatar_number between 0 and 99)
+      or (avatar_kind = 'photo' and avatar_url like '%/storage/v1/object/public/avatars/' || user_id::text || '/%')
+    );
+  end if;
+end $$;
+
+-- 12) Storage for uploaded photos: a public "avatars" bucket (small images only).
+--     Each player can add, replace or remove files only in their own folder (<user id>/...).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Avatar images are public" on storage.objects;
+create policy "Avatar images are public" on storage.objects
+  for select using (bucket_id = 'avatars');
+
+drop policy if exists "Upload own avatar" on storage.objects;
+create policy "Upload own avatar" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "Replace own avatar" on storage.objects;
+create policy "Replace own avatar" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text)
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "Remove own avatar" on storage.objects;
+create policy "Remove own avatar" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
