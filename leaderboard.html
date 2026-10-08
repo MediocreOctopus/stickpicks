@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="lbpage">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -19,36 +19,36 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-10">
+<link rel="stylesheet" href="styles.css?v=2026-10-11">
 </head>
 <body>
 <div class="wrap">
   <header class="board lb-board">
     <div class="board-top">
-      <h1 id="title">Stick Picks Leaderboard · 2026–27</h1>
       <div class="board-nav">
         <a class="navlink scriptlink" href="index.html">stickpicks</a>
         <a class="navlink" id="back" href="sheet.html">My picks</a>
-        <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
       </div>
+      <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
     </div>
-    <div class="lb-headline" id="headline">All teams</div>
-    <div class="lb-sub"><span id="updated">Loading…</span> · up to 2 points per game · updates automatically</div>
+    <h1 class="lb-headline" id="headline">Stick Picks Leaderboard · 2026–27</h1>
+    <div class="lb-sub" id="updated">Loading…</div>
   </header>
 
-  <div class="you hidden" id="you" aria-live="polite"></div>
-  <p class="lb-note" id="scope"></p>
-
+  <!-- Your standing sits in a sidebar to the left of the table (above it on phones) -->
+  <div class="lb-layout">
+  <aside class="you hidden" id="you" aria-live="polite" aria-label="Your standing"></aside>
+  <div class="lb-main">
   <div class="lb-wrap" id="tablewrap">
     <table class="lb">
       <thead>
         <tr>
           <th scope="col">#</th>
           <th scope="col">Player</th>
-          <th scope="col" class="teamcol" id="teamCol">Sheet</th>
-          <th scope="col">Points</th>
-          <th scope="col" title="Correct results out of graded result picks">Results</th>
-          <th scope="col" title="Exact combined goals out of graded goal picks">Goals</th>
+          <th scope="col" class="teamcol" id="teamCol" data-short="Team">Sheet</th>
+          <th scope="col" data-short="Pts">Points</th>
+          <th scope="col" title="Correct results out of graded result picks" data-short="Res">Results</th>
+          <th scope="col" title="Exact combined goals out of graded goal picks" data-short="Gls">Goals</th>
           <th scope="col" class="opt">Games picked</th>
         </tr>
       </thead>
@@ -56,13 +56,15 @@
     </table>
   </div>
   <div class="empty hidden" id="empty"></div>
+  </div>
+  </div>
 
-  <footer>Only final games count: 1 point for the right result, 1 for the exact combined goals. Each team sheet is ranked on its own; ties share a rank. Upcoming picks stay hidden until puck drop. <a href="rules.html">Rules</a></footer>
+  <footer><span id="scope"></span> Only final games count: 1 point for the right result, 1 for the exact combined goals. Each team sheet is ranked on its own; ties share a rank. Upcoming picks stay hidden until puck drop. <a href="rules.html">Rules</a></footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-10"></script>
-<script src="teams.js?v=2026-10-10"></script>
+<script src="config.js?v=2026-10-11"></script>
+<script src="teams.js?v=2026-10-11"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -81,12 +83,18 @@ function setTeam(code){
   team = code && TEAMS[code] ? code : null;
   sel.value = team || "";
   applyTheme(team || NEUTRAL_THEME);
+  document.documentElement.classList.toggle("neutral", !team); // All teams: plain wool page
   const url=new URL(location.href);
   team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
   history.replaceState(null,"",url);
   const lastSheet = team || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
   document.getElementById("back").href = lastSheet ? `sheet.html?team=${lastSheet}` : "index.html#teams";
-  document.getElementById("headline").textContent = team ? TEAMS[team].name : "All teams";
+  const head=document.getElementById("headline");
+  if(team) head.textContent=`${TEAMS[team].name} Leaderboard`;
+  else{ // keep "· 2026–27" together if the headline wraps
+    const yr=document.createElement("span"); yr.className="nowrap"; yr.textContent="· 2026–27";
+    head.replaceChildren("Stick Picks Leaderboard ", yr);
+  }
   document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · Stick Picks 2026–27`;
   document.getElementById("scope").textContent = team
     ? `Everyone’s ${TEAMS[team].name} prediction sheets. Click a player to see their sheet.`
@@ -108,7 +116,7 @@ async function load(){
   const {data,error}=await sb.rpc("leaderboard",{p_season:SEASON, p_team:team});
   if(ticket!==loading || want!==team) return; // a newer request replaced this one
   if(error){ showEmpty(`Couldn’t load the leaderboard: ${error.message}`); return; }
-  document.getElementById("updated").textContent=`Updated ${new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`;
+  document.getElementById("updated").textContent=`Updated ${new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"})}`;
   render(data||[]);
 }
 
@@ -157,21 +165,37 @@ function render(list){
     rowsEl.appendChild(tr);
   });
 
-  youEl.classList.remove("hidden");
+  renderYou(list.length, mine);
+}
+
+/* ───────── Your standing (sidebar card) ───────── */
+// Built only from numbers and the TEAMS list, never from usernames.
+function renderYou(total, mine){
+  youEl.classList.remove("hidden"); youEl.innerHTML="";
+  const el=(tag,cls,text)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; youEl.appendChild(e); return e; };
+  const link=(href,text)=>{ const a=el("a","btn",text); a.href=href; return a; };
   if(!myName){
-    youEl.textContent = sb && signedIn
-      ? "Choose a username on the home page to appear on the leaderboard."
-      : "Sign in on the home page and choose a username to join the leaderboard.";
-  }else if(!mine.length){
-    youEl.textContent = team ? `You haven't made any ${TEAMS[team].name} picks yet.` : "You haven't made any picks yet.";
-  }else if(team){
-    const m=mine[0];
-    youEl.innerHTML=`You're <b>#${m.rank}</b> of ${list.length} on the ${TEAMS[team].name} board with <b>${m.pts}</b> point${m.pts===1?"":"s"}.`;
-  }else{
-    const best=mine[0]; // list is sorted, so the first match is the best
-    youEl.innerHTML=`Your best sheet is <b>${TEAMS[best.team]?.name||best.team}</b> at <b>#${best.rank}</b> of ${list.length} with <b>${best.pts}</b> point${best.pts===1?"":"s"}`+
-      (mine.length>1?`. You have ${mine.length} sheets on the board, highlighted below.`:".");
+    el("div","you-label","Join the board");
+    if(sb && signedIn){ el("p",null,"Choose a username on the home page to appear on the leaderboard."); link("index.html#account","Choose a username"); }
+    else { el("p",null,"Sign in and choose a username to get your sheets on the leaderboard."); link("index.html#signin","Sign in"); }
+    return;
   }
+  if(!mine.length){
+    el("div","you-label","Your sheets");
+    el("p",null, team ? `You haven’t made any ${TEAMS[team].name} picks yet.` : "You haven’t made any picks yet.");
+    link(team ? `sheet.html?team=${team}` : "index.html#teams", team ? "Start this sheet" : "Choose a team");
+    return;
+  }
+  const best=mine[0]; // the list is sorted, so the first match is the best
+  el("div","you-label", team ? "Your spot" : "Your best sheet");
+  if(!team){
+    const t=el("div","you-team"); t.append(swatch(best.team));
+    const nm=document.createElement("span"); nm.textContent=TEAMS[best.team]?.name||best.team; t.append(nm);
+  }
+  const r=el("div","you-rank"); r.textContent=`#${best.rank}`;
+  const of=document.createElement("span"); of.textContent=` of ${total}`; r.append(of);
+  el("div","you-pts",`${best.pts} point${best.pts===1?"":"s"}`);
+  if(mine.length>1) el("p",null,`You have ${mine.length} sheets on the board, highlighted in the table.`);
 }
 
 let signedIn=false;

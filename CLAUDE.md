@@ -19,7 +19,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 | `intermission.html` | Intermission page hosting the Breakaway game (`game.js`). |
 | `sheet.html` | One team's prediction sheet (`?team=SEA`). Editable for the owner; view-only for others with `&user=Name`. `&game=ID` scrolls to and highlights that game once, then is removed from the URL. |
 | `compare.html` | Side-by-side: signed-in user vs another player for one team (`?team=SEA&user=Name`). |
-| `leaderboard.html` | Per-team boards and an All teams board. Rows link to `sheet.html?team=…&user=…`. |
+| `leaderboard.html` | Per-team boards and an All teams board. Rows link to `sheet.html?team=…&user=…`. Script headline ("Stick Picks Leaderboard · 2026–27", or "<Team> Leaderboard"); your standing is a sticky sidebar card (`#you`, built by `renderYou()`) left of the table, above it on phones; the scope sentence lives in the footer. All teams view adds `html.neutral` for a plain wool page. |
 | `rules.html` | Four-point "basics" list, then collapsible `<details>` sections (picks, scoring, examples, locking, leaderboards) and the FAQ. `rules.html#scoring` etc. opens that section. Keep it in sync with any scoring change. |
 | `game.js` | Breakaway, a canvas endless-runner on `intermission.html`. Self-contained IIFE. |
 | `teams.js` | Shared: `TEAMS` (32 teams: name, division, `board`/`accent`/`brand` colors, optional `stripe`), `DIVISIONS`, contrast helpers, `applyTheme()`, `mountTeamMenu()` (the "Choose Team" nav dropdown on index/rules/intermission), `mountTabBar()` (phone bottom tab bar, added to every page automatically on `DOMContentLoaded`), `makeClient()`, `SEASON`, `USERNAME_RULE`, `resultFor()`, `hasStarted()`, `scorePick()`. |
