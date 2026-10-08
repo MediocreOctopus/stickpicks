@@ -277,15 +277,19 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 
 .home .wrap{max-width:1040px}
 /* Desktop: intro beside the account card, today's games full width below.
-   Phones and the installed app: the account card first, then the intro, then today's games. */
+   Phones and the installed app: headline, account card, Continue button, install bar, today's games. */
 .homegrid{display:grid;grid-template-columns:1.15fr .85fr;grid-template-areas:"intro account" "today today" "promo promo";column-gap:32px;align-items:start;padding-top:20px}
 .homegrid .intro{grid-area:intro}
 .homegrid #account{grid-area:account}
 .homegrid #today{grid-area:today;margin-top:36px}
 .homegrid .promo{grid-area:promo}
 @media (max-width:760px){
-  .homegrid{grid-template-columns:1fr;grid-template-areas:"account" "intro" "today" "promo";padding-top:8px}
-  .homegrid .intro{margin-top:24px}
+  .homegrid{grid-template-columns:1fr;grid-template-areas:"headline" "account" "cta" "install" "today" "promo"}
+  .homegrid .intro{display:contents}   /* lets the account card sit between the headline and Continue */
+  .homegrid .intro h1{grid-area:headline}
+  .homegrid #account{margin-top:22px}
+  .homegrid .intro .cta{grid-area:cta}
+  .homegrid .intro .installbar{grid-area:install}
   .homegrid #today{margin-top:28px}
 }
 .intro h1{font:600 clamp(2.4rem,6.5vw,4rem)/1 "Oswald",sans-serif;text-transform:uppercase;margin:0;letter-spacing:.01em}
