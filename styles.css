@@ -236,7 +236,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
   .ticker-track [aria-hidden="true"]{display:none}
 }
 
-/* Top bar (position:relative anchors the Choose Team panel) */
+/* Top bar (position:relative anchors the Pick Team panel) */
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;flex-wrap:wrap;position:relative;z-index:20}
 /* .brand holds logo.svg (injected by teams.js); the script text is the fallback until it loads */
 .brand{display:inline-block;font:2rem/1 "Yellowtail",cursive;color:var(--logo-ink);text-decoration:none;transform:rotate(-6deg)}
@@ -250,7 +250,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .navaccount{border:2px solid var(--ink);border-radius:4px;padding:4px 12px;max-width:12em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .topnav a.navaccount:hover{text-decoration:none;border-color:var(--ink)}
 
-/* "Choose Team" dropdown */
+/* "Pick Team" dropdown (desktop and tablets) */
 .teammenu-btn{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--btn,var(--board));background:var(--btn,var(--board));color:var(--btn-ink,#fff);font:600 .9rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:4px;cursor:pointer;white-space:nowrap}
 .teammenu-btn::after{content:"";width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
 .teammenu-btn[aria-expanded="true"]::after{transform:translateY(2px) rotate(-135deg)}
@@ -262,18 +262,31 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .teammenu-panel a:hover,.teammenu-panel a:focus-visible{background:color-mix(in srgb, var(--ink) 8%, transparent);text-decoration:none}
 @media (max-width:900px){ .teammenu-panel{grid-template-columns:repeat(2,minmax(160px,1fr))} }
 @media (max-width:560px){
-  /* phones use the bottom tab bar, so the top bar keeps only Choose Team and the account button */
+  /* phones and the app use the bottom tab bar (its Pick Team tab opens teams.html),
+     so the top bar keeps only the logo and the account button */
   .topbar{flex-wrap:nowrap;padding:12px 0}
   .brand{font-size:1.6rem;white-space:nowrap}
   .brand .logo-svg{height:44px}
   .topnav{gap:8px;font-size:.9rem}
-  .topnav > a:not(.navaccount){display:none}
-  .teammenu-btn{padding:6px 10px}
-  .navaccount{max-width:7.5em}
-  .teammenu-panel{left:0;right:0;width:auto;max-width:none;grid-template-columns:1fr 1fr;max-height:70vh;overflow-y:auto}
-  .teammenu-panel a{font-size:.85rem;gap:6px}
-  .teammenu-panel .sw{width:2rem}
+  .topnav > a:not(.navaccount),.topnav .teammenu{display:none}
+  .navaccount{max-width:9em}
 }
+
+/* ───── Pick Team page: every team as a tile in its colours ───── */
+.pickteam .section-head h1{font:600 clamp(2rem,6vw,2.8rem)/1 var(--display);text-transform:uppercase;margin:0}
+.teamspage .section{margin-top:16px}
+.division{margin-top:22px}
+.division h2{font:600 .85rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:10px}
+.tile{position:relative;display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 14px 10px 16px;border-radius:6px;overflow:hidden;
+  background:var(--t-board);color:var(--t-ink,#fff);text-decoration:none;box-shadow:inset 8px 0 0 var(--t-stripe)}
+.tile::after{content:"";position:absolute;right:0;top:0;bottom:0;width:22px;   /* sleeve stripes */
+  background:linear-gradient(to right,transparent 0 4px,var(--t-stripe) 4px 9px,transparent 9px 13px,var(--t-stripe) 13px 18px,transparent 18px)}
+.tile:hover{filter:brightness(1.12)}
+.tile:focus-visible{outline:3px solid var(--alarm);outline-offset:2px}
+.tile-code{flex:none;font:600 .8rem var(--display);letter-spacing:.1em;opacity:.8;width:2.6rem;padding-left:6px}
+.tile-name{font:600 1.05rem/1.15 var(--display);letter-spacing:.04em;text-transform:uppercase;padding-right:26px}
+.tile-tag{position:absolute;top:6px;right:28px;font:italic .72rem var(--serif);opacity:.85}
 
 .home .wrap{max-width:1040px}
 /* Desktop: intro beside the account card, today's games full width below.

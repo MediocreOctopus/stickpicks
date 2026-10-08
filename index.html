@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-15">
+<link rel="stylesheet" href="styles.css?v=2026-10-16">
 </head>
 <body>
 
@@ -169,8 +169,8 @@
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-15"></script>
-<script src="teams.js?v=2026-10-15"></script>
+<script src="config.js?v=2026-10-16"></script>
+<script src="teams.js?v=2026-10-16"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -187,11 +187,10 @@ function swatch(code){
   return s;
 }
 
-/* ───────── Choose Team menu ───────── */
-const teamMenu=mountTeamMenu($("teamMenu"));
-const openTeams=()=>{ window.scrollTo({top:0}); teamMenu.open(); };
-// Older links (and other pages) point at index.html#teams
-if(location.hash==="#teams"){ history.replaceState(null,"",location.pathname+location.search); setTimeout(openTeams,0); }
+/* ───────── Pick Team menu (desktop) ───────── */
+mountTeamMenu($("teamMenu"));
+// Older links point at index.html#teams; teams now have their own page
+if(location.hash==="#teams") location.replace("teams.html");
 
 /* ───────── Continue where you left off ───────── */
 (function continueButton(){
@@ -473,7 +472,7 @@ async function loadMyStats(){
     }
   }
   if(!rows.length){
-    const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Choose Team to start your first sheet.";
+    const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Pick Team to start your first sheet.";
     list.appendChild(li); return;
   }
   rows.forEach(r=>{

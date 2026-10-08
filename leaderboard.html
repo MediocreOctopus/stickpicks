@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-15">
+<link rel="stylesheet" href="styles.css?v=2026-10-16">
 </head>
 <body>
 <div class="wrap">
@@ -63,8 +63,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-15"></script>
-<script src="teams.js?v=2026-10-15"></script>
+<script src="config.js?v=2026-10-16"></script>
+<script src="teams.js?v=2026-10-16"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -88,7 +88,7 @@ function setTeam(code){
   team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
   history.replaceState(null,"",url);
   const lastSheet = team || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
-  document.getElementById("back").href = lastSheet ? `sheet.html?team=${lastSheet}` : "index.html#teams";
+  document.getElementById("back").href = lastSheet ? `sheet.html?team=${lastSheet}` : "teams.html";
   const head=document.getElementById("headline");
   if(team) head.textContent=`${TEAMS[team].name} Leaderboard`;
   else{ // keep "· 2026–27" together if the headline wraps
@@ -183,7 +183,7 @@ function renderYou(total, mine){
   if(!mine.length){
     el("div","you-label","Your sheets");
     el("p",null, team ? `You haven’t made any ${TEAMS[team].name} picks yet.` : "You haven’t made any picks yet.");
-    link(team ? `sheet.html?team=${team}` : "index.html#teams", team ? "Start this sheet" : "Choose a team");
+    link(team ? `sheet.html?team=${team}` : "teams.html", team ? "Start this sheet" : "Pick Team");
     return;
   }
   const best=mine[0]; // the list is sorted, so the first match is the best

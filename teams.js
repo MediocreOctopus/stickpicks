@@ -1,4 +1,4 @@
-// Shared by every page: team list, colors, theming, and the "Choose Team" menu.
+// Shared by every page: team list, colors, theming, the "Pick Team" menu, tab bar, logo, and app setup.
 /* board = scoreboard background, accent = team highlight, brand = main color for tints and buttons,
    stripe (optional) = forces the edge stripe color when the automatic pick isn't right */
 const TEAMS = {
@@ -69,14 +69,14 @@ function applyTheme(code){
   const m=document.createElement("meta"); m.name="theme-color"; m.content=t.board; document.head.appendChild(m);
 }
 
-/* ───────── "Choose Team" dropdown in the top nav ───────── */
+/* ───────── "Pick Team" dropdown in the top nav (desktop; phones use teams.html) ───────── */
 // Fills <div class="teammenu" id="teamMenu"></div> with a button and a panel of
 // all 32 teams grouped by division. Returns {open, close} so pages can open it.
 function mountTeamMenu(root){
   if(!root) return null;
   const btn=document.createElement("button");
   btn.type="button"; btn.className="teammenu-btn"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","teamMenuPanel");
-  btn.textContent="Choose Team";
+  btn.textContent="Pick Team";
   const panel=document.createElement("div");
   panel.className="teammenu-panel"; panel.id="teamMenuPanel"; panel.hidden=true;
   DIVISIONS.forEach(div=>{
@@ -99,9 +99,8 @@ function mountTeamMenu(root){
   document.addEventListener("click",e=>{ if(!root.contains(e.target)) close(); });
   root.addEventListener("keydown",e=>{ if(e.key==="Escape") close(true); });
   root.addEventListener("focusout",e=>{ if(e.relatedTarget && !root.contains(e.relatedTarget)) close(); });
-  return TEAM_MENU={open,close};
+  return {open,close};
 }
-let TEAM_MENU=null;
 
 /* ───────── Phone tab bar (shown under 560px by styles.css) ───────── */
 const TAB_ICONS={
@@ -116,7 +115,7 @@ function mountTabBar(){
   const page=(location.pathname.split("/").pop()||"index.html").toLowerCase();
   const items=[
     ["home","Home","index.html",page==="index.html"],
-    ["teams","Teams","index.html#teams",page==="sheet.html"||page==="compare.html"],
+    ["teams","Pick Team","teams.html",page==="teams.html"||page==="sheet.html"||page==="compare.html"],
     ["board","Leaders","leaderboard.html",page==="leaderboard.html"],
     ["play","Intermission","intermission.html",page==="intermission.html"],
     ["rules","Rules","rules.html",page==="rules.html"]
@@ -127,10 +126,6 @@ function mountTabBar(){
     if(current) a.setAttribute("aria-current","page");
     a.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[icon]}</svg>`;
     a.append(label);
-    if(icon==="teams") a.addEventListener("click",e=>{
-      if(!TEAM_MENU) return; // no menu on this page: go to the home page's menu
-      e.preventDefault(); e.stopPropagation(); window.scrollTo({top:0}); TEAM_MENU.open();
-    });
     nav.appendChild(a);
   });
   document.body.appendChild(nav);

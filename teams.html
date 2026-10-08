@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" class="home teamspage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pick Team · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-16">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+    </div>
+  </nav>
+
+  <section class="section pickteam">
+    <div class="section-head"><h1>Pick Team</h1><span>Every team has its own sheet. Fill out as many as you like.</span></div>
+    <div id="divisions"></div>
+  </section>
+
+  <footer>Fan-made, not affiliated with the NHL. Team colors are approximations.</footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+<script src="teams.js?v=2026-10-16"></script>
+<script>
+// All 32 teams by division, as tiles in team colours. Marks the sheet you opened last
+// and any sheets with picks saved in this browser.
+(function buildTeams(){
+  let last=null; try{ last=localStorage.getItem("nhl-picks-last-team"); }catch(e){}
+  const started=code=>{ try{ const v=JSON.parse(localStorage.getItem(`nhl-picks-${SEASON}-${code}`)||"{}"); return v && Object.keys(v).length>0; }catch(e){ return false; } };
+  const root=document.getElementById("divisions");
+  DIVISIONS.forEach(div=>{
+    const sec=document.createElement("section"); sec.className="division";
+    const h=document.createElement("h2"); h.textContent=`${div} Division`; sec.appendChild(h);
+    const grid=document.createElement("div"); grid.className="tiles";
+    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
+      const t=TEAMS[c], a=document.createElement("a");
+      a.className="tile"; a.href=`sheet.html?team=${c}`;
+      a.style.setProperty("--t-board",t.board);
+      a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+      a.style.setProperty("--t-ink",inkOn(t.board));
+      const code=document.createElement("span"); code.className="tile-code"; code.textContent=c;
+      const name=document.createElement("span"); name.className="tile-name"; name.textContent=t.name;
+      a.append(code,name);
+      const tag = c===last ? "Last opened" : started(c) ? "Started" : "";
+      if(tag){ const s=document.createElement("span"); s.className="tile-tag"; s.textContent=tag; a.appendChild(s); }
+      grid.appendChild(a);
+    });
+    sec.appendChild(grid); root.appendChild(sec);
+  });
+})();
+</script>
+</body>
+</html>

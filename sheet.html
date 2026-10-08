@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-15">
+<link rel="stylesheet" href="styles.css?v=2026-10-16">
 </head>
 <body>
 <div class="wrap">
@@ -32,7 +32,7 @@
         <div class="board-nav">
           <a class="navlink scriptlink" href="index.html">stickpicks</a>
           <a class="navlink" id="lblink" href="leaderboard.html">Leaderboard</a>
-          <select class="teamsel" id="teamsel" aria-label="Choose a team"></select>
+          <select class="teamsel" id="teamsel" aria-label="Pick team"></select>
         </div>
       </div>
       <div class="sub"><span id="picked">0 games picked</span><span class="save" id="savestate" data-s="local">Saved in this browser</span></div>
@@ -82,8 +82,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-15"></script>
-<script src="teams.js?v=2026-10-15"></script>
+<script src="config.js?v=2026-10-16"></script>
+<script src="teams.js?v=2026-10-16"></script>
 <script>
 
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -524,7 +524,7 @@ if(sb){
 const start=new URL(location.href).searchParams.get("team")?.toUpperCase()
   || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
 if(start && TEAMS[start]) chooseTeam(start);
-else location.replace("index.html#teams"); // no team chosen yet: pick one on the home page
+else location.replace("teams.html"); // no team chosen yet: pick one on the Pick Team page
 </script>
 </body>
 </html>
