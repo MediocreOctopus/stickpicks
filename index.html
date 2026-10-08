@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-09">
+<link rel="stylesheet" href="styles.css?v=2026-10-10">
 </head>
 <body>
 
@@ -37,7 +37,6 @@
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="#today">Today</a>
       <a href="intermission.html">Intermission</a>
       <a href="rules.html">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
@@ -47,22 +46,15 @@
 
   <main class="homegrid">
     <section class="intro">
-      <h1>Call every game.<br><em>Climb the board.</em></h1>
-      <p class="lede">Pick the result and the combined goals for any team’s games.</p>
-      <ul class="chips" aria-label="How scoring works">
-        <li><b>+1</b> right result</li>
-        <li><b>+1</b> exact goals</li>
-        <li>Locks at puck drop</li>
-      </ul>
+      <h1>Pick the game.<br>Pick the goals.<br><em>Climb the board.</em></h1>
       <div class="cta">
         <a class="btn teambtn hidden" id="ctaContinue" href="sheet.html"></a>
-        <button class="btn" type="button" id="ctaPrimary">Choose Team</button>
         <a class="ctalink" href="rules.html">How it works</a>
       </div>
     </section>
 
     <section class="section" id="today">
-      <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">Times in your time zone · scores update every 15 min</span></div>
+      <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">updates every 15 minutes</span></div>
       <div class="games" id="gameCards"></div>
       <div class="empty hidden" id="todayEmpty"></div>
     </section>
@@ -176,8 +168,8 @@
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-09"></script>
-<script src="teams.js?v=2026-10-09"></script>
+<script src="config.js?v=2026-10-10"></script>
+<script src="teams.js?v=2026-10-10"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -197,7 +189,6 @@ function swatch(code){
 /* ───────── Choose Team menu ───────── */
 const teamMenu=mountTeamMenu($("teamMenu"));
 const openTeams=()=>{ window.scrollTo({top:0}); teamMenu.open(); };
-$("ctaPrimary").addEventListener("click",e=>{ e.stopPropagation(); openTeams(); });
 // Older links (and other pages) point at index.html#teams
 if(location.hash==="#teams"){ history.replaceState(null,"",location.pathname+location.search); setTimeout(openTeams,0); }
 
@@ -210,7 +201,6 @@ if(location.hash==="#teams"){ history.replaceState(null,"",location.pathname+loc
   a.style.setProperty("--t-board",t.board);
   a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
   a.classList.remove("hidden");
-  $("ctaPrimary").classList.add("ghost"); // Continue becomes the main button
 })();
 
 /* ───────── News ticker ───────── */
@@ -264,7 +254,7 @@ async function loadToday(){
   if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
   $("todayTitle").textContent = day===today ? "Today’s games" : `Next up · ${fmtDay(day)}`;
-  $("todayNote").textContent = `${data.length} game${data.length===1?"":"s"} · times in your time zone · scores update every 15 min`;
+  $("todayNote").textContent = "updates every 15 minutes";
   data.forEach(g=>{
     const final=!!g.period_type, started=hasStarted(g);
     const card=document.createElement("div"); card.className="gcard";
@@ -299,7 +289,7 @@ async function loadToday(){
     if(g.schedule_state==="PPD"){ left.textContent="Postponed"; }
     else if(final){ left.innerHTML=`<b>Final${g.period_type!=="REG"?" · "+g.period_type:""}</b>`; }
     else if(started){ left.className="live"; left.textContent="In progress"; }
-    else { left.textContent = g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}) : "Time TBD"; }
+    else { left.textContent = g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}) : "Time TBD"; }
     right.textContent = open ? "Picks open" : started && !final ? "Picks locked" : "";
     st.append(left,right); card.appendChild(st);
     box.appendChild(card);

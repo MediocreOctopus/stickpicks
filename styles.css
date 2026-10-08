@@ -249,6 +249,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .chips li{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border:2px solid var(--ink);border-radius:4px;background:var(--panel);font:500 .85rem var(--display);letter-spacing:.08em;text-transform:uppercase}
 .chips b{font:700 1.05rem "Oswald",sans-serif;color:var(--goal)}
 .cta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.intro .cta{margin-top:22px}
 .ctalink{color:var(--muted);font:italic .95rem var(--serif);margin-left:6px}
 .promo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:36px;padding:16px 20px;border-radius:8px;background:var(--navy);color:var(--wool);text-decoration:none;border-left:6px solid var(--goal);font:italic .95rem var(--serif)}
 @media (prefers-color-scheme: dark){ .promo{background:var(--board)} }
