@@ -1,4 +1,4 @@
-# Stick Picks: NHL 2026–27 prediction sheets
+# stickpicks: NHL 2026–27 prediction sheets
 
 Prediction sheets for all 32 NHL teams. Pick a team, then call every regular-season game a win, loss, or overtime loss, and guess the combined goals. Each sheet uses its team's colors, final scores fill in automatically, and leaderboards rank every sheet by points. A home page handles accounts and shows an NHL news ticker and the day's games. It's hosted free on GitHub Pages, with a Supabase database.
 

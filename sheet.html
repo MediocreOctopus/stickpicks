@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Prediction Sheet · Stick Picks 2026–27</title>
+<title>Prediction Sheet · stickpicks 2026–27</title>
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Stick Picks">
-<meta property="og:title" content="Stick Picks · NHL 2026–27 Predictions">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
 <meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
 <meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta name="apple-mobile-web-app-title" content="Stick Picks">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,7 +133,7 @@ async function chooseTeam(code){
   if(!viewing){ try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){} }
   const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
   applyTheme(code);
-  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks · Stick Picks`:`${TEAMS[code].name} · Stick Picks 2026–27`;
+  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks · stickpicks`:`${TEAMS[code].name} · stickpicks 2026–27`;
   document.getElementById("title").textContent=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks`:`${TEAMS[code].name} · 2026–27 predictions`;
   if(viewing){
     document.getElementById("backLb").href=`leaderboard.html?team=${code}`;
@@ -483,7 +483,7 @@ document.getElementById("dl").addEventListener("click",()=>{
   });
   const blob=new Blob([rows.map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=`${viewing?VIEW_USER.toLowerCase()+"-":""}${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-stick-picks.csv`;
+  a.download=`${viewing?VIEW_USER.toLowerCase()+"-":""}${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-stickpicks.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 });
 

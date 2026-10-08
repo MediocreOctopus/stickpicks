@@ -1,6 +1,6 @@
 {
-  "name": "Stick Picks · NHL 2026–27 Predictions",
-  "short_name": "Stick Picks",
+  "name": "stickpicks · NHL 2026–27 Predictions",
+  "short_name": "stickpicks",
   "description": "Call every NHL game for any team and climb the leaderboard.",
   "start_url": "./index.html",
   "scope": "./",

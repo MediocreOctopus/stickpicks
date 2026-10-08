@@ -1,4 +1,4 @@
-// Breakaway: a hockey-themed endless runner for the Stick Picks home page.
+// Breakaway: a hockey-themed endless runner for the stickpicks home page.
 // Jump over pucks, cones, and nets; duck under flying pucks. Everything is drawn
 // with simple canvas shapes (no images). Space / ↑ / W to jump, ↓ / S to duck,
 // or tap the rink (top half jumps, hold the bottom half to duck).

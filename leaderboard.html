@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Leaderboard · Stick Picks 2026–27</title>
+<title>Leaderboard · stickpicks 2026–27</title>
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Stick Picks">
-<meta property="og:title" content="Stick Picks · NHL 2026–27 Predictions">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
 <meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
 <meta property="og:image" content="https://mediocreoctopus.github.io/nhl-picks/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta name="apple-mobile-web-app-title" content="Stick Picks">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +31,7 @@
       </div>
       <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
     </div>
-    <h1 class="lb-headline" id="headline">Stick Picks Leaderboard · 2026–27</h1>
+    <h1 class="lb-headline" id="headline">stickpicks Leaderboard · 2026–27</h1>
     <div class="lb-sub" id="updated">Loading…</div>
   </header>
 
@@ -93,9 +93,9 @@ function setTeam(code){
   if(team) head.textContent=`${TEAMS[team].name} Leaderboard`;
   else{ // keep "· 2026–27" together if the headline wraps
     const yr=document.createElement("span"); yr.className="nowrap"; yr.textContent="· 2026–27";
-    head.replaceChildren("Stick Picks Leaderboard ", yr);
+    head.replaceChildren("stickpicks Leaderboard ", yr);
   }
-  document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · Stick Picks 2026–27`;
+  document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · stickpicks 2026–27`;
   document.getElementById("scope").textContent = team
     ? `Everyone’s ${TEAMS[team].name} prediction sheets. Click a player to see their sheet.`
     : "Every prediction sheet for every team, each ranked on its own. A player who predicts several teams can appear once for each of them. Click a player to see that sheet.";
