@@ -172,7 +172,9 @@ table.lb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .lb td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .lb tr:last-child td{border-bottom:0}
 .lb td.rank{text-align:left;width:3.2rem}
-.lb td.name{text-align:left;font-weight:600;white-space:normal;word-break:break-word}
+.lb td.name{text-align:left;font-weight:600;white-space:normal;min-width:9rem;overflow-wrap:anywhere}
+/* medium widths: team tags only (no full team names) and no "Games picked", so player names keep their room */
+@media (max-width:900px){ .lb .tname{display:none} .lb .opt{display:none} }
 .lb td.pts{font:600 1.4rem var(--display)}
 /* rank medals: gold, silver, bronze */
 .rk{display:inline-flex;align-items:center;justify-content:center;min-width:2rem;height:2rem;border-radius:50%;font:600 1rem var(--display);color:var(--muted)}
@@ -400,7 +402,6 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .teamlink{display:inline-flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none}
 .teamlink:hover .tname{text-decoration:underline}
 .teamcol{text-align:left!important}
-@media (max-width:560px){ .lb .tname{display:none} }
 @media (max-width:560px){ .board{position:static} .gdate{font-size:1rem} }
 
 /* ───── Breakaway mini-game ───── */
