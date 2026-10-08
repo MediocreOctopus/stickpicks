@@ -25,7 +25,7 @@
   try{ hi=Number(localStorage.getItem(HI_KEY))||0; }catch(e){}
 
   // Jersey colors follow the last team sheet the player opened.
-  let jersey={main:"#0E1A26", trim:"#D7263D"};
+  let jersey={main:"#1C2B45", trim:"#9B1C1F"};
   try{
     const code=localStorage.getItem("nhl-picks-last-team");
     if(code && typeof TEAMS!=="undefined" && TEAMS[code]){
@@ -222,7 +222,7 @@
     drawSkater();
 
     // score
-    ctx.font='700 16px "Barlow Condensed", system-ui, sans-serif'; ctx.textAlign="right"; ctx.textBaseline="top";
+    ctx.font='600 16px "Oswald", system-ui, sans-serif'; ctx.textAlign="right"; ctx.textBaseline="top";
     const s=String(Math.floor(score||0)).padStart(5,"0");
     const flashing=state==="running" && t<flashUntil && Math.floor(t*10)%2===0;
     ctx.fillStyle="rgba(24,34,45,.55)"; ctx.fillText(`HI ${String(hi).padStart(5,"0")}`, W-86, 132);
@@ -237,14 +237,14 @@
     ctx.fillStyle="rgba(14,26,38,.72)"; ctx.fillRect(0,0,W,H);
     ctx.textAlign="center"; ctx.fillStyle="#fff";
     if(state==="ready"){
-      ctx.font='800 30px "Barlow Condensed", system-ui, sans-serif'; ctx.textBaseline="middle";
+      ctx.font='700 30px "Oswald", system-ui, sans-serif'; ctx.textBaseline="middle";
       ctx.fillText("BREAKAWAY", W/2, H/2-24);
       ctx.font='500 15px "Barlow", system-ui, sans-serif';
       ctx.fillText(touch?"Tap to start":"Tap or press Space to start", W/2, H/2+8);
       ctx.fillStyle="rgba(255,255,255,.7)"; ctx.font='400 13px "Barlow", system-ui, sans-serif';
       ctx.fillText(W<520?"Jump the obstacles. Duck the slap shots.":"Jump the pucks, cones, and nets. Duck the slap shots.", W/2, H/2+32);
     }else{
-      ctx.font='800 28px "Barlow Condensed", system-ui, sans-serif'; ctx.textBaseline="middle";
+      ctx.font='700 28px "Oswald", system-ui, sans-serif'; ctx.textBaseline="middle";
       ctx.fillText(`SCORE ${Math.floor(score)}`, W/2, H/2-26);
       ctx.font=`500 ${W<520?13:15}px "Barlow", system-ui, sans-serif`;
       ctx.fillText(message, W/2, H/2+4, W-24);

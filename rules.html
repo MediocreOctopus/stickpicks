@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rules · Stick Picks 2026–27</title>
-<meta name="theme-color" content="#0E1A26">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Stick Picks">
@@ -18,13 +19,14 @@
 <meta name="apple-mobile-web-app-title" content="Stick Picks">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-08">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-09">
 </head>
 <body>
+<div class="hem-top" aria-hidden="true"></div>
 <div class="wrap">
   <nav class="topbar" aria-label="Main">
-    <a class="brand" href="index.html">Stick <span>Picks</span> 26–27</a>
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
       <a href="index.html#today">Today</a>
@@ -141,7 +143,8 @@
 
   <footer>Stick Picks is a fan-made prediction game, not affiliated with the NHL or its teams.</footer>
 </div>
-<script src="teams.js?v=2026-10-08"></script>
+<div class="hem" aria-hidden="true"></div>
+<script src="teams.js?v=2026-10-09"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section

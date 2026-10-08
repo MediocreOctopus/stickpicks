@@ -51,8 +51,8 @@ function contrast(a,b){ const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p); return (x+
 const inkOn=bg=>contrast(bg,"#FFFFFF")>=Math.min(4.5,contrast(bg,"#000000"))?"#FFFFFF":"#000000";
 function firstReadable(bg,candidates,min=3){ return candidates.find(c=>contrast(c,bg)>=min)||candidates[candidates.length-1]; }
 
-// Neutral league-wide look, used by the leaderboard's "All teams" view.
-const NEUTRAL_THEME = {board:"#1B2733", accent:"#C9D3DB", brand:"#3A4E60"};
+// Neutral league-wide look, used by the leaderboard's "All teams" view: the navy road sweater.
+const NEUTRAL_THEME = {board:"#1C2B45", accent:"#EFE6D2", brand:"#9B1C1F"};
 
 // Accepts a team code ("SEA") or a theme object like NEUTRAL_THEME.
 function applyTheme(code){
@@ -136,6 +136,19 @@ function mountTabBar(){
   document.body.appendChild(nav);
 }
 document.addEventListener("DOMContentLoaded", mountTabBar);
+
+/* ───────── Logo ───────── */
+// Swaps the "stickpicks" text in each <a class="brand"> for logo.svg (script + hockey stick).
+// The SVG is inlined so it can use the page's Yellowtail font and the --logo-* colours,
+// which switch between the home (light) and road (dark) sweaters.
+function mountLogo(){
+  const spots=document.querySelectorAll("a.brand");
+  if(!spots.length) return;
+  fetch("logo.svg?v=2026-10-09").then(r=>r.ok?r.text():Promise.reject()).then(svg=>{
+    spots.forEach(a=>{ a.innerHTML=svg; a.classList.add("has-logo"); });
+  }).catch(()=>{}); // keep the text fallback
+}
+document.addEventListener("DOMContentLoaded", mountLogo);
 
 /* ───────── Shared helpers ───────── */
 function makeClient(){

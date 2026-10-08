@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Leaderboard · Stick Picks 2026–27</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Stick Picks">
@@ -18,8 +18,8 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-08">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-09">
 </head>
 <body>
 <div class="wrap">
@@ -27,7 +27,7 @@
     <div class="board-top">
       <h1 id="title">Stick Picks Leaderboard · 2026–27</h1>
       <div class="board-nav">
-        <a class="navlink" href="index.html">Stick Picks</a>
+        <a class="navlink scriptlink" href="index.html">stickpicks</a>
         <a class="navlink" id="back" href="sheet.html">My picks</a>
         <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
       </div>
@@ -61,8 +61,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-08"></script>
-<script src="teams.js?v=2026-10-08"></script>
+<script src="config.js?v=2026-10-09"></script>
+<script src="teams.js?v=2026-10-09"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;

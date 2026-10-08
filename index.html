@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Stick Picks · NHL 2026–27 Predictions</title>
-<meta name="theme-color" content="#0E1A26">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏒</text></svg>">
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Stick Picks">
@@ -19,8 +20,8 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-08">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2026-10-09">
 </head>
 <body>
 
@@ -30,9 +31,10 @@
   <div class="ticker-viewport"><div class="ticker-track" id="tickerTrack"></div></div>
 </div>
 
+<div class="hem-top" aria-hidden="true"></div>
 <div class="wrap">
   <nav class="topbar" aria-label="Main">
-    <a class="brand" href="index.html">Stick <span>Picks</span> 26–27</a>
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
       <a href="#today">Today</a>
@@ -171,10 +173,11 @@
     Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN.
   </footer>
 </div>
+<div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-08"></script>
-<script src="teams.js?v=2026-10-08"></script>
+<script src="config.js?v=2026-10-09"></script>
+<script src="teams.js?v=2026-10-09"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -265,6 +268,13 @@ async function loadToday(){
   data.forEach(g=>{
     const final=!!g.period_type, started=hasStarted(g);
     const card=document.createElement("div"); card.className="gcard";
+    // sleeve stripes across the top of the card in each team's colours
+    // (board colour on the cream sweater; the brighter stripe colour on the navy one)
+    [["away",g.away],["home",g.home]].forEach(([side,code])=>{
+      const t=TEAMS[code]; if(!t) return;
+      card.style.setProperty(`--${side}-board`,t.board);
+      card.style.setProperty(`--${side}-stripe`,t.stripe||firstReadable("#22355A",[t.accent,t.brand,"#FFFFFF"],2));
+    });
     const open=!started && g.schedule_state!=="PPD";
     [["away",g.away,g.away_score],["home",g.home,g.home_score]].forEach(([side,code,score])=>{
       const row=document.createElement("div"); row.className="team";
