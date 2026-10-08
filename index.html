@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2026-10-13">
+<link rel="stylesheet" href="styles.css?v=2026-10-14">
 </head>
 <body>
 
@@ -47,16 +47,15 @@
   <main class="homegrid">
     <section class="intro">
       <h1>Pick the game.<br>Pick the goals.<br><em>Climb the board.</em></h1>
-      <div class="cta">
-        <a class="btn teambtn hidden" id="ctaContinue" href="sheet.html"></a>
-        <a class="ctalink" href="rules.html">How it works</a>
+      <div class="cta hidden" id="ctaRow">
+        <a class="btn teambtn" id="ctaContinue" href="sheet.html"></a>
       </div>
       <!-- "Get the stickpicks app": filled in by mountInstall() in teams.js when installing is possible -->
       <div class="installbar hidden" id="installBar"></div>
     </section>
 
     <section class="section" id="today">
-      <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote">updates every 15 minutes</span></div>
+      <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote"></span></div>
       <div class="games" id="gameCards"></div>
       <div class="empty hidden" id="todayEmpty"></div>
     </section>
@@ -170,8 +169,8 @@
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-13"></script>
-<script src="teams.js?v=2026-10-13"></script>
+<script src="config.js?v=2026-10-14"></script>
+<script src="teams.js?v=2026-10-14"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -202,7 +201,7 @@ if(location.hash==="#teams"){ history.replaceState(null,"",location.pathname+loc
   a.href=`sheet.html?team=${code}`; a.textContent=`Continue: ${t.name}`;
   a.style.setProperty("--t-board",t.board);
   a.style.setProperty("--t-stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
-  a.classList.remove("hidden");
+  $("ctaRow").classList.remove("hidden");
 })();
 
 /* ───────── News ticker ───────── */
@@ -241,7 +240,7 @@ const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,
 async function loadToday(){
   if(!sb){ $("todayEmpty").textContent="Connect the database to see today’s games."; $("todayEmpty").classList.remove("hidden"); return; }
   const today=ymd(new Date());
-  const cols="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type";
+  const cols="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
   let {data,error}=await sb.from("games").select(cols).eq("season",SEASON).eq("game_date",today).order("start_utc");
   let day=today;
   if(!error && !data.length){
@@ -256,7 +255,13 @@ async function loadToday(){
   if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
   $("todayTitle").textContent = day===today ? "Today’s games" : `Next up · ${fmtDay(day)}`;
-  $("todayNote").textContent = "updates every 15 minutes";
+  // "Last updated": when the score sync last refreshed these games (the newest updated_at)
+  const last=data.reduce((m,g)=>g.updated_at && g.updated_at>m ? g.updated_at : m, "");
+  if(last){
+    const t=new Date(last), sameDay=ymd(t)===ymd(new Date());
+    const time=t.toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"});
+    $("todayNote").textContent = `Last updated ${sameDay ? "" : t.toLocaleDateString([], {month:"short",day:"numeric"})+", "}${time}`;
+  }else $("todayNote").textContent="";
   data.forEach(g=>{
     const final=!!g.period_type, started=hasStarted(g);
     const card=document.createElement("div"); card.className="gcard";
