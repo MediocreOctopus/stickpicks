@@ -5,7 +5,7 @@
 // ?v=YYYY-MM-DD, so they can be served straight from the cache. Live data (Supabase) is never cached.
 //
 // When bumping the ?v= date in the pages, bump VERSION here too, so the old cache is cleared.
-const VERSION = "2026-11-06";
+const VERSION = "2026-11-07";
 const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 
@@ -39,10 +39,12 @@ self.addEventListener("fetch", event => {
   if(url.hostname.endsWith("goatcounter.com") || url.hostname === "gc.zgo.at") return;
 
   // Pages: network first; fall back to the saved copy of that page (ignoring ?team=…), then the home page.
+  // cache:"no-cache" makes the browser check with GitHub every time instead of reusing its own copy
+  // for up to 10 minutes, so the app shows a new deploy straight away (an unchanged page is a quick 304).
   if(req.mode === "navigate"){
     event.respondWith((async () => {
       try{
-        const fresh = await fetch(req);
+        const fresh = await fetch(req.url, {cache: "no-cache", credentials: "same-origin"});
         if(fresh.ok){ const c = await caches.open(CACHE); c.put(url.pathname.endsWith("/") ? "./" : url.pathname.split("/").pop(), fresh.clone()); }
         return fresh;
       }catch(e){
