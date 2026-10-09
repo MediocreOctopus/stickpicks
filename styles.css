@@ -253,22 +253,37 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
   .navaccount{max-width:9em}
 }
 
-/* ───── Pick Team page: every team as a tile in its colours ───── */
-.pickteam .section-head h1{font:600 clamp(2rem,6vw,2.8rem)/1 var(--display);text-transform:uppercase;margin:0}
-.teamspage .section{margin-top:16px}
-.division{margin-top:22px}
-.division h2{font:600 .85rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:10px}
-.tile{position:relative;display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 14px 10px 16px;border-radius:6px;overflow:hidden;
-  background:var(--t-board);color:var(--t-ink,#fff);text-decoration:none;box-shadow:inset 8px 0 0 var(--t-stripe)}
-.tile::after{content:"";position:absolute;right:0;top:0;bottom:0;width:22px;   /* sleeve stripes */
-  background:linear-gradient(to right,transparent 0 4px,var(--t-stripe) 4px 9px,transparent 9px 13px,var(--t-stripe) 13px 18px,transparent 18px)}
-.tile:hover{filter:brightness(1.12)}
+/* ───── Pick Team page: sweater banner, then every team as a card with its sweater ───── */
+.teamspage .wrap{max-width:1040px}
+.teams-banner{position:relative;margin-top:4px;padding:18px 20px 30px 44px;background:var(--navy);color:var(--wool);border-radius:8px;overflow:hidden}
+[data-scheme="dark"] .teams-banner{background:#14203A;box-shadow:0 0 0 2px var(--ink)}
+.teams-banner::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
+  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+.teams-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;
+  background:linear-gradient(to bottom,#E8463F 0 5px,transparent 5px 8px,var(--wool) 8px 14px)}
+.tb-kicker{font:600 .75rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.teams-banner h1{font:700 clamp(2.2rem,6.5vw,3.2rem)/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:4px 0 0}
+.teams-banner p{font:italic .95rem var(--serif);color:#C9D0DC;margin:8px 0 0}
+.division{margin-top:26px}
+.division .section-head{margin-bottom:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:12px}
+/* a cream card: the team's sweater in a stitched patch, the name, and a team-colour hem along the bottom */
+.tile{position:relative;display:flex;align-items:center;gap:12px;min-height:76px;padding:10px 14px 18px 12px;border:2px solid var(--ink);border-radius:8px;overflow:hidden;
+  background:var(--panel);color:var(--ink);text-decoration:none;transition:transform .12s ease,box-shadow .12s ease}
+.tile::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;
+  background:linear-gradient(to bottom,var(--t-board) 0 3px,transparent 3px 5px,var(--t-stripe) 5px 8px)}
+[data-scheme="dark"] .tile::after{background:linear-gradient(to bottom,var(--t-stripe) 0 3px,transparent 3px 5px,var(--t-board) 5px 8px)}
+.tile:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.14)}
 .tile:focus-visible{outline:3px solid var(--alarm);outline-offset:2px}
-.tile-code{flex:none;font:600 .8rem var(--display);letter-spacing:.1em;opacity:.8;width:2.6rem;padding-left:6px}
-.tile-name{font:600 1.05rem/1.15 var(--display);letter-spacing:.04em;text-transform:uppercase;padding-right:26px}
-.tile-tag{position:absolute;top:6px;right:28px;font:italic .72rem var(--serif);opacity:.85}
-
+.tile-jersey{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#F4EDDC;
+  border:2px solid var(--t-board);box-shadow:inset 0 0 0 3px #F4EDDC,inset 0 0 0 4.5px color-mix(in srgb, var(--t-board) 35%, transparent)}
+.tile-jersey svg{width:84%;height:84%;margin-top:6%;--j1:var(--t-board);--j2:var(--t-stripe)}
+.tile-text{display:grid;gap:2px;min-width:0}
+.tile-name{font:600 1.02rem/1.15 var(--display);letter-spacing:.04em;text-transform:uppercase}
+.tile-code{font:italic .78rem var(--serif);color:var(--muted)}
+.tile-tag{justify-self:start;margin-top:3px;font:600 .62rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink)}
+.tile-tag.is-last{background:var(--gold);border-color:var(--gold);color:#2A1C02}
+@media (prefers-reduced-motion:reduce){ .tile{transition:none} .tile:hover{transform:none} }
 .home .wrap{max-width:1040px}
 /* Desktop: intro beside the account card, today's games full width below.
    Phones and the installed app: headline, account card, Continue button, install bar, today's games. */

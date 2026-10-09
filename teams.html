@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-05">
+<link rel="stylesheet" href="styles.css?v=2026-11-06">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -41,35 +41,50 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </div>
   </nav>
 
-  <section class="section pickteam">
-    <div class="section-head"><h1>Pick Team</h1><span>Every team has its own sheet. Fill out as many as you like.</span></div>
+  <section class="pickteam">
+    <!-- Sweater banner (sleeve stripes, hem), like the home and profile banners -->
+    <header class="teams-banner">
+      <small class="tb-kicker">2026–27 pick sheets</small>
+      <h1>Pick Team</h1>
+      <p>Every team has its own sheet. Fill out as many as you like.</p>
+    </header>
     <div id="divisions"></div>
   </section>
 
   <footer>Fan-made, not affiliated with the NHL. Team colors are approximations. <a href="rules.html">Rules</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-11-05"></script>
+<script src="teams.js?v=2026-11-06"></script>
 <script>
-// All 32 teams by division, as tiles in team colours. Marks the sheet you opened last
-// and any sheets with picks saved in this browser.
+// All 32 teams by division. Each tile is a cream card with the team's sweater (the same jersey
+// drawing as profile pictures) in a stitched patch, and a hem in the team's colours. Marks the
+// sheet you opened last and any sheets with picks saved in this browser.
 (function buildTeams(){
+  ensureJerseyDefs();
   let last=null; try{ last=localStorage.getItem("nhl-picks-last-team"); }catch(e){}
   const started=code=>{ try{ const v=JSON.parse(localStorage.getItem(`nhl-picks-${SEASON}-${code}`)||"{}"); return v && Object.keys(v).length>0; }catch(e){ return false; } };
   const root=document.getElementById("divisions");
   DIVISIONS.forEach(div=>{
+    const codes=Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name));
     const sec=document.createElement("section"); sec.className="division";
-    const h=document.createElement("h2"); h.textContent=`${div} Division`; sec.appendChild(h);
+    const head=document.createElement("div"); head.className="section-head";
+    const h=document.createElement("h2"); h.textContent=`${div} Division`;
+    const n=document.createElement("span"); n.textContent=`${codes.length} teams`;
+    head.append(h,n); sec.appendChild(head);
     const grid=document.createElement("div"); grid.className="tiles";
-    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
+    codes.forEach(c=>{
       const t=TEAMS[c], a=document.createElement("a");
       a.className="tile"; a.href=`sheet.html?team=${c}`;
       teamStyle(a,c);
-      const code=document.createElement("span"); code.className="tile-code"; code.textContent=c;
+      const jersey=document.createElement("span"); jersey.className="tile-jersey"; jersey.setAttribute("aria-hidden","true");
+      jersey.innerHTML='<svg viewBox="0 0 100 100"><use href="#spJersey"/></svg>';
+      const text=document.createElement("span"); text.className="tile-text";
       const name=document.createElement("span"); name.className="tile-name"; name.textContent=t.name;
-      a.append(code,name);
+      const code=document.createElement("span"); code.className="tile-code"; code.textContent=c;
+      text.append(name,code);
+      a.append(jersey,text);
       const tag = c===last ? "Last opened" : started(c) ? "Started" : "";
-      if(tag){ const s=document.createElement("span"); s.className="tile-tag"; s.textContent=tag; a.appendChild(s); }
+      if(tag){ const s=document.createElement("span"); s.className="tile-tag"+(c===last?" is-last":""); s.textContent=tag; text.appendChild(s); }
       grid.appendChild(a);
     });
     sec.appendChild(grid); root.appendChild(sec);
