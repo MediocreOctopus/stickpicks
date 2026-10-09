@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-25">
+<link rel="stylesheet" href="styles.css?v=2026-10-26">
 </head>
 <body>
 
@@ -55,6 +55,13 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <h1>Pick the game.<br>Pick the goals.<br><em>Climb the board.</em></h1>
       <!-- "Get the stickpicks app": filled in by mountInstall() in teams.js when installing is possible -->
       <div class="installbar hidden" id="installBar"></div>
+    </section>
+
+    <!-- Up next: the next few days of games on your sheets, picked right here -->
+    <section class="section upnext hidden" id="upnext" aria-live="polite">
+      <div class="section-head"><h2>Up next on your sheets</h2><span id="upnextNote"></span></div>
+      <div class="uprows" id="upnextRows"></div>
+      <p class="upnext-hint">Picks are from your sheet’s team side and lock at puck drop.</p>
     </section>
 
     <section class="section" id="today">
@@ -135,6 +142,17 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <h2 id="welcome">Welcome back</h2>
         <p class="hint hidden" id="acctNote"></p>
 
+        <!-- Since your last visit: points, results and rank change since you were last here -->
+        <section class="recap hidden" id="recap" aria-label="Since your last visit">
+          <h3 class="acct-label" id="recapTitle">Since your last visit</h3>
+          <div class="recap-stats">
+            <div><b id="recapPts">+0</b><span>points</span></div>
+            <div><b id="recapHits">0/0</b><span>results right</span></div>
+            <div><b id="recapRank">—</b><span id="recapRankLbl">best rank</span></div>
+          </div>
+          <p class="recap-note" id="recapNote"></p>
+        </section>
+
         <form id="fName" class="hidden" novalidate>
           <div class="field"><label for="nmInput" id="nmLabel">Choose a username for the leaderboard</label><input id="nmInput" type="text" maxlength="20" autocomplete="nickname" placeholder="3–20 letters, numbers, or _"></div>
           <div class="form-actions">
@@ -169,8 +187,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-25"></script>
-<script src="teams.js?v=2026-10-25"></script>
+<script src="config.js?v=2026-10-26"></script>
+<script src="teams.js?v=2026-10-26"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -468,7 +486,7 @@ async function loadMyStats(){
   list.innerHTML="";   // cleared again: two refreshes can overlap
   if(!rows.length){
     const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Pick Team to start your first sheet.";
-    list.appendChild(li); return;
+    list.appendChild(li); loadRecap([]); loadUpNext([lastTeam()]); return;
   }
   rows.forEach(r=>{
     const li=document.createElement("li"), a=document.createElement("a");
@@ -478,7 +496,215 @@ async function loadMyStats(){
     meta.textContent=`${r.points} pt${Number(r.points)===1?"":"s"} · ${r.total_picks} pick${Number(r.total_picks)===1?"":"s"}`;
     a.append(swatch(r.team), name, meta); li.appendChild(a); list.appendChild(li);
   });
+  const teams=rows.map(r=>r.team);
+  loadRecap(teams);
+  loadUpNext([...teams, lastTeam()]);
 }
+
+const lastTeam=()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } };
+// Sheets started on this device while signed out (their picks are kept in localStorage).
+function localSheetTeams(){
+  const out=[], re=new RegExp(`^nhl-picks-${SEASON}-([A-Z]{3})$`);
+  try{ for(let i=0;i<localStorage.length;i++){ const m=re.exec(localStorage.key(i)||""); if(m && Object.keys(readLocal(m[1])).length) out.push(m[1]); } }catch(e){}
+  return [...out, lastTeam()];
+}
+function readLocal(team){
+  try{
+    const raw=JSON.parse(localStorage.getItem(`nhl-picks-${SEASON}-${team}`)||"{}")||{};
+    return Object.fromEntries(Object.entries(raw).map(([k,v])=>[k, typeof v==="string"?{o:v}:v]).filter(([,v])=>v&&(v.o||v.g!=null)));
+  }catch(e){ return {}; }
+}
+const shortDay=iso=>{
+  const d=new Date(iso), today=new Date(), tmr=new Date(); tmr.setDate(today.getDate()+1);
+  if(ymd(d)===ymd(today)) return "Today";
+  if(ymd(d)===ymd(tmr)) return "Tomorrow";
+  return d.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"});
+};
+const clock=iso=>iso?new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}):"Time TBD";
+
+/* ───────── Since your last visit ───────── */
+// A "visit" starts after 3+ hours away. The recap compares now with the start of your previous visit
+// and stays the same until you've been away again, so a refresh doesn't wipe it. Kept on this device.
+const VISIT_GAP=3*60*60*1000;
+async function loadRecap(teams){
+  const box=$("recap");
+  if(!currentUser){ box.classList.add("hidden"); return; }
+  const key=`stickpicks-recap-${currentUser.id}`, now=Date.now();
+  let st=null; try{ st=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}
+  if(!st?.last || now-st.last.at>VISIT_GAP) st={base: st?.last ? {...st.last} : null, last:{at:now}};
+  // best rank right now (every sheet ranked on its own; ties share a rank)
+  let rank=null, of=0;
+  if(profile?.username){
+    const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
+    if(board?.length){
+      of=board.length; let r=0, prev=null;
+      board.forEach((x,i)=>{ const p=Number(x.points); if(p!==prev){ r=i+1; prev=p; } if(rank===null && x.username.toLowerCase()===profile.username.toLowerCase()) rank=r; });
+    }
+  }
+  st.last.at=now; st.last.rank=rank;
+  try{ localStorage.setItem(key, JSON.stringify(st)); }catch(e){}
+  const base=st.base;
+  if(!base || !teams.length){ box.classList.add("hidden"); return; }
+  // games on your sheets that went final since then (games already under way at your last visit count too)
+  const since=new Date(base.at-3*60*60*1000).toISOString(), list=teams.join(",");
+  const {data:games}=await sb.from("games").select("game_id,home,away,home_score,away_score,period_type,start_utc")
+    .eq("season",SEASON).not("period_type","is",null).gt("start_utc",since).or(`home.in.(${list}),away.in.(${list})`);
+  const ids=(games||[]).map(g=>g.game_id);
+  const {data:tp}= ids.length ? await sb.from("team_picks").select("team,game_id,pick,goals").in("game_id",ids) : {data:[]};
+  let pts=0, oHit=0, oOf=0, gHit=0, gOf=0, finals=0;
+  (games||[]).forEach(g=>teams.forEach(team=>{
+    if(g.home!==team && g.away!==team) return;
+    const p=(tp||[]).find(r=>r.team===team && r.game_id===g.game_id); if(!p) return;
+    const sc=scorePick(g,team,{o:p.pick||undefined,g:p.goals??undefined}); if(!sc) return;
+    finals++; pts+=sc.points;
+    if(sc.outcomeHit!==null){ oOf++; if(sc.outcomeHit) oHit++; }
+    if(sc.goalsHit!==null){ gOf++; if(sc.goalsHit) gHit++; }
+  }));
+  const moved = rank!==null && base.rank!=null ? base.rank-rank : 0;
+  if(!finals && !moved){ box.classList.add("hidden"); return; }
+  $("recapTitle").textContent=`Since your last visit · ${new Date(base.at).toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"})}`;
+  $("recapPts").textContent=`+${pts}`;
+  $("recapHits").textContent=oOf?`${oHit}/${oOf}`:"—";
+  const rk=$("recapRank"); rk.textContent=rank?`#${rank}`:"—";
+  if(moved){ const m=document.createElement("small"); m.className=moved>0?"up":"down"; m.textContent=`${moved>0?"▲":"▼"}${Math.abs(moved)}`; rk.append(" ",m); }
+  $("recapRankLbl").textContent = rank ? `best rank of ${of}` : "best rank";
+  $("recapNote").textContent = finals
+    ? `${finals} game${finals===1?"":"s"} you picked went final${gOf?` · exact goals ${gHit}/${gOf}`:""}.`
+    : "No new finals, but the board moved.";
+  box.classList.remove("hidden");
+}
+
+/* ───────── Up next: pick the next few days of games right here ───────── */
+// Same rules and saving as the pick sheet: picks are from the sheet team's side, kept on this
+// device, and saved to your account when signed in. Picks lock at puck drop (the database enforces it).
+const UP_DAYS=3, GOAL_MAX=20;
+let upGames={}, upPicks={}, upPending={};
+async function loadUpNext(teams){
+  const sec=$("upnext");
+  teams=[...new Set(teams)].filter(t=>t && TEAMS[t]);
+  if(!sb || !teams.length || Object.keys(upPending).length){ if(!teams.length) sec.classList.add("hidden"); return; }
+  const now=new Date(), until=new Date(now.getTime()+UP_DAYS*24*60*60*1000), list=teams.join(",");
+  const {data,error}=await sb.from("games").select("game_id,game_date,start_utc,home,away,schedule_state,period_type")
+    .eq("season",SEASON).gt("start_utc",now.toISOString()).lt("start_utc",until.toISOString())
+    .or(`home.in.(${list}),away.in.(${list})`).order("start_utc");
+  if(error){ sec.classList.add("hidden"); return; }
+  upPicks={}; teams.forEach(t=>upPicks[t]=readLocal(t));
+  const items=[];
+  data.filter(g=>g.schedule_state!=="PPD").forEach(g=>teams.forEach(t=>{ if(g.home===t||g.away===t) items.push({g,team:t}); }));
+  if(currentUser && data.length){   // signed in: your account is the source of truth for these games
+    const {data:tp}=await sb.from("team_picks").select("team,game_id,pick,goals").in("game_id",data.map(g=>g.game_id));
+    items.forEach(({g,team})=>{
+      const r=(tp||[]).find(x=>x.team===team && x.game_id===g.game_id), id=String(g.game_id);
+      if(r) upPicks[team][id]={o:r.pick||undefined,g:r.goals??undefined}; else delete upPicks[team][id];
+    });
+  }
+  upGames=Object.fromEntries(data.map(g=>[String(g.game_id),g]));
+  const box=$("upnextRows"); box.innerHTML="";
+  if(!items.length){
+    const p=document.createElement("p"); p.className="upnext-empty";
+    p.textContent=`No games on your sheets in the next ${UP_DAYS} days.`; box.appendChild(p);
+  }
+  items.forEach(({g,team})=>box.appendChild(upRow(g,team)));
+  upCount(); sec.classList.remove("hidden");
+}
+function upRow(g, team){
+  const t=TEAMS[team], home=g.home===team, oppCode=home?g.away:g.home, id=String(g.game_id);
+  const row=document.createElement("div"); row.className="game upgame"+(home?" is-home":""); row.dataset.id=id; row.dataset.team=team;
+  // each row wears its sheet team's colours (selected picks, home-game edge)
+  row.style.setProperty("--board",t.board); row.style.setProperty("--board-ink",inkOn(t.board));
+  row.style.setProperty("--stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
+  row.innerHTML=`
+    <span class="gdate"><b>${shortDay(g.start_utc)}</b><small>${clock(g.start_utc)}</small></span>
+    <span class="opp"><span class="oppline"><span class="sw"></span><a class="upname"></a></span><span class="gmeta"><span class="upstate"></span></span></span>
+    <span class="picks" role="group">
+      <button type="button" data-v="W" aria-pressed="false" aria-label="Win">W</button>
+      <button type="button" data-v="L" aria-pressed="false" aria-label="Loss">L</button>
+      <button type="button" data-v="OTL" aria-pressed="false" aria-label="Overtime loss">OTL</button>
+    </span>
+    <span class="goals" role="group">
+      <span class="glabel" aria-hidden="true">Goals</span>
+      <button type="button" class="gbtn" data-d="-1" aria-label="One fewer goal">−</button>
+      <input class="gin" type="text" inputmode="numeric" maxlength="2" placeholder="?" autocomplete="off">
+      <button type="button" class="gbtn" data-d="1" aria-label="One more goal">+</button>
+    </span>
+    <span class="ptsbadge"></span>`;
+  const sw=teamStyle(row.querySelector(".sw"),team); sw.textContent=team; sw.title=`Your ${t.name} sheet`;
+  const a=row.querySelector(".upname"); a.href=`sheet.html?team=${team}&game=${id}`;
+  a.textContent=`${home?"vs":"at"} ${TEAMS[oppCode]?.name||oppCode}`; a.title=`Open your ${t.name} sheet at this game`;
+  const what=`${t.name} ${home?"vs":"at"} ${TEAMS[oppCode]?.name||oppCode}`;
+  row.querySelector(".picks").setAttribute("aria-label",`Outcome for the ${what}`);
+  row.querySelector(".goals").setAttribute("aria-label",`Combined goals for the ${what}`);
+  row.querySelector(".gin").setAttribute("aria-label",`Predicted combined goals, ${what}`);
+  upPaint(row);
+  return row;
+}
+function upPaint(row, state){
+  const p=upPicks[row.dataset.team]?.[row.dataset.id], g=upGames[row.dataset.id];
+  row.querySelectorAll(".picks button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===p?.o)));
+  const inp=row.querySelector(".gin"); if(document.activeElement!==inp) inp.value=p?.g??"";
+  row.querySelector(".goals").classList.toggle("set", p?.g!=null);
+  const locked=!g || hasStarted(g); row.classList.toggle("locked",locked);
+  row.querySelectorAll(".picks button, .goals button, .gin").forEach(el=>el.disabled=locked);
+  const st=row.querySelector(".upstate");
+  if(state){ st.textContent=state.text; st.dataset.s=state.kind||""; }
+  else if(locked){ st.textContent="Locked at puck drop"; st.dataset.s=""; }
+  else{ const done=p?.o && p?.g!=null; st.textContent = done ? "Picked" : p ? "Half picked" : "Not picked yet"; st.dataset.s = done ? "ok" : "todo"; }
+}
+function upCount(){
+  let left=0;
+  document.querySelectorAll("#upnextRows .upgame:not(.locked)").forEach(r=>{ const p=upPicks[r.dataset.team]?.[r.dataset.id]; if(!(p?.o && p?.g!=null)) left++; });
+  $("upnextNote").textContent = left ? `${left} left to pick` : document.querySelector("#upnextRows .upgame") ? "All picked ✓" : "";
+}
+function upSet(team, id, field, value){
+  const p=upPicks[team], prev=p[id]?{...p[id]}:undefined, next={...(p[id]||{})};
+  if(value==null) delete next[field]; else next[field]=value;
+  if(!next.o && next.g==null) delete p[id]; else p[id]=next;
+  try{ localStorage.setItem(`nhl-picks-${SEASON}-${team}`, JSON.stringify(p)); }catch(e){}
+  return prev;
+}
+async function upSave(row, prev){
+  const team=row.dataset.team, id=row.dataset.id, p=upPicks[team][id];
+  if(!currentUser){ upPaint(row,{text:"Saved on this device · sign in to join the board",kind:"ok"}); upCount(); return; }
+  upPaint(row,{text:"Saving…"});
+  const q = p
+    ? sb.from("team_picks").upsert({user_id:currentUser.id, team, game_id:Number(id), pick:p.o||null, goals:p.g??null, updated_at:new Date().toISOString()},{onConflict:"user_id,team,game_id"})
+    : sb.from("team_picks").delete().eq("user_id",currentUser.id).eq("team",team).eq("game_id",Number(id));
+  const {error}=await q;
+  if(!error){ upPaint(row,{text:p?"Saved ✓":"Cleared",kind:"ok"}); upCount(); return; }
+  if(hasStarted(upGames[id])){   // the database refused: the game has started
+    if(prev) upPicks[team][id]=prev; else delete upPicks[team][id];
+    upPaint(row,{text:"Puck dropped: this game is locked",kind:"err"});
+  }else upPaint(row,{text:"Couldn’t save online; saved on this device",kind:"err"});
+  upCount();
+}
+function upQueue(row, prev){
+  const k=row.dataset.team+row.dataset.id;
+  if(!upPending[k]) upPending[k]={prev};
+  clearTimeout(upPending[k].t);
+  upPending[k].t=setTimeout(()=>{ const p=upPending[k].prev; delete upPending[k]; upSave(row,p); },600);
+}
+const upOpen=row=>{ const g=upGames[row.dataset.id]; if(!g||hasStarted(g)){ upPaint(row); upCount(); return false; } return true; };
+$("upnextRows").addEventListener("click",e=>{
+  const b=e.target.closest(".picks button, .gbtn"); if(!b) return;
+  const row=b.closest(".upgame"), team=row.dataset.team, id=row.dataset.id;
+  if(!upOpen(row)) return;
+  if(b.classList.contains("gbtn")){
+    const cur=upPicks[team][id]?.g;
+    const val = cur==null ? 6 : Math.min(GOAL_MAX, Math.max(0, cur+Number(b.dataset.d)));
+    const prev=upSet(team,id,"g",val); upPaint(row,{text:"Saving…"}); upQueue(row,prev); return;
+  }
+  const prev=upSet(team,id,"o", upPicks[team][id]?.o===b.dataset.v ? null : b.dataset.v);
+  upPaint(row); upSave(row,prev);
+});
+$("upnextRows").addEventListener("input",e=>{
+  const inp=e.target.closest(".gin"); if(!inp) return;
+  const row=inp.closest(".upgame"); if(!upOpen(row)) return;
+  inp.value=inp.value.replace(/\D/g,"").slice(0,2);
+  const val = inp.value==="" ? null : Math.min(GOAL_MAX, Number(inp.value));
+  const prev=upSet(row.dataset.team,row.dataset.id,"g",val);
+  row.querySelector(".goals").classList.toggle("set", val!=null); upQueue(row,prev);
+});
+setInterval(()=>document.querySelectorAll("#upnextRows .upgame").forEach(r=>{ if(!r.classList.contains("locked") && hasStarted(upGames[r.dataset.id])){ upPaint(r); upCount(); } }), 30*1000);
 
 /* ───────── Start ───────── */
 if(!sb){ show("pOffline"); }
@@ -491,6 +717,8 @@ else{
       if(session){ if(currentUser?.id!==session.user.id) renderSignedIn(session); }
       else {
         currentUser=null; profile=null; setNavAccount();
+        $("recap").classList.add("hidden");
+        loadUpNext(localSheetTeams());   // guests: sheets started on this device
         if(wantSignin){ wantSignin=false; openForms("in"); } else show("pWelcome");
       }
       if(location.hash.includes("access_token")) history.replaceState(null,"",location.pathname+location.search);
@@ -499,7 +727,7 @@ else{
   loadNews(); loadToday();
   setInterval(loadNews, 10*60*1000);
   setInterval(loadToday, 5*60*1000);
-  document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadToday(); if(currentUser) loadMyStats(); } });
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadToday(); if(currentUser) loadMyStats(); else loadUpNext(localSheetTeams()); } });
   addEventListener("online",()=>{ loadNews(); loadToday(); }); // back from offline
 }
 if(wantSignin) $("account").scrollIntoView({block:"center"});
