@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-04">
+<link rel="stylesheet" href="styles.css?v=2026-11-05">
 </head>
 <body>
 
@@ -57,11 +57,11 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <div class="installbar hidden" id="installBar"></div>
     </section>
 
-    <!-- Up next: the next few days of games on your sheets, picked right here -->
+    <!-- Upcoming Picks: the next few days of games on your sheets, grouped by day, picked right here -->
     <section class="section upnext hidden" id="upnext" aria-live="polite">
-      <div class="section-head"><h2>Up next on your sheets</h2><span id="upnextNote"></span></div>
+      <div class="section-head"><h2>Upcoming Picks</h2><span id="upnextNote"></span></div>
       <div class="uprows" id="upnextRows"></div>
-      <p class="upnext-hint">Picks are from your sheet’s team side and lock at puck drop. <a class="hidden" id="upnextRemind" href="profile.html#reminders">Get a reminder before puck drop</a></p>
+      <p class="upnext-hint">Picks lock at puck drop. <a class="hidden" id="upnextRemind" href="profile.html#reminders">Get a reminder</a></p>
     </section>
 
     <section class="section" id="today">
@@ -202,8 +202,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-04"></script>
-<script src="teams.js?v=2026-11-04"></script>
+<script src="config.js?v=2026-11-05"></script>
+<script src="teams.js?v=2026-11-05"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -699,7 +699,7 @@ async function loadRecap(teams){
   box.classList.remove("hidden");
 }
 
-/* ───────── Up next: pick the next few days of games right here ───────── */
+/* ───────── Upcoming Picks: pick the next few days of games right here ───────── */
 // Same rules and saving as the pick sheet: picks are from the sheet team's side, kept on this
 // device, and saved to your account when signed in. Picks lock at puck drop (the database enforces it).
 const UP_DAYS=3, GOAL_MAX=20;
@@ -729,7 +729,13 @@ async function loadUpNext(teams){
     const p=document.createElement("p"); p.className="upnext-empty";
     p.textContent=`No games on your sheets in the next ${UP_DAYS} days.`; box.appendChild(p);
   }
-  items.forEach(({g,team})=>box.appendChild(upRow(g,team)));
+  // a navy day header ("Today", "Tomorrow", "Sun, Oct 11") above each day's games
+  let lastDay=null;
+  items.forEach(({g,team})=>{
+    const day=shortDay(g.start_utc);
+    if(day!==lastDay){ const h=document.createElement("div"); h.className="upday"; h.textContent=day; box.appendChild(h); lastDay=day; }
+    box.appendChild(upRow(g,team));
+  });
   upCount(); sec.classList.remove("hidden");
   // signed in, reminders possible here but not on yet: point to the switch on the profile
   const s=pushSupport(), remind=$("upnextRemind");
@@ -742,7 +748,7 @@ function upRow(g, team){
   row.style.setProperty("--board",t.board); row.style.setProperty("--board-ink",inkOn(t.board));
   row.style.setProperty("--stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
   row.innerHTML=`
-    <span class="gdate"><b>${shortDay(g.start_utc)}</b><small>${clock(g.start_utc)}</small></span>
+    <span class="gdate"><b>${clock(g.start_utc)}</b></span>
     <span class="opp"><span class="oppline"><span class="sw"></span><a class="upname"></a></span><span class="gmeta"><span class="upstate"></span></span></span>
     <span class="picks" role="group">
       <button type="button" data-v="W" aria-pressed="false" aria-label="Win">W</button>

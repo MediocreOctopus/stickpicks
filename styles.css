@@ -850,3 +850,9 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .acct-reach .acct-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .acct-reach .acct-label a{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--ink)}
 .reach-list{display:grid;gap:12px}
+/* Upcoming Picks: a navy day header with a red-and-cream hem above each day's games */
+.upday{position:relative;padding:8px 14px 13px;background:var(--navy);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+[data-scheme="dark"] .upday{background:#14203A}
+.upday::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+.uprows .upgame .gdate b{font:600 .95rem var(--display);letter-spacing:.02em}
+@media (max-width:760px){ .uprows .upgame .gdate b{font:italic .78rem var(--serif);letter-spacing:0} }
