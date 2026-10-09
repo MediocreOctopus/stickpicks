@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-09">
+<link rel="stylesheet" href="styles.css?v=2026-11-10">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -42,22 +42,25 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </div>
   </nav>
 
-  <header class="rules-hero">
-    <h1>The rules</h1>
-    <p class="lede">Two predictions per game, up to two points per game, and every team sheet competes on its own.</p>
-    <div class="points-strip" aria-label="Scoring summary">
-      <div><b>+1</b><span>Correct result<br><small>W, L, or OTL</small></span></div>
-      <div><b>+1</b><span>Exact combined goals<br><small>both teams together</small></span></div>
-      <div class="max"><b>2</b><span>Most points<br><small>from one game</small></span></div>
-    </div>
+  <!-- Sweater banner, like the Pick Teams and leaderboard banners -->
+  <header class="teams-banner rules-banner">
+    <small class="tb-kicker">2026–27 season</small>
+    <h1>The Rules</h1>
+    <p>Two predictions per game, up to two points per game, and every team sheet competes on its own.</p>
   </header>
 
-  <ul class="basics">
+  <div class="points-strip" aria-label="Scoring summary">
+    <div><b class="medal">+1</b><span>Correct result<small>W, L, or OTL</small></span></div>
+    <div><b class="medal red">+1</b><span>Exact combined goals<small>both teams together</small></span></div>
+    <div><b class="medal gold">2</b><span>Most points<small>from one game</small></span></div>
+  </div>
+
+  <ol class="basics">
     <li><b>Pick a team.</b> Each team’s sheet lists all its games. Fill out as many sheets as you like.</li>
     <li><b>Call each game</b> from that team’s side: <span class="pill w">W</span> any win, <span class="pill l">L</span> regulation loss, <span class="pill otl">OTL</span> overtime or shootout loss. Add the combined goals.</li>
     <li><b>Picks lock at puck drop.</b> Change them as often as you like until then.</li>
     <li><b>Every sheet ranks on its own</b> on the leaderboard. Ties share a rank.</li>
-  </ul>
+  </ol>
 
   <article class="rules">
     <h2 class="rules-more">The details</h2>
@@ -71,6 +74,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <dd>Set the total number of goals both teams will score, using <b>−</b> and <b>+</b> or by typing a number.</dd>
       </dl>
       <p>You can make one prediction without the other, and you can change either one as often as you like until the game starts. You can fill out as many team sheets as you want.</p>
+      <p>Short on time? <b>Upcoming Picks</b> on the <a href="index.html">home page</a> lists the next few days of games for every sheet you’ve started, and you can pick them right there.</p>
       <p>To have your picks count, <a href="index.html#signin">sign in</a> and choose a username. Picks made while signed out are saved only in that browser, and they’re added to your account the next time you open that sheet while signed in, as long as those games haven’t started.</p>
     </details>
 
@@ -115,7 +119,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 
     <details id="locking">
       <summary>Locking and schedule changes</summary>
-      <p>Both predictions for a game lock at <b>puck drop</b>, the scheduled start time. After that, they can’t be added, changed, or cleared, and the site enforces this, not just the buttons. “Clear all picks” only clears games that haven’t started.</p>
+      <p>Both predictions for a game lock at <b>puck drop</b>, the scheduled start time. After that, they can’t be added, changed, or cleared, and the site enforces this, not just the buttons. “Clear all picks” (in a sheet’s <b>More</b> menu) only clears games that haven’t started.</p>
       <p>If the NHL moves a game, its picks follow the new start time. A game with no final score never awards points.</p>
     </details>
 
@@ -124,7 +128,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <ul class="bullets">
         <li><b>Every sheet is ranked on its own.</b> Points are never added together across sheets. If you fill out the Kraken and the Maple Leafs, you have two separate entries.</li>
         <li><b>Team leaderboards</b> rank everyone’s sheets for one team, head to head.</li>
-        <li><b>The All teams leaderboard</b> ranks every sheet for every team in one list, so the same player can appear more than once, once per team.</li>
+        <li><b>The All-Teams leaderboard</b> ranks every sheet for every team in one list, so the same player can appear more than once, once per team. Use <b>Switch board</b> to move between boards.</li>
         <li><b>Ties:</b> sheets with the same points share a rank.</li>
         <li><b>Viewing other players:</b> on a leaderboard, click a player’s name to open their profile (picture, points, best rank, and sheets; never their email or settings), or click the team to open that player’s pick sheet. Picks are revealed at puck drop, so for games that haven’t started you can only see <i>whether</i> a pick was made, not what it is. From any player’s sheet, <b>Compare side by side</b> lines up your picks against theirs for the same team. Your email address is never shown.</li>
       </ul>
@@ -139,18 +143,20 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <details><summary>What are the W–L–OTL record and “standings pts” on my sheet?</summary><p>That’s your predicted season record for the team, using NHL standings points (2 for a win, 1 for an overtime loss). It’s just for fun and doesn’t affect your stickpicks score.</p></details>
       <details><summary>Can other players see my picks?</summary><p>Yes, once each game starts. Anyone can open your sheet from the leaderboard, but your picks for upcoming games stay hidden until puck drop, so nobody can copy them.</p></details>
       <details><summary>Can I change my username?</summary><p>Yes, from Settings on your <a href="profile.html">profile</a> (the Me tab, or your name in the top bar). Your points stay with you.</p></details>
+      <details><summary>What are badges and streaks?</summary><p>Your profile shows your <b>Hot streak</b> (results right in a row, across all your sheets) and 15 badges you can earn, like <b>Hat Trick</b> (a W, an L and an OTL called right on one sheet), the <b>3rd, 2nd and 1st Star</b> (3, 5 and 10 results right in a row on one sheet), and <b>Captain</b> (#1 on a team leaderboard). Each badge has a progress bar, and the home page shows the ones you’re closest to. They’re just for fun and don’t change your score.</p></details>
+      <details><summary>Can I get a reminder before puck drop?</summary><p>Yes. Turn on <b>Puck-drop reminders</b> in Settings on your <a href="profile.html#reminders">profile</a>. About an hour before a game on one of your sheets, if its result or goals aren’t picked yet, you’ll get a notification. Turn it on for each device you use. On iPhone and iPad, add stickpicks to your Home Screen first (Share → Add to Home Screen), then turn it on in the app.</p></details>
     </section>
   </article>
 
   <div class="cta rules-cta">
-    <a class="btn" href="teams.html">Pick Team</a>
+    <a class="btn" href="teams.html">Pick Teams</a>
     <a class="btn ghost" href="leaderboard.html">See the leaderboard</a>
   </div>
 
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams.</footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-11-09"></script>
+<script src="teams.js?v=2026-11-10"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section

@@ -898,3 +898,26 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleeve and hem stripes */
 [data-scheme="dark"] .lbhead{box-shadow:0 0 0 2px var(--ink)}
 .lbpage .lb-layout{margin-top:22px}
+/* ───── Rules page: sweater banner, felt medals, numbered patches, sweater-band sections ───── */
+.rules-banner{margin-top:4px}
+.rulespage .points-strip{margin-top:16px}
+.rulespage .points-strip div{background:var(--panel);border:2px solid var(--ink);border-radius:8px;padding:12px 14px;color:var(--ink)}
+.rulespage .points-strip span{display:grid;font:600 .95rem var(--display);letter-spacing:.06em;text-transform:uppercase;line-height:1.2}
+.rulespage .points-strip small{font:italic .8rem var(--serif);letter-spacing:0;text-transform:none;color:var(--muted);margin-top:2px}
+.medal{flex:none;display:grid;place-items:center;width:3.2rem;height:3.2rem;border-radius:50%;background:var(--navy);color:var(--wool)!important;
+  font:700 1.35rem var(--display)!important;outline:1.5px dashed rgba(255,255,255,.75);outline-offset:-5px}
+.medal.red{background:#9B1C1F} .medal.gold{background:#C08A2A;color:#2A1C02!important}
+.rulespage .basics{counter-reset:rule}
+.rulespage .basics li{position:relative;counter-increment:rule;padding:12px 14px 12px 60px;border:2px solid var(--ink);border-radius:8px}
+.rulespage .basics li::before{content:counter(rule);position:absolute;left:12px;top:10px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  background:var(--navy);color:var(--wool);font:700 1rem var(--display);outline:1.2px dashed rgba(255,255,255,.75);outline-offset:-4px}
+[data-scheme="dark"] .rulespage .basics li::before,[data-scheme="dark"] .medal:not(.red):not(.gold){background:#14203A;box-shadow:0 0 0 1.5px var(--wool)}
+.rulespage details{border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.rulespage summary{font:600 1rem var(--display);letter-spacing:.08em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rulespage summary::-webkit-details-marker{display:none}
+.rulespage summary::after{content:"+";font:700 1.3rem/1 var(--display)}
+.rulespage details[open] > summary{position:relative;background:var(--navy);color:var(--wool);border-bottom:0;padding-bottom:18px}
+[data-scheme="dark"] .rulespage details[open] > summary{background:#14203A}
+.rulespage details[open] > summary::after{content:"–"}
+.rulespage details[open] > summary::before{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+.rulespage #faq summary{font-size:.9rem;letter-spacing:.04em}
