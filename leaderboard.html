@@ -113,7 +113,7 @@ function setTeam(code){
   history.replaceState(null,"",url);
   document.getElementById("lbKicker").textContent = team ? "2026–27 · team leaderboard" : "Every team, every sheet";
   const head=document.getElementById("headline");
-  if(team) head.textContent=`${TEAMS[team].name} Leaderboard`;
+  if(team) head.textContent=TEAMS[team].name;   // the kicker above already says "team leaderboard"
   else{ // keep "· 2026–27" together if the headline wraps
     const yr=document.createElement("span"); yr.className="nowrap"; yr.textContent="· 2026–27";
     head.replaceChildren("stickpicks Leaderboard ", yr);
