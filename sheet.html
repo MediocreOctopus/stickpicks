@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" class="sheetpage">
+<html lang="en" class="home sheetpage">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Prediction Sheet · stickpicks 2026–27</title>
+<title>Pick Sheet · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
@@ -25,72 +27,87 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-21">
+<link rel="stylesheet" href="styles.css?v=2026-10-22">
 </head>
 <body>
+<div class="hem-top" aria-hidden="true"></div>
 <div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html" id="lblink">Leaderboard</a>
+      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+    </div>
+  </nav>
 
-  <!-- Sheet -->
+  <!-- Pick sheet -->
   <div id="app">
-    <header class="board" aria-live="polite">
-      <div class="board-top">
-        <h1 id="title">Prediction sheet</h1>
-        <div class="board-nav">
-          <a class="navlink scriptlink" href="index.html">stickpicks</a>
-          <a class="navlink" id="lblink" href="leaderboard.html">Leaderboard</a>
-          <a class="navlink" href="rules.html">Rules</a>
-          <select class="teamsel" id="teamsel" aria-label="Pick team"></select>
+    <!-- Team banner: team colours, sleeve stripes on the left, hem stripes along the bottom = progress -->
+    <header class="sheethead" aria-live="polite">
+      <div class="sh-in">
+        <div class="sh-main">
+          <div class="sh-kicker" id="kicker">2026–27 pick sheet</div>
+          <h1 class="sh-team" id="title">Pick sheet</h1>
+          <div class="sh-chips">
+            <span class="sh-chip" id="picked">0 of 84 picked</span>
+            <span class="sh-chip" id="scorechip">Score 0 pts</span>
+            <span class="sh-chip hidden" id="actual"></span>
+            <span class="sh-chip save" id="savestate" data-s="local">Saved on this device</span>
+            <label class="sh-switch" id="switchTeam"><span aria-hidden="true">Switch team</span><select id="teamsel" aria-label="Switch team"></select></label>
+          </div>
+        </div>
+        <div class="sh-rec">
+          <div class="rec" id="rec">0<span class="dash">–</span>0<span class="dash">–</span>0</div>
+          <div class="sh-recnote" id="recnote">Your predicted record</div>
         </div>
       </div>
-      <div class="sub"><span id="picked">0 games picked</span><span class="save" id="savestate" data-s="local">Saved in this browser</span></div>
-      <div class="record">
-        <div class="rec" id="rec">0<span class="dash">–</span>0<span class="dash">–</span>0</div>
-        <div class="stat"><b id="pts">0</b><span>standings pts</span></div>
-        <div class="stat"><b id="pace">—</b><span id="pacelabel">full-season pace</span></div>
-      </div>
-      <div class="actual" id="actual">Actual record appears here once games are final.</div>
-      <div class="progress"><i id="bar"></i></div>
+      <div class="sh-hem" aria-hidden="true"><i id="bar"></i></div>
     </header>
 
-    <section class="account" id="account">
-      <p id="accountMsg">Picks you make while signed out are saved only in this browser.</p>
-      <a class="plain primary" id="signinLink" href="index.html#signin">Sign in or create an account</a>
-      <button class="plain hidden" id="signout">Sign out</button>
-    </section>
+    <!-- Signed out (or no username yet): one line -->
+    <p class="sh-strip hidden" id="account"></p>
 
-    <section class="viewing hidden" id="viewing" aria-live="polite">
+    <!-- Viewing another player's sheet -->
+    <section class="sh-strip sh-viewing hidden" id="viewing" aria-live="polite">
       <p id="viewMsg"></p>
-      <div class="right">
+      <div class="sh-actions">
         <a class="plain" id="backLb" href="leaderboard.html">Back to leaderboard</a>
         <a class="plain" id="mySheet" href="sheet.html">Open my sheet</a>
         <a class="plain primary" id="compareLink" href="compare.html">Compare side by side</a>
       </div>
     </section>
 
-    <div class="controls">
-      <div class="seg" role="group" aria-label="Show games">
-        <button data-f="all" aria-pressed="true">All</button>
-        <button data-f="home" aria-pressed="false">Home</button>
-        <button data-f="away" aria-pressed="false">Away</button>
-        <button data-f="open" aria-pressed="false">Unpicked</button>
+    <div class="sh-controls">
+      <div class="sh-seg" role="group" aria-label="Show games">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="home" aria-pressed="false">Home</button>
+        <button type="button" data-f="away" aria-pressed="false">Away</button>
+        <button type="button" data-f="open" aria-pressed="false">Unpicked</button>
       </div>
-      <div class="right">
-        <button class="plain" id="dl">Download picks (CSV)</button>
-        <button class="plain" id="clear">Clear all picks</button>
+      <div class="sh-more">
+        <button type="button" class="sh-morebtn" id="moreBtn" aria-expanded="false" aria-controls="moreMenu">More <span aria-hidden="true">⋯</span></button>
+        <div class="sh-menu" id="moreMenu" hidden>
+          <button type="button" id="dl">Download picks (CSV)</button>
+          <a href="rules.html#scoring">How scoring works</a>
+          <button type="button" class="danger" id="clear">Clear all picks</button>
+        </div>
       </div>
     </div>
-    <p class="note" id="note">Tap W, L, or OTL and set the combined goals. Shaded rows are home games. Picks lock at puck drop. <a href="rules.html">Rules</a></p>
 
     <main id="sheet"></main>
     <div class="empty hidden" id="empty"></div>
 
-    <footer>Fan-made, not affiliated with the NHL. Start times can change; times are in your time zone. Standings points: W = 2, OTL = 1. <a href="rules.html">Rules</a></footer>
+    <footer>Fan-made, not affiliated with the NHL. Picks lock at puck drop. Start times can change and are shown in your time zone. Home games have a team-colour edge. Standings points: W = 2, OTL = 1. <a href="rules.html">Rules</a></footer>
   </div>
 </div>
+<div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-21"></script>
-<script src="teams.js?v=2026-10-21"></script>
+<script src="config.js?v=2026-10-22"></script>
+<script src="teams.js?v=2026-10-22"></script>
 <script>
 
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -140,8 +157,9 @@ async function chooseTeam(code){
   if(!viewing){ try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){} }
   const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
   applyTheme(code);
-  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks · stickpicks`:`${TEAMS[code].name} · stickpicks 2026–27`;
-  document.getElementById("title").textContent=viewing?`${VIEW_USER}’s ${TEAMS[code].name} picks`:`${TEAMS[code].name} · 2026–27 predictions`;
+  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} pick sheet · stickpicks`:`${TEAMS[code].name} pick sheet · stickpicks 2026–27`;
+  document.getElementById("title").textContent=TEAMS[code].name;
+  document.getElementById("kicker").textContent=viewing?`${VIEW_USER}’s 2026–27 pick sheet`:"2026–27 pick sheet";
   if(viewing){
     document.getElementById("backLb").href=`leaderboard.html?team=${code}`;
     document.getElementById("mySheet").href=`sheet.html?team=${code}`;
@@ -231,12 +249,12 @@ async function savePick(gid, prev){
     ? sb.from("team_picks").upsert(rowFor(gid), {onConflict:"user_id,team,game_id"})
     : sb.from("team_picks").delete().eq("user_id",userId).eq("team",team).eq("game_id",Number(gid));
   const {error}=await q;
-  if(!error){ setState("ok","Saved to database"); return; }
+  if(!error){ setState("ok","Saved"); return; }
   const g=byId()[gid];
   if(g && hasStarted(g)){ // the database refused because the game already started
     if(prev) picks[gid]=prev; else delete picks[gid];
     saveLocal(); refresh(); setState("err","That game has started, so its picks are locked");
-  }else setState("err","Couldn’t save to database; saved in this browser");
+  }else setState("err","Couldn’t save online; saved on this device");
 }
 
 // Goal totals save shortly after the last change, so tapping + several times sends one save.
@@ -253,7 +271,7 @@ async function clearCloud(){
   if(!sb||!userId) return;
   setState("busy","Saving…");
   const {error}=await sb.from("team_picks").delete().eq("user_id",userId).eq("team",team);
-  error ? setState("err","Couldn’t clear database; cleared in this browser") : setState("ok","Saved to database");
+  error ? setState("err","Couldn’t clear online; cleared on this device") : setState("ok","Saved");
 }
 
 async function loadPicks(){
@@ -262,7 +280,7 @@ async function loadPicks(){
   setState("busy","Loading picks…");
   const {data,error}=await sb.from("team_picks").select("game_id,pick,goals").eq("team",team);
   if(want!==team) return;
-  if(error){ setState("err","Couldn’t load picks from database"); return; }
+  if(error){ setState("err","Couldn’t load your saved picks"); return; }
   if(data.length){
     picks=Object.fromEntries(data.map(r=>[String(r.game_id),{o:r.pick||undefined, g:r.goals??undefined}]));
     saveLocal();
@@ -272,16 +290,21 @@ async function loadPicks(){
     const rows=Object.keys(picks).filter(gid=>G[gid] && !hasStarted(G[gid])).map(rowFor);
     if(rows.length){
       const {error:e2}=await sb.from("team_picks").upsert(rows,{onConflict:"user_id,team,game_id"});
-      if(e2){ setState("err","Couldn’t upload picks to database"); refresh(); return; }
+      if(e2){ setState("err","Couldn’t upload this device’s picks"); refresh(); return; }
     }
   }
-  setState("ok","Saved to database");
+  setState("ok","Saved");
   refresh();
 }
 
 /* ───────── Account (sign-in happens on the home page) ───────── */
-const accountMsg=document.getElementById("accountMsg"), signinLink=document.getElementById("signinLink"),
-      signoutBtn=document.getElementById("signout");
+// One line under the banner, only when there's something to do: sign in, or choose a username.
+const accountMsg=document.getElementById("account");
+function strip(parts){
+  accountMsg.textContent="";
+  parts.forEach(p=>{ if(typeof p==="string") accountMsg.append(p); else { const a=document.createElement("a"); a.href=p.href; a.textContent=p.text; accountMsg.append(a); } });
+  accountMsg.classList.toggle("hidden", !parts.length);
+}
 async function showAccount(session){
   if(viewing){
     // looking at your own sheet through the leaderboard? open it normally
@@ -291,27 +314,16 @@ async function showAccount(session){
     }
     return;
   }
-  const inn=!!session;
-  signinLink.classList.toggle("hidden",inn); signoutBtn.classList.toggle("hidden",!inn);
-  if(!inn){
-    accountMsg.textContent="Picks you make while signed out are saved only in this browser. Sign in to save them to your account and join the leaderboard.";
-    setState("local","Saved in this browser"); return;
+  if(!session){
+    strip(["Picks are saved only on this device. ",{href:"index.html#signin",text:"Sign in"}," to save them to your account and join the leaderboard."]);
+    setState("local","Saved on this device"); forgetMe(); return;
   }
-  accountMsg.textContent=`Signed in as ${session.user.email}. Picks save to your account.`;
-  const {data}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
+  strip([]);
+  const {data}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
   if(userId!==session.user.id) return;
-  accountMsg.textContent="";
-  if(data?.username){
-    accountMsg.append("Signed in as ");
-    const b=document.createElement("b"); b.textContent=data.username; accountMsg.append(b);
-    accountMsg.append(". Picks save to your account.");
-  }else{
-    accountMsg.append(`Signed in as ${session.user.email}. `);
-    const a=document.createElement("a"); a.href="index.html#account"; a.textContent="Choose a username"; accountMsg.append(a);
-    accountMsg.append(" to appear on the leaderboard.");
-  }
+  if(data?.username) rememberMe(data.username, avatarFromProfile(data));
+  else strip([{href:"profile.html",text:"Choose a username"}," to put this sheet on the leaderboard."]);
 }
-signoutBtn.addEventListener("click", async ()=>{ await sb.auth.signOut(); });
 
 /* ───────── Sheet ───────── */
 const sheet=document.getElementById("sheet");
@@ -326,7 +338,7 @@ function renderSheet(){
     if(k!==cur){
       cur=k;
       const sec=document.createElement("section"); sec.className="month";
-      sec.innerHTML=`<div class="month-head"><h2>${MONTHS[mo-1]} ${y}</h2><span class="mrec"></span></div>`;
+      sec.innerHTML=`<div class="month-head"><h2>${MONTHS[mo-1]}<span class="myear"> ${y}</span></h2><span class="mrec"></span></div>`;
       list=document.createElement("div"); sec.appendChild(list); sheet.appendChild(sec);
       groups.push({el:sec, ids:[]});
     }
@@ -337,23 +349,26 @@ function renderSheet(){
     if(g.neutral_site) tags.push(g.venue?`Neutral site: ${g.venue}`:"Neutral site");
     if(g.schedule_state && g.schedule_state!=="OK") tags.push(g.schedule_state==="PPD"?"Postponed":g.schedule_state);
     const row=document.createElement("div");
-    row.className="game"+(home?" home":""); row.dataset.id=gid;
+    row.className="game"+(home?" is-home":""); row.dataset.id=gid;   // not "home": that's the page theme class
+    const day=`${DAYS[new Date(y,mo-1,d).getDay()]} ${MONTHS[mo-1].slice(0,3)} ${d}`;
     row.innerHTML=`
-      <span class="gnum">${i+1}</span>
-      <span class="gdate">${DAYS[new Date(y,mo-1,d).getDay()]} ${MONTHS[mo-1].slice(0,3)} ${d}<small>${localTime(g.start_utc)}</small></span>
-      <span class="opp"><strong></strong><span class="ha">${home?"Home":"Away"}</span>${tags.map(()=>`<span class="tag"></span>`).join("")}<span class="final"></span><span class="verdict"></span></span>
+      <span class="gdate"><b>${day}</b><small>${localTime(g.start_utc)}</small></span>
+      <span class="opp"><span class="oppline"><span class="sw"></span><strong></strong></span><span class="gmeta">${tags.map(()=>`<span class="tag"></span>`).join("")}<span class="final"></span></span></span>
       <span class="picks" role="group">
-        <button data-v="W" aria-pressed="false" aria-label="Win">W</button>
-        <button data-v="L" aria-pressed="false" aria-label="Loss">L</button>
-        <button data-v="OTL" aria-pressed="false" aria-label="Overtime loss">OTL</button>
+        <button type="button" data-v="W" aria-pressed="false" aria-label="Win">W</button>
+        <button type="button" data-v="L" aria-pressed="false" aria-label="Loss">L</button>
+        <button type="button" data-v="OTL" aria-pressed="false" aria-label="Overtime loss">OTL</button>
       </span>
       <span class="goals" role="group">
         <span class="glabel" aria-hidden="true">Goals</span>
         <button type="button" class="gbtn" data-d="-1" aria-label="One fewer goal">−</button>
         <input class="gin" type="text" inputmode="numeric" maxlength="2" placeholder="?" autocomplete="off">
         <button type="button" class="gbtn" data-d="1" aria-label="One more goal">+</button>
-      </span>`;
+      </span>
+      <span class="ptsbadge"></span>`;
+    const sw=teamStyle(row.querySelector(".sw"),oppCode); sw.textContent=oppCode;
     row.querySelector("strong").textContent=`${vs} ${opp}`;
+    row.querySelector(".gdate").setAttribute("aria-label",`${day}, ${localTime(g.start_utc)}, ${home?"home":"away"} game`);
     row.querySelectorAll(".tag").forEach((el,j)=>el.textContent=tags[j]);
     row.querySelector(".picks").setAttribute("aria-label",`Outcome for game ${i+1}, ${vs} ${opp}`);
     row.querySelector(".goals").setAttribute("aria-label",`Combined goals for game ${i+1}, ${vs} ${opp}`);
@@ -385,40 +400,43 @@ function refresh(){
     row.classList.toggle("locked", locked);
     row.classList.toggle("secret", secret);
     row.querySelectorAll(".goals button, .gin").forEach(el=>el.disabled=locked);
-    const fin=row.querySelector(".final"), ver=row.querySelector(".verdict");
+    const fin=row.querySelector(".final"), badge=row.querySelector(".ptsbadge");
     const sc=g?scorePick(g,team,picks[id]):null;
+    badge.textContent=""; badge.removeAttribute("data-p"); badge.removeAttribute("title"); badge.removeAttribute("aria-label");
     if(sc){
       const home=g.home===team, us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
       const suffix=g.period_type==="OT"?" OT":g.period_type==="SO"?" SO":"";
       fin.dataset.r=sc.result; fin.textContent=`Final ${sc.result} ${us}–${them}${suffix} · ${sc.goals} goals`;
       const parts=[];
-      if(sc.outcomeHit!==null){ oGraded++; if(sc.outcomeHit) oHit++; parts.push(`Result ${sc.outcomeHit?"✓":"✗"}`); }
-      if(sc.goalsHit!==null){ gGraded++; if(sc.goalsHit) gHit++; parts.push(`Goals ${sc.goalsHit?"✓":"✗"}`); }
+      if(sc.outcomeHit!==null){ oGraded++; if(sc.outcomeHit) oHit++; parts.push(`result ${sc.outcomeHit?"right":"wrong"}`); }
+      if(sc.goalsHit!==null){ gGraded++; if(sc.goalsHit) gHit++; parts.push(`goals ${sc.goalsHit?"right":"wrong"}`); }
       score+=sc.points;
-      ver.textContent = parts.length ? `${parts.join(" · ")} · +${sc.points}` : "";
-      ver.className = "verdict" + (parts.length ? (sc.points?" hit":" miss") : "");
-    }else{ fin.textContent = secret ? "Picked · revealed at puck drop" : ""; ver.textContent=""; }
+      if(parts.length){   // points badge: gold +2, navy +1, plain +0
+        const why=`${sc.points} point${sc.points===1?"":"s"}: ${parts.join(", ")}`;
+        badge.textContent=`+${sc.points}`; badge.dataset.p=sc.points; badge.title=why; badge.setAttribute("aria-label",why);
+      }
+    }else{ fin.removeAttribute("data-r"); fin.textContent = secret ? "Picked · revealed at puck drop" : ""; }
   });
   const ids=games.map(g=>String(g.game_id));
   const t=tally(ids,pickO);
   const rec=document.getElementById("rec");
   rec.innerHTML=recHTML(t);
   rec.setAttribute("aria-label",`Predicted record ${t.w} wins, ${t.l} losses, ${t.o} overtime losses`);
-  document.getElementById("pts").textContent=t.pts;
-  document.getElementById("pace").textContent=t.n?Math.round(t.pts/t.n*total):"—";
-  document.getElementById("pacelabel").textContent=`${total}-game pace`;
-  document.getElementById("picked").textContent=`${t.n} of ${total} outcomes · ${goalCount} goal totals`+
-    (viewing&&hiddenCount?` · ${hiddenCount} hidden until puck drop`:"");
+  document.getElementById("recnote").textContent = t.n
+    ? `${t.pts} standings pts · ${total}-game pace ${Math.round(t.pts/t.n*total)}`
+    : `${viewing?"Their":"Your"} predicted record`;
+  const picked=document.getElementById("picked");
+  picked.textContent=`${t.n} of ${total} picked`+(viewing&&hiddenCount?` · ${hiddenCount} hidden`:"");
+  picked.title=`${t.n} results and ${goalCount} goal totals picked`+(viewing&&hiddenCount?`; ${hiddenCount} hidden until puck drop`:"");
   document.getElementById("bar").style.width=((t.n+goalCount)/(2*total)*100)+"%";
 
-  const a=tally(ids,actualOf), act=document.getElementById("actual");
-  if(a.n){
-    act.innerHTML=`Actual: <b>${a.w}–${a.l}–${a.o}</b> &nbsp; ${viewing?"Their score":"Your score"}: <b>${score} pt${score===1?"":"s"}</b>`+
-      ((oGraded||gGraded)?` (results ${oHit}/${oGraded}, goals ${gHit}/${gGraded})`:"");
-  }else act.textContent="Your score appears once games are final: up to 2 points per game.";
+  const a=tally(ids,actualOf), act=document.getElementById("actual"), sc=document.getElementById("scorechip");
+  sc.textContent=`${viewing?"Their score":"Score"} ${score} pt${score===1?"":"s"}`;
+  sc.title=(oGraded||gGraded)?`Results ${oHit} of ${oGraded}, goals ${gHit} of ${gGraded}`:"Up to 2 points per game once games are final";
+  act.textContent=a.n?`Actual ${a.w}–${a.l}–${a.o}`:""; act.classList.toggle("hidden",!a.n);
   groups.forEach(gr=>{
     const m=tally(gr.ids,pickO);
-    gr.el.querySelector(".mrec").textContent = m.n ? `${m.w}–${m.l}–${m.o} · ${m.pts} standings pts` : `${gr.ids.length} game${gr.ids.length===1?"":"s"}`;
+    gr.el.querySelector(".mrec").textContent = m.n ? `${m.w}–${m.l}–${m.o} · ${m.pts} pts` : `${gr.ids.length} game${gr.ids.length===1?"":"s"}`;
   });
   applyFilter();
 }
@@ -465,21 +483,28 @@ sheet.addEventListener("input",e=>{
 });
 sheet.addEventListener("focusout",e=>{ if(e.target.closest(".gin")) refresh(); });
 setInterval(()=>{ if(team && games.length) refresh(); }, 30*1000); // lock games as they start
-document.querySelector(".seg").addEventListener("click",e=>{
+document.querySelector(".sh-seg").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b) return;
   filter=b.dataset.f;
-  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  document.querySelectorAll(".sh-seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
   applyFilter();
 });
+
+/* ───────── "More" menu: download, scoring rules, clear ───────── */
+const moreBtn=document.getElementById("moreBtn"), moreMenu=document.getElementById("moreMenu");
+function setMenu(open){ moreMenu.hidden=!open; moreBtn.setAttribute("aria-expanded",String(open)); if(!open) disarm(); }
+moreBtn.addEventListener("click",()=>setMenu(moreMenu.hidden));
+document.addEventListener("click",e=>{ if(!moreMenu.hidden && !e.target.closest(".sh-more")) setMenu(false); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !moreMenu.hidden){ setMenu(false); moreBtn.focus(); } });
 
 const clearBtn=document.getElementById("clear");
 let armed=false, armTimer=null;
 function disarm(){ armed=false; clearBtn.textContent="Clear all picks"; clearBtn.classList.remove("armed"); }
 clearBtn.addEventListener("click",()=>{
-  if(!Object.keys(picks).length) return;
-  if(!armed){ armed=true; clearBtn.textContent="Tap again to clear"; clearBtn.classList.add("armed");
+  if(!Object.keys(picks).length){ clearBtn.textContent="No picks to clear"; clearTimeout(armTimer); armTimer=setTimeout(disarm,2000); return; }
+  if(!armed){ armed=true; clearBtn.textContent="Tap again to clear every upcoming pick"; clearBtn.classList.add("armed");
     clearTimeout(armTimer); armTimer=setTimeout(disarm,4000); return; }
-  clearTimeout(armTimer); disarm();
+  clearTimeout(armTimer); setMenu(false);
   Object.values(pending).forEach(p=>clearTimeout(p.t)); Object.keys(pending).forEach(k=>delete pending[k]);
   const G=byId(); // picks for games that have started stay locked
   picks=Object.fromEntries(Object.entries(picks).filter(([gid])=>G[gid] && hasStarted(G[gid])));
@@ -500,24 +525,24 @@ document.getElementById("dl").addEventListener("click",()=>{
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download=`${viewing?VIEW_USER.toLowerCase()+"-":""}${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-stickpicks.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  setMenu(false);
 });
 
 /* ───────── Start ───────── */
+mountTeamMenu(document.getElementById("teamMenu"));
 buildTeamMenu();
 if(viewing){
   document.documentElement.classList.add("viewmode");
-  document.getElementById("account").classList.add("hidden");
   document.getElementById("viewing").classList.remove("hidden");
-  document.getElementById("teamsel").classList.add("hidden");
+  document.getElementById("switchTeam").classList.add("hidden");
   document.getElementById("clear").classList.add("hidden");
   document.getElementById("savestate").classList.add("hidden");
-  document.getElementById("note").innerHTML='This sheet is view-only. Each game is worth up to 2 points: 1 for the right result and 1 for the exact combined goals. <a href="rules.html">Full rules</a>';
-  document.querySelector('.seg button[data-f="open"]').textContent="Not picked";
+  document.querySelector('.sh-seg button[data-f="open"]').textContent="Not picked";
 }
 if(sb){
   sb.auth.onAuthStateChange((_event, session)=>{
     const newId=session?.user?.id||null;
-    if(newId===userId) return;
+    if(newId===userId && _event!=="INITIAL_SESSION") return;   // the first event always runs, so signed-out visitors get the sign-in line
     userId=newId;
     setTimeout(()=>{ showAccount(session); if(userId && !viewing) loadPicks(); },0); // defer: don't await Supabase calls inside this callback
   });
@@ -526,7 +551,7 @@ if(sb){
   setInterval(reload, 10*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) reload(); });
 }else{
-  document.getElementById("account").innerHTML='<p>Database not connected yet: add your Supabase URL and key to config.js.</p>';
+  strip(["Database not connected yet: add your Supabase URL and key to config.js."]);
 }
 const start=new URL(location.href).searchParams.get("team")?.toUpperCase()
   || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();

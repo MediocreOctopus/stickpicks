@@ -88,28 +88,6 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 .month-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:4px}
 .month-head h2{font-family:"Oswald",sans-serif;font-weight:600;font-size:1.7rem;text-transform:uppercase;margin:0;line-height:1}
 .month-head .mrec{font-family:"Oswald",sans-serif;font-weight:600;font-size:1.05rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.game{display:grid;grid-template-columns:2.2rem 6.4rem 1fr auto;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
-.game.home{background:var(--home);box-shadow:inset 3px 0 0 var(--stripe)}
-.gnum{font-family:"Oswald",sans-serif;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
-.gdate{font-family:"Oswald",sans-serif;font-weight:600;font-size:1.05rem;line-height:1.1}
-.gdate small{display:block;font-family:"Barlow",sans-serif;font-weight:400;font-size:.8rem;color:var(--muted)}
-.opp{min-width:0}
-.opp strong{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.opp .ha{font-size:.8rem;color:var(--muted)}
-.opp .tag{font-size:.72rem;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
-.final{display:inline-block;margin-left:6px;font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums}
-.final[data-r="W"]{color:var(--win)} .final[data-r="L"]{color:var(--loss)} .final[data-r="OTL"]{color:var(--otl)}
-.verdict{font-size:.8rem;font-weight:600;margin-left:6px}
-.verdict.hit{color:var(--win)} .verdict.miss{color:var(--muted)}
-.picks{display:inline-flex;gap:4px}
-.picks button{width:3rem;height:2.4rem;border:1.5px solid var(--line);background:transparent;color:var(--muted);
-  font:700 .95rem "Oswald",sans-serif;letter-spacing:.03em;border-radius:5px;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
-.picks button:hover{border-color:var(--ctl);color:var(--ink)}
-.picks button[data-v="W"][aria-pressed="true"]{background:var(--winbg);border-color:var(--win);color:var(--win)}
-.picks button[data-v="L"][aria-pressed="true"]{background:var(--lossbg);border-color:var(--loss);color:var(--loss)}
-.picks button[data-v="OTL"][aria-pressed="true"]{background:var(--otlbg);border-color:var(--otl);color:var(--otl)}
-.game.locked .picks button{cursor:default}
-.game.locked .picks button:not([aria-pressed="true"]){opacity:.35}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--alarm);outline-offset:2px}
 
 .hidden{display:none!important}
@@ -128,15 +106,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .offline.on{display:block}
 footer{margin-top:28px;font:italic .82rem/1.5 var(--serif);color:var(--muted)}
 
-@media (max-width:560px){
-  .game{grid-template-columns:5.6rem 1fr;grid-template-areas:"d o" "p p";row-gap:8px}
-  .gnum{display:none}
-  .gdate{grid-area:d}.opp{grid-area:o}
-  .picks{grid-area:p;display:grid;grid-template-columns:repeat(3,1fr)}
-  .picks button{width:auto}
-}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media print{.board{position:static}.controls,.account,.teamsel{display:none}.game{break-inside:avoid}}
+@media print{.board{position:static}.controls,.account,.teamsel,.topbar,.tabbar,.sh-controls,.sh-strip,.sh-switch,.hem,.hem-top{display:none}.game{break-inside:avoid}}
 
 /* ───── Navigation + username ───── */
 .board-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -408,30 +379,141 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
   [data-scheme="dark"] .tabbar a[aria-current="page"],[data-scheme="dark"] .tabbar a[aria-current="page"] > svg{color:#9B1C1F;stroke:#9B1C1F}
 }
 
-/* ───── Combined-goals stepper ───── */
+/* ═════════ Pick sheet (sheet.html) ═════════
+   Brand page (cream or navy knit) with the team's colours in one banner: sleeve stripes on the left,
+   hem stripes along the bottom that fill in as you pick (the progress bar). */
 .sheetpage .wrap{max-width:940px}
-.game{grid-template-columns:2.2rem 6.4rem 1fr auto auto}
-.goals{display:inline-flex;align-items:center;gap:1px;border:1.5px solid var(--line);border-radius:6px;padding:1px 2px;height:2.4rem}
-.goals.set{border-color:var(--ctl)}
-.glabel{font:600 .68rem "Barlow",sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:0 3px 0 5px}
-.gbtn{width:1.8rem;height:2rem;border:0;border-radius:4px;background:transparent;color:var(--ink);font:700 1.15rem "Barlow",sans-serif;line-height:1;cursor:pointer}
-.gbtn:hover:not(:disabled){background:color-mix(in srgb, var(--ctl) 14%, transparent)}
-.gin{width:2.1rem;height:2rem;border:0;background:transparent;color:var(--ink);text-align:center;font:700 1.15rem "Oswald",sans-serif;font-variant-numeric:tabular-nums;padding:0}
+html.sheetpage{scroll-padding-top:16px;--edge:var(--board)}
+html.sheetpage[data-scheme="dark"]{--edge:var(--stripe)}
+.sheethead{position:relative;margin-top:4px;background:var(--board);color:var(--board-ink);border-radius:8px;overflow:hidden}
+.sheethead::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
+  background:linear-gradient(to right,transparent 0 5px,var(--stripe) 5px 10px,transparent 10px 14px,var(--stripe) 14px 19px,transparent 19px)}
+.sh-in{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 24px;flex-wrap:wrap;padding:18px 22px 16px 44px}
+.sh-main{min-width:0;flex:1 1 300px}
+.sh-kicker{font:600 .75rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--title)}
+.sh-team{font:700 clamp(1.8rem,5vw,2.6rem)/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:2px 0 0;color:var(--board-ink)}
+.sh-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.sh-chip{display:inline-flex;align-items:center;gap:6px;font:500 .8rem "Barlow",sans-serif;padding:2px 10px;border-radius:999px;
+  border:1px solid color-mix(in srgb, var(--board-ink) 35%, transparent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sh-switch{position:relative;display:inline-flex;align-items:center;gap:7px;font:600 .75rem var(--display);letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 12px;border-radius:999px;background:var(--title);color:var(--board);cursor:pointer}
+.sh-switch::after{content:"";width:.4em;height:.4em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg)}
+.sh-switch select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.sh-switch:focus-within{outline:3px solid var(--alarm);outline-offset:2px}
+.sh-rec{text-align:right;margin-left:auto}
+.sheethead .rec{font:700 clamp(2.4rem,7vw,3.6rem)/.95 var(--display);font-variant-numeric:tabular-nums}
+.sh-recnote{font:italic .82rem var(--serif);color:color-mix(in srgb, var(--board-ink) 75%, transparent);margin-top:4px}
+.sh-hem{position:relative;height:14px;
+  background:linear-gradient(to bottom,color-mix(in srgb, var(--stripe) 30%, transparent) 0 5px,transparent 5px 9px,color-mix(in srgb, var(--stripe) 30%, transparent) 9px 14px)}
+.sh-hem i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .25s;
+  background:linear-gradient(to bottom,var(--stripe) 0 5px,transparent 5px 9px,var(--stripe) 9px 14px)}
+
+/* One-line notes under the banner: sign in / choose a username, or viewing someone else's sheet */
+.sh-strip{margin:12px 0 0;padding:9px 12px;border:2px dashed var(--ink);border-radius:8px;background:var(--panel);font-size:.92rem}
+.sh-strip a{color:var(--ink);font-weight:700}
+.sh-viewing{border-style:solid;border-left:6px solid var(--edge);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.sh-viewing p{margin:0;flex:1 1 260px}
+.sh-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Filter + More menu */
+.sh-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 4px}
+.sh-seg{display:inline-flex;border:2px solid var(--ink);border-radius:4px;overflow:hidden;min-width:0}
+.sh-seg button,.sh-morebtn{border:0;background:transparent;color:var(--ink);font:600 .8rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:7px 11px;cursor:pointer;white-space:nowrap}
+.sh-seg button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink)}
+.sh-more{position:relative;flex:none}
+.sh-morebtn{border:2px solid var(--ink);border-radius:4px;padding:5px 11px}
+.sh-morebtn[aria-expanded="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.sh-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:15;min-width:16rem;background:var(--panel);border:2px solid var(--ink);border-radius:6px;box-shadow:0 12px 28px rgba(0,0,0,.18);overflow:hidden}
+.sh-menu[hidden]{display:none}
+.sh-menu > *{display:block;width:100%;box-sizing:border-box;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);
+  font:600 .82rem var(--display);letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer}
+.sh-menu > :last-child{border-bottom:0}
+.sh-menu > :hover{background:color-mix(in srgb, var(--ink) 7%, transparent)}
+.sh-menu .danger{color:var(--loss)}
+.sh-menu .danger.armed{background:var(--loss);color:#fff}
+
+/* Months */
+.sheetpage .month{margin-top:22px}
+.sheetpage .month-head{border-bottom:4px double var(--ink);padding-bottom:4px}
+.sheetpage .month-head h2{font-size:1.3rem;letter-spacing:.06em}
+.sheetpage .month-head .myear{color:var(--muted);font-weight:500}
+.sheetpage .month-head .mrec{font:italic .85rem var(--serif);color:var(--muted)}
+
+/* Game rows: date · opponent (+ final score) · W/L/OTL · goals · points badge. Home games get a team-colour edge. */
+.game{display:grid;grid-template-columns:6.4rem minmax(0,1fr) auto auto 2.4rem;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.game.is-home{box-shadow:inset 5px 0 0 var(--edge)}
+.gdate b{display:block;font:600 1rem/1.15 var(--display);letter-spacing:.02em}
+.gdate small{display:block;font:italic .75rem var(--serif);color:var(--muted)}
+.opp{min-width:0}
+.oppline{display:flex;align-items:center;gap:8px;min-width:0}
+.oppline strong{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.game .sw{width:2.5rem;height:1.45rem;font-size:.72rem;border-radius:4px}
+.gmeta{display:flex;flex-wrap:wrap;gap:0 6px}
+.gmeta .tag,.final:not(:empty){margin-top:4px}
+.gmeta .tag{font:600 .68rem var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 5px}
+.final:not(:empty){display:inline-block;font:600 .72rem var(--display);letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:3px;color:#fff;background:var(--muted);font-variant-numeric:tabular-nums}
+.final[data-r="W"]{background:#2E7D4F} .final[data-r="L"]{background:#9B1C1F} .final[data-r="OTL"]{background:#A8730F}
+.game.secret .final{background:transparent;color:var(--muted);font:italic .78rem var(--serif);letter-spacing:0;text-transform:none;padding:0}
+.picks{display:inline-flex;gap:4px}
+.picks button{width:2.8rem;height:2.3rem;border:2px solid color-mix(in srgb, var(--ink) 30%, transparent);background:transparent;color:var(--muted);
+  font:600 .95rem var(--display);letter-spacing:.03em;border-radius:4px;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+.picks button:hover{border-color:var(--ink);color:var(--ink)}
+.picks button[aria-pressed="true"]{background:var(--board);border-color:var(--board);color:var(--board-ink);box-shadow:inset 0 -4px 0 var(--stripe)}
+[data-scheme="dark"] .picks button[aria-pressed="true"]{border-color:var(--stripe)}
+.game.locked .picks button{cursor:default}
+.game.locked .picks button:not([aria-pressed="true"]){opacity:.35}
+.goals{display:inline-flex;align-items:stretch;height:2.3rem;border:2px solid color-mix(in srgb, var(--ink) 30%, transparent);border-radius:4px;overflow:hidden}
+.goals.set{border-color:var(--ink)}
+.glabel{align-self:center;font:600 .62rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 4px 0 7px}.gbtn{width:1.9rem;border:0;background:transparent;color:var(--ink);font:600 1.15rem/1 var(--display);cursor:pointer;padding:0}
+.gbtn:hover:not(:disabled){background:color-mix(in srgb, var(--ink) 8%, transparent)}
+.gin{width:2.3rem;border:0;border-left:1.5px solid var(--line);border-right:1.5px solid var(--line);border-radius:0;background:var(--bg);color:var(--ink);
+  text-align:center;font:600 1.1rem var(--display);font-variant-numeric:tabular-nums;padding:0}
 .gin::placeholder{color:var(--muted)}
 .gin:focus{outline:none}
 .goals:focus-within{outline:3px solid var(--alarm);outline-offset:2px}
 .game.locked .goals{opacity:.55}
 .game.locked .goals.set{opacity:1}
 .game.locked .gbtn{visibility:hidden}
+.ptsbadge{justify-self:end;min-width:2.2rem;text-align:center;font:700 .8rem var(--display);padding:2px 6px;border-radius:3px}
+.ptsbadge:empty{visibility:hidden}
+.ptsbadge[data-p="2"]{background:var(--gold);color:#3A2A08}
+.ptsbadge[data-p="1"]{background:var(--navy);color:var(--wool)}
+[data-scheme="dark"] .ptsbadge[data-p="1"]{background:var(--wool);color:var(--navy)}
+.ptsbadge[data-p="0"]{background:color-mix(in srgb, var(--ink) 10%, transparent);color:var(--muted)}
+
 @media (max-width:560px){
-  .game{grid-template-columns:5.6rem 1fr auto;grid-template-areas:"d o o" "p p g"}
-  .goals{grid-area:g}
+  .sh-in{padding:14px 14px 12px 36px}
+  .sheethead::before{width:22px;background:linear-gradient(to right,transparent 0 4px,var(--stripe) 4px 8px,transparent 8px 11px,var(--stripe) 11px 15px,transparent 15px)}
+  .sh-rec{text-align:left;flex-basis:100%;margin-left:0}
+  .sh-controls{gap:8px}
+  .sh-seg button{padding:6px 8px;font-size:.74rem;letter-spacing:.08em}
+  .sh-morebtn{padding:4px 9px;font-size:.74rem}
+}
+@media (max-width:760px){
+  /* two short lines per game: opponent + date, then picks + goals + points */
+  .game{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:8px 10px}
+  .picks,.goals,.ptsbadge{margin-top:7px}
+  .picks button,.goals{height:2.15rem}
+  .opp{order:1;flex:1 1 0;min-width:0}
+  .gdate{order:2;flex:none;text-align:right;align-self:flex-start;padding-top:3px}
+  .game::after{content:"";order:3;flex-basis:100%;height:0}   /* line break between the two rows */
+  .picks{order:4}.goals{order:5}.ptsbadge{order:6;margin-left:auto}
+  .gdate b,.gdate small{display:inline;font:italic .75rem var(--serif);color:var(--muted);letter-spacing:0}
+  .gdate small::before{content:" · "}
+}
+@media (max-width:420px){
+  .picks button{width:2.4rem}
+  .gbtn{width:1.7rem}
+  .gin{width:2rem}
+  .glabel{padding:0 2px 0 6px;letter-spacing:.08em}
+  .gdate b,.gdate small{display:block;line-height:1.3}   /* narrow phones: day over time, so the opponent keeps its room */
+  .gdate small::before{content:none}
 }
 .lb td.teamcell{text-align:left}
 .teamlink{display:inline-flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none}
 .teamlink:hover .tname{text-decoration:underline}
 .teamcol{text-align:left!important}
-@media (max-width:560px){ .board{position:static} .gdate{font-size:1rem} }
+@media (max-width:560px){ .board{position:static} }
 
 /* ───── Breakaway mini-game ───── */
 .rinkwrap{border:1.5px solid var(--line);border-radius:12px;overflow:hidden;line-height:0;background:#18222D}
@@ -526,7 +608,7 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .cmp-head span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .comparepage .month{margin-top:20px}
 .cmp-row{padding:8px;border-bottom:1px solid var(--line);background:var(--panel)}
-.cmp-row.home{background:var(--home);box-shadow:inset 3px 0 0 var(--stripe)}
+.cmp-row.is-home{background:var(--home);box-shadow:inset 3px 0 0 var(--stripe)}
 .cmp-game{display:flex;gap:10px;align-items:center;min-width:0}
 .cmp-game .gdate{flex:none;width:5.6rem}
 .cmp-game .opp{min-width:0}

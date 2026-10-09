@@ -25,7 +25,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-21">
+<link rel="stylesheet" href="styles.css?v=2026-10-22">
 </head>
 <body>
 <div class="wrap">
@@ -70,8 +70,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-21"></script>
-<script src="teams.js?v=2026-10-21"></script>
+<script src="config.js?v=2026-10-22"></script>
+<script src="teams.js?v=2026-10-22"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -104,8 +104,8 @@ function setTeam(code){
   }
   document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · stickpicks 2026–27`;
   document.getElementById("scope").textContent = team
-    ? `Everyone’s ${TEAMS[team].name} prediction sheets. Click a player to see their sheet.`
-    : "Every prediction sheet for every team, each ranked on its own. A player who predicts several teams can appear once for each of them. Click a player to see that sheet.";
+    ? `Everyone’s ${TEAMS[team].name} pick sheets. Click a player to see their sheet.`
+    : "Every pick sheet for every team, each ranked on its own. A player who predicts several teams can appear once for each of them. Click a player to see that sheet.";
   document.getElementById("teamCol").classList.toggle("hidden",!!team);
   load();
 }
