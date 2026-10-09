@@ -223,25 +223,46 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .brand.has-logo{transform:none}
 .brand .logo-svg{display:block;height:58px;width:auto;overflow:visible}
 .topnav{display:flex;gap:16px;align-items:center;font:500 .95rem var(--display);letter-spacing:.08em;text-transform:uppercase}
-.topnav a{color:var(--ink);text-decoration:none}
-.topnav a:hover{text-decoration:underline}
-.topnav a[aria-current="page"]{text-decoration:underline;text-decoration-color:var(--goal);text-decoration-thickness:3px;text-underline-offset:6px}
+.topnav a{color:var(--ink);text-decoration:none;text-underline-offset:6px;text-decoration-thickness:3px}
+.topnav a:hover{text-decoration:underline;text-decoration-color:var(--goal)}
+.topnav a[aria-current="page"]{text-decoration:underline;text-decoration-color:var(--goal)}
 
-.navaccount{border:2px solid var(--ink);border-radius:4px;padding:4px 12px;max-width:12em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topnav a.navaccount:hover{text-decoration:none;border-color:var(--ink)}
+/* account button: outlined, fills in navy (cream on the road sweater) on hover */
+.navaccount{border:2px solid var(--ink);border-radius:4px;padding:4px 12px;max-width:12em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:background .12s,color .12s}
+.topnav a.navaccount:hover{text-decoration:none;background:var(--btn);border-color:var(--btn);color:var(--btn-ink)}
+.topnav a.navaccount[aria-current="page"]{text-decoration:none;box-shadow:inset 0 -3px 0 var(--goal)}
 
-/* "Pick Team" dropdown (desktop and tablets) */
-.teammenu-btn{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--btn,var(--board));background:var(--btn,var(--board));color:var(--btn-ink,#fff);font:600 .9rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:4px;cursor:pointer;white-space:nowrap}
+/* "Pick Team" button (desktop and tablets): a navy sweater sleeve with red and cream stripes */
+.topbar{--sleeve2:var(--wool)} [data-scheme="dark"] .topbar{--sleeve2:var(--navy)}
+.teammenu-btn{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--btn);color:var(--btn-ink);font:600 .9rem var(--display);letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 13px 6px 26px;border-radius:4px;cursor:pointer;white-space:nowrap;
+  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 9px,transparent 9px 12px,var(--sleeve2) 12px 16px,transparent 16px),var(--btn)}
+.teammenu-btn:hover{filter:brightness(1.12)}
 .teammenu-btn::after{content:"";width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
 .teammenu-btn[aria-expanded="true"]::after{transform:translateY(2px) rotate(-135deg)}
-.teammenu-panel{position:absolute;top:calc(100% - 6px);right:0;z-index:20;display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:4px 16px;
-  width:max-content;max-width:100%;padding:14px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+/* the panel: navy sweater banner, four divisions of mini sweaters, and a link to every team */
+.teammenu-panel{position:absolute;top:calc(100% - 6px);right:0;z-index:20;width:min(920px,calc(100vw - 32px));
+  background:var(--panel);border:2px solid var(--ink);border-radius:8px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.22)}
 .teammenu-panel[hidden]{display:none}
-.teammenu-div h3{font:600 .8rem var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 6px}
-.teammenu-panel a{display:flex;align-items:center;gap:10px;padding:5px 6px;border-radius:6px;color:var(--ink);text-decoration:none;font:600 .92rem "Barlow",sans-serif;letter-spacing:0;text-transform:none}
-.teammenu-panel a:hover,.teammenu-panel a:focus-visible{background:color-mix(in srgb, var(--ink) 8%, transparent);text-decoration:none}
-@media (max-width:900px){ .teammenu-panel{grid-template-columns:repeat(2,minmax(160px,1fr))} }
-@media (max-width:560px){
+.tm-head{position:relative;display:grid;gap:2px;padding:12px 18px 22px 40px;background:var(--navy);color:var(--wool)}
+[data-scheme="dark"] .tm-head{background:#14203A}
+.tm-head::before{content:"";position:absolute;left:0;top:0;bottom:10px;width:24px;
+  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+.tm-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(to bottom,#E8463F 0 4px,transparent 4px 6px,var(--wool) 6px 10px)}
+.tm-head small{font:600 .7rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.tm-head b{font:700 1.5rem/1 var(--display);letter-spacing:.03em;text-transform:uppercase}
+.tm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 18px;padding:14px 16px 6px}
+.teammenu-div h3{font:600 .8rem var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--ink);margin:0 0 6px;padding-bottom:4px;border-bottom:4px double var(--ink)}
+.teammenu-panel .teammenu-div a{display:flex;align-items:center;gap:10px;padding:4px 8px 4px 6px;border-radius:4px;color:var(--ink);text-decoration:none;
+  font:500 .9rem var(--display);letter-spacing:.04em;text-transform:uppercase}
+.teammenu-panel .teammenu-div a:hover,.teammenu-panel .teammenu-div a:focus-visible{text-decoration:none;
+  background:color-mix(in srgb, var(--t-board) 12%, transparent);box-shadow:inset 4px 0 0 var(--t-board)}
+[data-scheme="dark"] .teammenu-panel .teammenu-div a:hover,[data-scheme="dark"] .teammenu-panel .teammenu-div a:focus-visible{background:color-mix(in srgb, var(--t-stripe) 14%, transparent);box-shadow:inset 4px 0 0 var(--t-stripe)}
+.tm-jersey{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#F4EDDC;border:1.5px solid var(--t-board)}
+.tm-jersey svg{width:84%;height:84%;margin-top:6%;--j1:var(--t-board);--j2:var(--t-stripe)}
+.teammenu-panel a.tm-all{display:block;margin:6px 16px 14px;padding-top:10px;border-top:1px solid var(--line);font:italic .9rem var(--serif);color:var(--ink);text-decoration:none;text-transform:none;letter-spacing:0}
+.teammenu-panel a.tm-all:hover{text-decoration:underline;text-decoration-color:var(--goal)}
+@media (max-width:860px){ .tm-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }@media (max-width:560px){
   /* phones and the app use the bottom tab bar (its Pick Team tab opens teams.html),
      so the top bar keeps only the logo and the account button */
   .topbar{flex-wrap:nowrap;padding:12px 0}

@@ -91,21 +91,29 @@ function mountTeamMenu(root){
   const btn=document.createElement("button");
   btn.type="button"; btn.className="teammenu-btn"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","teamMenuPanel");
   btn.textContent="Pick Team";
+  // The panel: a navy sweater banner, then the four divisions with each team's mini sweater,
+  // then a link to the full Pick Teams page.
+  ensureJerseyDefs();
   const panel=document.createElement("div");
   panel.className="teammenu-panel"; panel.id="teamMenuPanel"; panel.hidden=true;
+  const head=document.createElement("div"); head.className="tm-head";
+  head.innerHTML='<small>2026–27 season</small><b>Pick Teams</b>';
+  const grid=document.createElement("div"); grid.className="tm-grid";
   DIVISIONS.forEach(div=>{
     const col=document.createElement("div"); col.className="teammenu-div";
     const h=document.createElement("h3"); h.textContent=div; col.appendChild(h);
     Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)).forEach(c=>{
       const t=TEAMS[c], a=document.createElement("a");
-      a.href=`sheet.html?team=${c}`;
-      const sw=document.createElement("span"); sw.className="sw"; sw.textContent=c;
-      teamStyle(sw,c);
+      a.href=`sheet.html?team=${c}`; teamStyle(a,c);
+      const j=document.createElement("span"); j.className="tm-jersey"; j.setAttribute("aria-hidden","true");
+      j.innerHTML='<svg viewBox="0 0 100 100"><use href="#spJersey"/></svg>';
       const nm=document.createElement("span"); nm.textContent=t.name;
-      a.append(sw,nm); col.appendChild(a);
+      a.append(j,nm); col.appendChild(a);
     });
-    panel.appendChild(col);
+    grid.appendChild(col);
   });
+  const foot=document.createElement("a"); foot.className="tm-all"; foot.href="teams.html"; foot.textContent="All 32 teams →";
+  panel.append(head,grid,foot);
   root.append(btn,panel);
   const open=()=>{ panel.hidden=false; btn.setAttribute("aria-expanded","true"); panel.querySelector("a")?.focus(); };
   const close=(refocus)=>{ if(panel.hidden) return; panel.hidden=true; btn.setAttribute("aria-expanded","false"); if(refocus) btn.focus(); };
