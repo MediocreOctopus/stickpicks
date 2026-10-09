@@ -727,3 +727,12 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .pf-public .pf-grid{grid-template-columns:1fr}
 .pf-signedout{max-width:34rem;margin:28px auto 0;text-align:center}
 .pf-signedout .form-actions{justify-content:center}
+/* ───── Leaderboard header logo: the real logo on the coloured header ───── */
+/* script in the team's readable accent, light tape, outline in the header colour */
+.lb-brand{--logo-ink:var(--title);--logo-bg:var(--board);--logo-tape:#F3EEE2;--logo-wrap:var(--board);margin-right:6px}
+html.neutral .lb-brand{--logo-ink:#E8463F}
+.lb-board .lb-brand .logo-svg{height:46px}
+@media (max-width:560px){ .lb-board .lb-brand .logo-svg{height:38px} }
+
+/* Phones and the app: no account button in the top bar; the Me tab opens your profile (or sign-in) */
+@media (max-width:560px){ .topnav > a.navaccount{display:none} }

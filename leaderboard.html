@@ -25,14 +25,14 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-23">
+<link rel="stylesheet" href="styles.css?v=2026-10-24">
 </head>
 <body>
 <div class="wrap">
   <header class="board lb-board">
     <div class="board-top">
       <div class="board-nav">
-        <a class="navlink scriptlink" href="index.html">stickpicks</a>
+        <a class="brand lb-brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
         <a class="navlink" id="back" href="sheet.html">My picks</a>
         <a class="navlink" href="rules.html">Rules</a>
       </div>
@@ -66,12 +66,12 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   </div>
   </div>
 
-  <footer><span id="scope"></span> Only final games count: 1 point for the right result, 1 for the exact combined goals. Each team sheet is ranked on its own; ties share a rank. Upcoming picks stay hidden until puck drop. <a href="rules.html">Rules</a></footer>
+  <footer><span id="scope"></span> 1 point for the right result, 1 for the exact goals. Ties share a rank. <a href="rules.html">Rules</a></footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-23"></script>
-<script src="teams.js?v=2026-10-23"></script>
+<script src="config.js?v=2026-10-24"></script>
+<script src="teams.js?v=2026-10-24"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -104,8 +104,8 @@ function setTeam(code){
   }
   document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · stickpicks 2026–27`;
   document.getElementById("scope").textContent = team
-    ? `Everyone’s ${TEAMS[team].name} pick sheets. Click a player for their profile, or the team for that pick sheet.`
-    : "Every pick sheet for every team, each ranked on its own. A player who predicts several teams can appear once for each of them. Click a player for their profile, or the team for that pick sheet.";
+    ? `Every ${TEAMS[team].name} pick sheet.`
+    : "Every pick sheet, each ranked on its own.";
   load();
 }
 sel.addEventListener("change",()=>setTeam(sel.value));
