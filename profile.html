@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-22">
+<link rel="stylesheet" href="styles.css?v=2026-10-23">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -82,12 +82,12 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <div class="pf-stat"><span class="pf-label">Points / game</span><b id="stPpg">—</b><small>max 2.00</small></div>
           </div>
           <section class="pf-card" style="margin-top:14px">
-            <h2>Your sheets</h2>
+            <h2 id="pfSheetsTitle">Your sheets</h2>
             <ul class="mysheets" id="pfSheets"></ul>
           </section>
         </div>
 
-        <div>
+        <div class="pf-settings-col">
           <section class="pf-card" aria-label="Settings">
             <h2>Settings</h2>
 
@@ -185,8 +185,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-22"></script>
-<script src="teams.js?v=2026-10-22"></script>
+<script src="config.js?v=2026-10-23"></script>
+<script src="teams.js?v=2026-10-23"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -248,25 +248,29 @@ async function load(session){
 
 async function loadStats(){
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
-  const rows=sheets||[];
+  const board = username ? (await sb.rpc("leaderboard",{p_season:SEASON,p_team:null})).data : null;
+  showStats(sheets||[], board||[], username, team=>`sheet.html?team=${team}`, "No picks yet. Use Pick Team to start your first sheet.");
+}
+
+// Stats + sheet list, for your own profile or another player's.
+// rows: {team, points, graded (finished games picked), total_picks}; board: the All teams leaderboard.
+function showStats(rows, board, who, sheetHref, emptyText){
   const pts=rows.reduce((s,r)=>s+Number(r.points),0), graded=rows.reduce((s,r)=>s+Number(r.graded),0);
   $("stPts").textContent=pts;
   $("stSheets").textContent = `across ${rows.length} sheet${rows.length===1?"":"s"}`;
   $("stPpg").textContent = graded ? (pts/graded).toFixed(2) : "—";
+  $("stRank").textContent="—"; $("stRankOf").textContent="";
   const list=$("pfSheets"); list.innerHTML="";
   const ranks={};
-  if(username){
-    const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
-    if(board?.length){
-      let rank=0, prev=null, best=null;
-      board.forEach((r,i)=>{ const p=Number(r.points); if(p!==prev){ rank=i+1; prev=p; }
-        if(r.username.toLowerCase()===username.toLowerCase()){ ranks[r.team]=rank; if(best===null) best={rank,team:r.team}; } });
-      if(best){ $("stRank").textContent=`#${best.rank}`; $("stRankOf").textContent=`of ${board.length} · ${TEAMS[best.team]?.name||best.team}`; }
-    }
+  if(who && board.length){
+    let rank=0, prev=null, best=null;
+    board.forEach((r,i)=>{ const p=Number(r.points); if(p!==prev){ rank=i+1; prev=p; }
+      if(r.username.toLowerCase()===who.toLowerCase()){ ranks[r.team]=rank; if(best===null) best={rank,team:r.team}; } });
+    if(best){ $("stRank").textContent=`#${best.rank}`; $("stRankOf").textContent=`of ${board.length} · ${TEAMS[best.team]?.name||best.team}`; }
   }
-  if(!rows.length){ const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Pick Team to start your first sheet."; list.appendChild(li); return; }
+  if(!rows.length){ const li=document.createElement("li"); li.className="hint"; li.textContent=emptyText; list.appendChild(li); return; }
   rows.forEach(r=>{
-    const li=document.createElement("li"), a=document.createElement("a"); a.href=`sheet.html?team=${r.team}`;
+    const li=document.createElement("li"), a=document.createElement("a"); a.href=sheetHref(r.team);
     const sw=teamStyle(document.createElement("span"),r.team); sw.className="sw"; sw.textContent=r.team;
     const nm=document.createElement("span"); nm.textContent=TEAMS[r.team]?.name||r.team;
     const meta=document.createElement("span"); meta.className="meta";
@@ -439,9 +443,44 @@ $("delForm").addEventListener("submit", async e=>{
   location.href="index.html";
 });
 
+/* ───────── Another player's profile (profile.html?user=Name) ───────── */
+// Read-only: picture, name, Est. date, stats and their sheets. Never their settings, email or Look.
+const VIEW_USER=(()=>{ const u=new URL(location.href).searchParams.get("user"); return u&&USERNAME_RULE.test(u)?u:null; })();
+async function loadPublic(name){
+  const {data:prof}=await sb.from("profiles").select("*").ilike("username", name.replace(/[\\%_]/g,"\\$&")).maybeSingle();
+  if(!prof){ $("pfLoading").textContent=`There’s no player called ${name}.`; return; }
+  const who=prof.username;
+  showIn(); $("pfIn").classList.add("pf-public");
+  document.title=`${who} · stickpicks 2026–27`;
+  $("pfName").textContent=who;
+  $("pfEst").textContent = prof.created_at ? "Est. "+new Date(prof.created_at).toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"}) : "";
+  $("pfAvatar").replaceChildren(avatarEl(avatarFromProfile(prof), who, 88));
+  $("pfSheetsTitle").textContent=`${who}’s sheets`;
+  const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
+  // Finished games picked ≈ the larger of graded results and graded goal totals (the leaderboard counts each separately).
+  const rows=(board||[]).filter(r=>r.username.toLowerCase()===who.toLowerCase())
+    .map(r=>({team:r.team, points:Number(r.points), graded:Math.max(Number(r.outcome_graded),Number(r.goals_graded)), total_picks:r.total_picks}));
+  showStats(rows, board||[], who, team=>`sheet.html?team=${team}&user=${encodeURIComponent(who)}`, `${who} hasn’t made any picks yet.`);
+}
+// On someone else's profile the Me tab and account button aren't "this page".
+if(VIEW_USER) document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll('.tab-me[aria-current], a.navaccount[aria-current]').forEach(a=>a.removeAttribute("aria-current"));
+});
+
 /* ───────── Start ───────── */
 if(!sb) showOut("Database not connected yet: add your Supabase URL and key to config.js (see README).");
-else{
+else if(VIEW_USER){
+  sb.auth.getSession().then(async ({data:{session}})=>{
+    if(session){
+      const {data:me}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
+      if(me?.username && me.username.toLowerCase()===VIEW_USER.toLowerCase()){   // it's you: your own profile
+        history.replaceState(null,"","profile.html"); return load(session);
+      }
+      if(me?.username) rememberMe(me.username, avatarFromProfile(me));
+    }
+    loadPublic(VIEW_USER);
+  });
+}else{
   sb.auth.getSession().then(({data:{session}})=>{ session ? load(session) : (forgetMe(), showOut()); });
   sb.auth.onAuthStateChange((event)=>{ if(event==="SIGNED_OUT") setTimeout(()=>{ forgetMe(); showOut(); },0); });
 }

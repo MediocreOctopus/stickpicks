@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-22">
+<link rel="stylesheet" href="styles.css?v=2026-10-23">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -126,7 +126,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li><b>Team leaderboards</b> rank everyone’s sheets for one team, head to head.</li>
         <li><b>The All teams leaderboard</b> ranks every sheet for every team in one list, so the same player can appear more than once, once per team.</li>
         <li><b>Ties:</b> sheets with the same points share a rank.</li>
-        <li><b>Viewing other sheets:</b> click any player on a leaderboard to see that sheet. Picks are revealed at puck drop, so for games that haven’t started you can only see <i>whether</i> a pick was made, not what it is. From any player’s sheet, <b>Compare side by side</b> lines up your picks against theirs for the same team. Your email address is never shown.</li>
+        <li><b>Viewing other players:</b> on a leaderboard, click a player’s name to open their profile (picture, points, best rank, and sheets; never their email or settings), or click the team to open that player’s pick sheet. Picks are revealed at puck drop, so for games that haven’t started you can only see <i>whether</i> a pick was made, not what it is. From any player’s sheet, <b>Compare side by side</b> lines up your picks against theirs for the same team. Your email address is never shown.</li>
       </ul>
     </details>
 
@@ -150,7 +150,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams.</footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-10-22"></script>
+<script src="teams.js?v=2026-10-23"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section
