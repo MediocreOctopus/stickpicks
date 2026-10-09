@@ -5,7 +5,7 @@
 // ?v=YYYY-MM-DD, so they can be served straight from the cache. Live data (Supabase) is never cached.
 //
 // When bumping the ?v= date in the pages, bump VERSION here too, so the old cache is cleared.
-const VERSION = "2026-10-26";
+const VERSION = "2026-10-27";
 const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 
@@ -35,6 +35,8 @@ self.addEventListener("fetch", event => {
 
   // Live data and sign-in: always straight to the network, never cached.
   if(url.hostname.endsWith("supabase.co") || url.hostname.endsWith("supabase.in")) return;
+  // Visitor counting (GoatCounter): straight to the network.
+  if(url.hostname.endsWith("goatcounter.com") || url.hostname === "gc.zgo.at") return;
 
   // Pages: network first; fall back to the saved copy of that page (ignoring ?team=…), then the home page.
   if(req.mode === "navigate"){

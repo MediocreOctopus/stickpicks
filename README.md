@@ -116,6 +116,10 @@ To appear on the leaderboard, a player needs a username (3–20 letters, numbers
 
 When you're signed in, the home page account box lists your **Current Picks** (each sheet you've started, with its points) and a **Continue** button for the last sheet you opened. Your total points, best rank, and settings (including sign out) are on your profile page.
 
+## Visitor stats
+
+Every page loads [GoatCounter](https://www.goatcounter.com/) (stickpicks.goatcounter.com), a free, privacy-friendly visitor counter: no cookies and no personal data. Page addresses are counted without usernames (for example `sheet.html?team=SEA`). Visits from `localhost` aren't counted. See the numbers by signing in at https://stickpicks.goatcounter.com.
+
 ## Things to know
 
 - **The NHL feed isn't official.** Schedules and scores come from `api-web.nhle.com`, which the NHL's own website uses but doesn't document publicly, so it could change without notice. If sheets stop updating, check the latest run in the **Actions** tab. If one team's schedule fails to download, the job skips it for that run, logs a warning, and tries again on the next run.
