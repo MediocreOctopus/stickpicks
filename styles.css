@@ -808,3 +808,27 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .daypanel{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
 @media (prefers-reduced-motion:reduce){ .daystrip{transition:none} }
 .day-empty{margin:0;padding:22px 16px;border:2px dashed var(--line);border-radius:8px;text-align:center;font:italic .95rem var(--serif);color:var(--muted)}
+
+/* ───── Home account box: a navy sweater banner on top (sleeve stripes, hem), panels below ───── */
+.acct-card{padding:0 0 20px;overflow:hidden}
+.acct-card > :not(.acct-banner){margin-left:20px;margin-right:20px}
+.acct-card > :not(.acct-banner):not(.hidden):not(.acct-cta){margin-top:16px}
+.acct-banner{position:relative;display:flex;align-items:center;gap:14px;min-height:92px;padding:16px 18px 26px 40px;background:var(--navy);color:var(--wool)}
+[data-scheme="dark"] .acct-banner{background:#14203A}
+.acct-banner::before{content:"";position:absolute;left:0;top:0;bottom:12px;width:24px;
+  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+.acct-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;
+  background:linear-gradient(to bottom,#E8463F 0 4px,transparent 4px 7px,var(--wool) 7px 12px)}
+.acct-face{display:flex;flex:none}
+.acct-face .avatar:not(.avatar-sweater):not(.avatar-photo){font:400 calc(var(--av-size) * .62)/1 "Yellowtail",cursive;text-transform:none}
+.acct-head{display:grid;min-width:0}
+.acct-kicker{font:600 .72rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.acct-title{font:2.1rem/1.15 "Yellowtail",cursive;color:var(--wool);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 .35em 2px 0}   /* room for the script's last stroke */
+/* the panels' own headings now live in the banner; keep them for screen readers only */
+.acct-card h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.acct-card .acct-cta{margin-top:12px}
+
+/* Current Picks rows: a team-colour edge, team names in the display face */
+.mysheets a{box-shadow:inset 5px 0 0 var(--t-board,transparent);padding-left:14px}
+[data-scheme="dark"] .mysheets a{box-shadow:inset 5px 0 0 var(--t-stripe,transparent)}
+.mysheets a > span:not(.sw):not(.meta){font:500 .98rem var(--display);letter-spacing:.04em;text-transform:uppercase}

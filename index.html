@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-02">
+<link rel="stylesheet" href="styles.css?v=2026-11-03">
 </head>
 <body>
 
@@ -79,7 +79,12 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </section>
 
     <!-- Account card: one of several panels is shown -->
-    <aside class="card" id="account" aria-live="polite">
+    <aside class="card acct-card" id="account" aria-live="polite">
+      <!-- Sweater banner: picture + title for whichever panel is showing (the panels' own headings stay for screen readers) -->
+      <div class="acct-banner" aria-hidden="true">
+        <span class="acct-face" id="acctFace"></span>
+        <div class="acct-head"><small class="acct-kicker" id="acctKicker">stickpicks</small><span class="acct-title" id="acctTitle">Loading…</span></div>
+      </div>
       <div id="pLoading"><p class="hint">Loading…</p></div>
 
       <!-- Signed out: a short pitch; the forms open on request -->
@@ -195,8 +200,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-02"></script>
-<script src="teams.js?v=2026-11-02"></script>
+<script src="config.js?v=2026-11-03"></script>
+<script src="teams.js?v=2026-11-03"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -419,8 +424,23 @@ function renderCards(box, data){
 
 /* ───────── Account panels ───────── */
 const PANELS=["pLoading","pWelcome","pSignedOut","pForgot","pRecover","pSignedIn","pOffline"];
+// The banner's small label and script title for each panel (signed in: your picture and name).
+const BANNERS={pLoading:["stickpicks","Loading…"], pWelcome:["Free to play","Join the board"], pSignedOut:["Your account","Sign in"],
+  pForgot:["Your account","Reset password"], pRecover:["Your account","New password"], pSignedIn:["Welcome back","Welcome!"], pOffline:["stickpicks","Not connected"]};
+let panelNow="pLoading";
+function setBanner(){
+  let [kicker,title]=BANNERS[panelNow]||BANNERS.pLoading;
+  if(panelNow==="pSignedOut" && $("tabUp").getAttribute("aria-selected")==="true") title="Create account";
+  const name = panelNow==="pSignedIn" ? profile?.username : null;
+  if(panelNow==="pSignedIn" && !name) kicker="Welcome";
+  $("acctKicker").textContent=kicker; $("acctTitle").textContent=name||title;
+  const face=$("acctFace");
+  face.replaceChildren(...(panelNow==="pSignedIn" && currentUser ? [avatarEl(avatarFromProfile(profile), name||"", 58)] : []));
+  face.classList.toggle("hidden", !face.children.length);
+}
 function show(id){
   PANELS.forEach(p=>$(p).classList.toggle("hidden",p!==id));
+  panelNow=id; setBanner();
   // Continue sits in the account box, under the welcome pitch or your current picks (not under the forms)
   $("ctaRow").classList.toggle("hidden", !($("ctaRow").dataset.ready && (id==="pSignedIn" || id==="pWelcome")));
 }
@@ -458,6 +478,7 @@ function setTab(which){
   const up=which==="up";
   $("tabIn").setAttribute("aria-selected",String(!up)); $("tabUp").setAttribute("aria-selected",String(up));
   $("fIn").classList.toggle("hidden",up); $("fUp").classList.toggle("hidden",!up);
+  setBanner();
 }
 $("tabIn").addEventListener("click",()=>setTab("in"));
 $("tabUp").addEventListener("click",()=>setTab("up"));
@@ -553,6 +574,7 @@ async function renderSignedIn(session, note=""){
   syncLook(sb); // apply the Look saved to this account (Auto / Home / Road)
   showNameForm(!profile);
   $("welcome").textContent = profile ? `Welcome back, ${profile.username}` : "Welcome!";
+  setBanner();
   await loadMyStats();
 }
 
@@ -574,7 +596,7 @@ $("fName").addEventListener("submit", async e=>{
   const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
   if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
-  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount();
+  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner();
   showNameForm(false); loadMyStats();
 });
 
@@ -589,7 +611,7 @@ async function loadMyStats(){
   }
   rows.forEach(r=>{
     const li=document.createElement("li"), a=document.createElement("a");
-    a.href=`sheet.html?team=${r.team}`;
+    a.href=`sheet.html?team=${r.team}`; teamStyle(a,r.team);   // team-colour edge on the row
     const name=document.createElement("span"); name.textContent=TEAMS[r.team]?.name||r.team;
     const meta=document.createElement("span"); meta.className="meta";
     meta.textContent=`${r.points} pt${Number(r.points)===1?"":"s"} · ${r.total_picks} pick${Number(r.total_picks)===1?"":"s"}`;
