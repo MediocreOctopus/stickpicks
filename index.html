@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-27">
+<link rel="stylesheet" href="styles.css?v=2026-10-28">
 </head>
 <body>
 
@@ -61,7 +61,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <section class="section upnext hidden" id="upnext" aria-live="polite">
       <div class="section-head"><h2>Up next on your sheets</h2><span id="upnextNote"></span></div>
       <div class="uprows" id="upnextRows"></div>
-      <p class="upnext-hint">Picks are from your sheet’s team side and lock at puck drop.</p>
+      <p class="upnext-hint">Picks are from your sheet’s team side and lock at puck drop. <a class="hidden" id="upnextRemind" href="profile.html#reminders">Get a reminder before puck drop</a></p>
     </section>
 
     <section class="section" id="today">
@@ -187,8 +187,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-27"></script>
-<script src="teams.js?v=2026-10-27"></script>
+<script src="config.js?v=2026-10-28"></script>
+<script src="teams.js?v=2026-10-28"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -499,6 +499,8 @@ async function loadMyStats(){
   const teams=rows.map(r=>r.team);
   loadRecap(teams);
   loadUpNext([...teams, lastTeam()]);
+  const uid=currentUser.id;   // pop-up for badges earned since this device last showed them
+  myBadges(sb, profile?.username||null).then(r=>{ if(currentUser?.id===uid) announceBadges(uid, r.earned); }).catch(()=>{});
 }
 
 const lastTeam=()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } };
@@ -606,6 +608,9 @@ async function loadUpNext(teams){
   }
   items.forEach(({g,team})=>box.appendChild(upRow(g,team)));
   upCount(); sec.classList.remove("hidden");
+  // signed in, reminders possible here but not on yet: point to the switch on the profile
+  const s=pushSupport(), remind=$("upnextRemind");
+  remind.classList.toggle("hidden", !currentUser || !(s==="ok"||s==="ios-install") || await remindersOn(sb).catch(()=>false));
 }
 function upRow(g, team){
   const t=TEAMS[team], home=g.home===team, oppCode=home?g.away:g.home, id=String(g.game_id);

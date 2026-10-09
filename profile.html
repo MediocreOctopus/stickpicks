@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-27">
+<link rel="stylesheet" href="styles.css?v=2026-10-28">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -80,10 +80,15 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <div class="pf-stat"><span class="pf-label">Total points</span><b id="stPts">0</b><small id="stSheets"></small></div>
             <div class="pf-stat"><span class="pf-label">Best rank</span><b id="stRank">—</b><small id="stRankOf"></small></div>
             <div class="pf-stat"><span class="pf-label">Points / game</span><b id="stPpg">—</b><small>max 2.00</small></div>
+            <div class="pf-stat"><span class="pf-label">Hot streak</span><b id="stStreak">—</b><small id="stStreakBest">results right in a row</small></div>
           </div>
           <section class="pf-card" style="margin-top:14px">
             <h2 id="pfSheetsTitle">Your sheets</h2>
             <ul class="mysheets" id="pfSheets"></ul>
+          </section>
+          <section class="pf-card" id="badges" style="margin-top:14px">
+            <h2>Badges <span class="badge-count" id="badgeCount"></span></h2>
+            <div class="badge-grid" id="badgeGrid"><p class="hint" style="margin:0">Loading…</p></div>
           </section>
         </div>
 
@@ -147,6 +152,13 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
               <p class="formmsg" id="lookMsg" role="status"></p>
             </div>
 
+            <div class="pf-row" id="reminders">
+              <div class="pf-label">Puck-drop reminders</div>
+              <p class="hint" style="margin:6px 0 0">A notification about an hour before puck drop when a game on your sheets isn’t picked yet. Set for each device.</p>
+              <div class="form-actions"><button class="btn ghost" type="button" id="remToggle">Turn on</button></div>
+              <p class="formmsg" id="remMsg" role="status"></p>
+            </div>
+
             <div class="pf-row">
               <div class="pf-label">Email</div>
               <div class="pf-value" id="emValue"></div>
@@ -185,8 +197,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-27"></script>
-<script src="teams.js?v=2026-10-27"></script>
+<script src="config.js?v=2026-10-28"></script>
+<script src="teams.js?v=2026-10-28"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -243,6 +255,7 @@ async function load(session){
   startPicker();
   if(!prof) openUsername();
   syncLook(sb).then(markLook);
+  showReminders();
   loadStats();
 }
 
@@ -250,6 +263,25 @@ async function loadStats(){
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const board = username ? (await sb.rpc("leaderboard",{p_season:SEASON,p_team:null})).data : null;
   showStats(sheets||[], board||[], username, team=>`sheet.html?team=${team}`, "No picks yet. Use Pick Team to start your first sheet.");
+  myBadges(sb, username).then(r=>{ showBadges(r,true); try{ localStorage.setItem(`stickpicks-badges-${user.id}`, JSON.stringify(r.earned)); }catch(e){} })
+    .catch(()=>{ $("badgeGrid").innerHTML='<p class="hint" style="margin:0">Couldn’t load badges right now.</p>'; });
+}
+
+// Badges card + streak tile. Earned patches in full colour; the rest faded, with how to earn them.
+function showBadges(r, own){
+  $("stStreak").textContent = r.streak.current ? `${r.streak.current}` : "0";
+  $("stStreakBest").textContent = `in a row · best ${r.streak.best}`;
+  $("badgeCount").textContent=`${r.earned.length} of ${BADGES.length}`;
+  const grid=$("badgeGrid"); grid.innerHTML="";
+  BADGES.forEach(b=>{
+    const has=r.earned.includes(b.id), item=document.createElement("div"); item.className="badge-item"+(has?"":" is-locked");
+    const name=document.createElement("b"); name.textContent=b.name;
+    const how=document.createElement("small"); how.textContent = has ? b.how : (r.progress[b.id] ? `${b.how} ${r.progress[b.id]}.` : b.how);
+    item.append(badgeEl(b.id,60,has), name, how);
+    item.title = `${b.name}: ${has?"earned":"not yet"}. ${b.how}`;
+    grid.appendChild(item);
+  });
+  if(location.hash==="#badges") $("badges").scrollIntoView({block:"start"});
 }
 
 // Stats + sheet list, for your own profile or another player's.
@@ -426,7 +458,29 @@ $("emForm").addEventListener("submit", async e=>{
 });
 
 /* ───────── Sign out / delete account ───────── */
-$("signOut").addEventListener("click", async ()=>{ await sb.auth.signOut(); forgetMe(); location.href="index.html"; });
+/* ───────── Puck-drop reminders (this device) ───────── */
+async function showReminders(){
+  const s=pushSupport(), btn=$("remToggle");
+  const off=text=>{ btn.classList.add("hidden"); msg("remMsg",text); };
+  if(s==="ios-install") return off("On iPhone and iPad, reminders work in the stickpicks app: tap Share, then Add to Home Screen, open the app, and turn them on here.");
+  if(s==="unsupported") return off("This browser can’t show reminders. Try Chrome, Edge, Firefox, or Safari, or install the stickpicks app.");
+  if(s==="blocked") return off("Notifications are blocked for stickpicks in this browser’s settings. Allow them there, then reload this page.");
+  btn.classList.remove("hidden");
+  const on=await remindersOn(sb).catch(()=>false);
+  btn.dataset.on=String(on); btn.textContent=on?"Turn off":"Turn on";
+  msg("remMsg", on?"On for this device.":"", on?"ok":"");
+}
+$("remToggle").addEventListener("click", async ()=>{
+  const btn=$("remToggle"), on=btn.dataset.on==="true"; btn.disabled=true; msg("remMsg", on?"Turning off…":"Turning on…");
+  const err = on ? await disableReminders(sb) : await enableReminders(sb).catch(e=>e.message||"error");
+  btn.disabled=false;
+  if(err==="dismissed") return msg("remMsg","No problem. Tap Turn on whenever you’re ready, then choose Allow.");
+  await showReminders();
+  if(err && !["blocked","ios-install","unsupported"].includes(err)) msg("remMsg", /function|does not exist/.test(err) ? "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : "Couldn’t turn on reminders: "+err, "err");
+});
+if(location.hash==="#reminders") addEventListener("load",()=>$("reminders").scrollIntoView({block:"center"}));
+
+$("signOut").addEventListener("click", async ()=>{ await disableReminders(sb).catch(()=>{}); await sb.auth.signOut(); forgetMe(); location.href="index.html"; });
 $("delStart").addEventListener("click",()=>{ $("delForm").classList.remove("hidden"); $("delStart").classList.add("hidden"); $("delInput").value=""; $("delInput").focus(); });
 $("delCancel").addEventListener("click",()=>{ $("delForm").classList.add("hidden"); $("delStart").classList.remove("hidden"); msg("delMsg",""); });
 $("delForm").addEventListener("submit", async e=>{
@@ -435,6 +489,7 @@ $("delForm").addEventListener("submit", async e=>{
   if(!username || typed.toLowerCase()!==username.toLowerCase()) return msg("delMsg","Type your username exactly to confirm.","err");
   busy(e.target,true); msg("delMsg","Deleting…");
   await removePhotoFile();   // photos live in storage, which the database can't clear on its own
+  await disableReminders(sb).catch(()=>{});
   const {error}=await sb.rpc("delete_my_account");
   busy(e.target,false);
   if(error) return msg("delMsg",friendly(error),"err");
@@ -461,6 +516,8 @@ async function loadPublic(name){
   const rows=(board||[]).filter(r=>r.username.toLowerCase()===who.toLowerCase())
     .map(r=>({team:r.team, points:Number(r.points), graded:Math.max(Number(r.outcome_graded),Number(r.goals_graded)), total_picks:r.total_picks}));
   showStats(rows, board||[], who, team=>`sheet.html?team=${team}&user=${encodeURIComponent(who)}`, `${who} hasn’t made any picks yet.`);
+  playerBadges(sb, who, board||[]).then(r=>showBadges(r,false))
+    .catch(()=>{ $("badgeGrid").innerHTML='<p class="hint" style="margin:0">Couldn’t load badges right now.</p>'; });
 }
 // On someone else's profile the Me tab and account button aren't "this page".
 if(VIEW_USER) document.addEventListener("DOMContentLoaded",()=>{

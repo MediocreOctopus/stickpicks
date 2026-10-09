@@ -305,6 +305,201 @@ function mountOffline(){
 }
 document.addEventListener("DOMContentLoaded", mountOffline);
 
+/* ───────── Puck-drop reminders (web push) ───────── */
+// About an hour before puck drop, the GitHub Action notifies players whose sheets have games
+// they haven't fully picked. Each device opts in on its own (Settings on the profile page).
+// iPhone/iPad only allow this inside the installed app (Add to Home Screen), iOS 16.4 or newer.
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone===true;
+// "ok" | "ios-install" (needs the Home Screen app first) | "unsupported" | "blocked" (denied in settings)
+function pushSupport(){
+  if(!(window.PICKS_CONFIG||{}).VAPID_PUBLIC_KEY) return "unsupported";
+  if(isIOS && !isStandalone) return "ios-install";
+  if(!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return "unsupported";
+  if(Notification.permission==="denied") return "blocked";
+  return "ok";
+}
+function vapidKey(){
+  const s=PICKS_CONFIG.VAPID_PUBLIC_KEY.replace(/-/g,"+").replace(/_/g,"/"), raw=atob(s+"=".repeat((4-s.length%4)%4));
+  return Uint8Array.from(raw, c=>c.charCodeAt(0));
+}
+async function pushSub(){ const reg=await navigator.serviceWorker.ready; return reg.pushManager.getSubscription(); }
+// Is this device signed up (for the signed-in player)?
+async function remindersOn(sb){
+  if(pushSupport()!=="ok" || Notification.permission!=="granted") return false;
+  const sub=await pushSub(); if(!sub) return false;
+  const {data,error}=await sb.rpc("has_push_subscription",{p_endpoint:sub.endpoint});
+  return !error && data===true;
+}
+// Returns null when done, or a short message saying what went wrong.
+async function enableReminders(sb){
+  const s=pushSupport(); if(s!=="ok") return s;
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted") return perm==="denied" ? "blocked" : "dismissed";
+  const reg=await navigator.serviceWorker.ready;
+  const sub=(await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:vapidKey()});
+  const j=sub.toJSON();
+  const {error}=await sb.rpc("save_push_subscription",{p_endpoint:j.endpoint, p_p256dh:j.keys.p256dh, p_auth:j.keys.auth});
+  return error ? (error.message||"error") : null;
+}
+async function disableReminders(sb){
+  const sub=await pushSub(); if(!sub) return null;
+  await sb.rpc("remove_push_subscription",{p_endpoint:sub.endpoint});
+  await sub.unsubscribe().catch(()=>{});
+  return null;
+}
+
+/* ───────── Badges and streaks ───────── */
+// Each badge is a felt sweater patch: cream felt, a stitched ring (navy = everyday, red = scoring,
+// gold = rare) and a simple pictogram in navy, cardinal red and stick-tape colours.
+const BADGE_RING={navy:"#1C2B45", red:"#9B1C1F", gold:"#C08A2A"};
+const BI={n:"#1C2B45", r:"#9B1C1F", w:"#B98245", s:"#8E98A6", p:"#FBF7EE", c:"#F4EDDC"};   // navy, red, wood, steel, paper, felt
+const BADGES=[
+  {id:"faceoff", name:"First Faceoff", ring:"navy", how:"Make your first pick.",
+   art:`<circle cx="32" cy="32" r="12" fill="none" stroke="${BI.r}" stroke-width="2.6"/><circle cx="32" cy="32" r="3.6" fill="${BI.r}"/><path d="M11 28h8M11 36h8M45 28h8M45 36h8" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/>`},
+  {id:"hattrick", name:"Hat Trick", ring:"red", how:"Get 3 results right in a row on one sheet.",
+   art:`<path d="M20 38Q19 22 26 21Q29 24 32 22Q35 24 38 21Q45 22 44 38Z" fill="${BI.n}"/><rect x="20" y="32" width="24" height="4.5" fill="${BI.r}"/><ellipse cx="32" cy="39.5" rx="17" ry="4.2" fill="${BI.n}"/>`},
+  {id:"topshelf", name:"Top Shelf", ring:"red", how:"Get the result and the exact goals right in the same game.",
+   art:`<path d="M24 22v20M30 22v20M36 22v20M42 22v20M19 28h26M19 34h26" stroke="${BI.n}" stroke-width=".9" opacity=".55"/><path d="M18 44V24q0-4 4-4h20q4 0 4 4v20" fill="none" stroke="${BI.r}" stroke-width="3"/><path d="M13 44h38" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="39.5" cy="25.5" rx="4.6" ry="2.4" fill="${BI.n}"/><rect x="34.9" y="25.5" width="9.2" height="2.2" fill="${BI.n}"/>`},
+  {id:"lamp", name:"Lamp Lighter", ring:"red", how:"Nail the exact combined goals 5 times.",
+   art:`<path d="M23 31Q23 18 32 18Q41 18 41 31Z" fill="${BI.r}"/><path d="M27 24q1-3 4-3.6" stroke="${BI.c}" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/><rect x="21" y="31" width="22" height="5" rx="1" fill="${BI.n}"/><rect x="30.3" y="36" width="3.4" height="9" fill="${BI.n}"/><rect x="25" y="45" width="14" height="3" rx="1" fill="${BI.n}"/><path d="M32 10.5v3.5M18.5 16l2.6 2.6M45.5 16l-2.6 2.6M14.5 27h3.5M46 27h3.5" stroke="${BI.r}" stroke-width="2.2" stroke-linecap="round"/>`},
+  {id:"shutout", name:"Shutout", ring:"gold", how:"Get every result right on a night with 3 or more of your games.",
+   art:`<path d="M32 13C22 13 19 21 19 30.5C19 42 25 50.5 32 50.5S45 42 45 30.5C45 21 42 13 32 13Z" fill="${BI.n}"/><path d="M32 14v11" stroke="${BI.r}" stroke-width="2.6"/><ellipse cx="26.6" cy="30.5" rx="3.6" ry="2.3" fill="${BI.c}"/><ellipse cx="37.4" cy="30.5" rx="3.6" ry="2.3" fill="${BI.c}"/><g fill="${BI.c}"><circle cx="32" cy="37.5" r="1.3"/><circle cx="28.6" cy="41.5" r="1.2"/><circle cx="35.4" cy="41.5" r="1.2"/><circle cx="32" cy="45.2" r="1.2"/></g>`},
+  {id:"overtime", name:"Overtime Hero", ring:"navy", how:"Call an overtime or shootout loss (OTL) correctly.",
+   art:`<rect x="28.5" y="13" width="7" height="4.2" rx="1" fill="${BI.n}"/><rect x="30.8" y="16.5" width="2.4" height="3" fill="${BI.n}"/><circle cx="32" cy="34" r="13" fill="${BI.p}" stroke="${BI.n}" stroke-width="3"/><path d="M32 23.5v2.4M42.5 34h-2.4M32 44.5v-2.4M21.5 34h2.4" stroke="${BI.n}" stroke-width="1.6"/><path d="M32 34V26.5M32 34l5 3" stroke="${BI.r}" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="34" r="1.8" fill="${BI.n}"/>`},
+  {id:"shootout", name:"Shootout Ace", ring:"navy", how:"Get the result right in a game decided by a shootout.",
+   art:`<path d="M20 20L39 46" stroke="${BI.w}" stroke-width="3.4" stroke-linecap="round"/><path d="M44 20L25 46" stroke="${BI.w}" stroke-width="3.4" stroke-linecap="round"/><path d="M38 46h9" stroke="${BI.n}" stroke-width="4.2" stroke-linecap="round"/><path d="M26 46h-9" stroke="${BI.n}" stroke-width="4.2" stroke-linecap="round"/><ellipse cx="32" cy="15.6" rx="6" ry="2.6" fill="${BI.n}"/><rect x="26" y="13.4" width="12" height="2.2" fill="${BI.n}"/><ellipse cx="32" cy="13.4" rx="6" ry="2.6" fill="#33476A"/>`},
+  {id:"fullsheet", name:"Full Sheet", ring:"gold", how:"Pick every game on a sheet, result and goals.",
+   art:`<rect x="20" y="16" width="24" height="32" rx="2.4" fill="${BI.w}"/><rect x="23.5" y="20.5" width="17" height="24" fill="${BI.p}"/><rect x="27.5" y="13.5" width="9" height="5.5" rx="1.4" fill="${BI.n}"/><path d="M26.5 25.5h11M26.5 30h11M26.5 34.5h5" stroke="${BI.n}" stroke-width="1.5"/><path d="M30.5 39l3 3 6.5-7.5" stroke="${BI.r}" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`},
+  {id:"original6", name:"Original Six", ring:"navy", how:"Start sheets for Boston, Chicago, Detroit, Montréal, the Rangers and Toronto.",
+   art:`<path d="M19.5 14v36" stroke="${BI.n}" stroke-width="2.8" stroke-linecap="round"/><path d="M21 16L49 26L21 36Z" fill="${BI.r}"/><text x="31" y="30" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="9.5" fill="${BI.c}">VI</text>`},
+  {id:"barnstormer", name:"Barnstormer", ring:"navy", how:"Start sheets in all four divisions.",
+   art:`<path d="M21 16h11l1.2 16Q44 32.5 46 37v4H21Z" fill="${BI.n}"/><path d="M26 22h5M26 26h5.4M26 30h5.8" stroke="${BI.c}" stroke-width="1.4" stroke-linecap="round"/><path d="M24.5 41v4M42 41v4" stroke="${BI.n}" stroke-width="2.2"/><path d="M17 45.5h29q4 0 4-4" fill="none" stroke="${BI.s}" stroke-width="2.6" stroke-linecap="round"/>`},
+  {id:"hotstick", name:"Hot Stick", ring:"gold", how:"Get 10 results right in a row.",
+   art:`<path d="M20 13L37 42" stroke="${BI.w}" stroke-width="3.6" stroke-linecap="round"/><path d="M36 42h11" stroke="${BI.n}" stroke-width="4.6" stroke-linecap="round"/><path d="M39 36q2.5-3 .5-6.5M44 36q2.5-3 .5-6.5M49 37q2-2.6.4-5.4" stroke="${BI.r}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M22.6 17.5l2.6-1.5M24.2 20.2l2.6-1.5" stroke="${BI.n}" stroke-width="1.4"/>`},
+  {id:"captain", name:"Captain", ring:"gold", how:"Sit at #1 on a team leaderboard.",
+   art:`<text x="32" y="44" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="31" fill="${BI.r}" stroke="${BI.n}" stroke-width="1.6" paint-order="stroke">C</text>`},
+];
+const BADGE_BY_ID=Object.fromEntries(BADGES.map(b=>[b.id,b]));
+// A round felt patch: ring with stitching, cream felt, pictogram.
+function badgeEl(id, px=56, earned=true){
+  const b=BADGE_BY_ID[id], el=document.createElement("span");
+  el.className="badge"+(earned?"":" locked"); el.style.setProperty("--bd-size",px+"px");
+  el.innerHTML=`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
+    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/>`+
+    `<circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${b.art}</svg>`;
+  return el;
+}
+
+// Works out badges and streaks from a player's picks.
+// picks: [{team, game_id, pick, goals, hidden}] (hidden = an upcoming pick another player can't see yet)
+// games: [{game_id, game_date, start_utc, home, away, home_score, away_score, period_type}] for those teams
+// board: the All teams leaderboard (for Captain); who: the player's username
+const ORIGINAL_SIX=["BOS","CHI","DET","MTL","NYR","TOR"];
+function computeBadges(picks, games, board, who){
+  const G=new Map(games.map(g=>[Number(g.game_id),g]));
+  const sheets=[...new Set(picks.map(p=>p.team))];
+  const scored=[];
+  picks.forEach(p=>{
+    const g=G.get(Number(p.game_id)); if(!g || p.hidden) return;
+    const sc=scorePick(g,p.team,{o:p.pick||undefined,g:p.goals??undefined}); if(sc) scored.push({p,g,sc});
+  });
+  scored.sort((a,b)=>String(a.g.start_utc).localeCompare(String(b.g.start_utc)) || a.p.team.localeCompare(b.p.team));
+  const results=scored.filter(x=>x.sc.outcomeHit!==null);
+  // streaks: results right in a row, across every sheet in game order
+  let cur=0, best=0; results.forEach(x=>{ cur = x.sc.outcomeHit ? cur+1 : 0; best=Math.max(best,cur); });
+  // longest run on a single sheet (Hat Trick)
+  let sheetBest=0; sheets.forEach(t=>{ let c=0; results.filter(x=>x.p.team===t).forEach(x=>{ c = x.sc.outcomeHit ? c+1 : 0; sheetBest=Math.max(sheetBest,c); }); });
+  const exact=scored.filter(x=>x.sc.goalsHit).length;
+  // nights: every result right with 3+ results graded that day
+  const nights={}; results.forEach(x=>{ const d=x.g.game_date; (nights[d]=nights[d]||[]).push(x.sc.outcomeHit); });
+  const shutout=Object.values(nights).some(a=>a.length>=3 && a.every(Boolean));
+  // full sheet: every game of a team's season has both a result and goals picked (or a hidden pick)
+  const fullSheet=sheets.some(t=>{
+    const tg=games.filter(g=>g.home===t||g.away===t); if(!tg.length) return false;
+    const mine=new Map(picks.filter(p=>p.team===t).map(p=>[Number(p.game_id),p]));
+    return tg.every(g=>{ const p=mine.get(Number(g.game_id)); return p && (p.hidden || (p.pick && p.goals!=null)); });
+  });
+  const divs=new Set(sheets.map(t=>TEAMS[t]?.div).filter(Boolean));
+  const o6=ORIGINAL_SIX.filter(t=>sheets.includes(t)).length;
+  let captain=false;
+  if(who && board?.length){
+    const top={}; board.forEach(r=>{ const p=Number(r.points); if(top[r.team]===undefined || p>top[r.team]) top[r.team]=p; });
+    captain=board.some(r=>r.username.toLowerCase()===who.toLowerCase() && Number(r.points)>0 && Number(r.points)===top[r.team]);
+  }
+  const earned={
+    faceoff: picks.length>0,
+    hattrick: sheetBest>=3,
+    topshelf: scored.some(x=>x.sc.points===2),
+    lamp: exact>=5,
+    shutout,
+    overtime: results.some(x=>x.p.pick==="OTL" && x.sc.outcomeHit),
+    shootout: results.some(x=>x.g.period_type==="SO" && x.sc.outcomeHit),
+    fullsheet: fullSheet,
+    original6: o6===6,
+    barnstormer: divs.size===4,
+    hotstick: best>=10,
+    captain,
+  };
+  const progress={ hattrick:`Best run on a sheet: ${sheetBest} of 3`, lamp:`${exact} of 5`, hotstick:`Best run: ${best} of 10`,
+    original6:`${o6} of 6 sheets`, barnstormer:`${divs.size} of 4 divisions` };
+  return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, streak:{current:cur, best}};
+}
+
+// Every row of a query, 1000 at a time (Supabase returns at most 1000 rows per request).
+async function fetchAllRows(make){
+  const out=[];
+  for(let from=0;;from+=1000){
+    const {data,error}=await make().range(from,from+999);
+    if(error) throw error;
+    out.push(...data); if(data.length<1000) break;
+  }
+  return out;
+}
+async function gamesForTeams(sb, teams){
+  if(!teams.length) return [];
+  const list=teams.join(",");
+  return fetchAllRows(()=>sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,period_type")
+    .eq("season",SEASON).or(`home.in.(${list}),away.in.(${list})`).order("game_id"));
+}
+// Your own badges (signed in): all your picks + those teams' games + the leaderboard.
+async function myBadges(sb, username){
+  const picks=await fetchAllRows(()=>sb.from("team_picks").select("team,game_id,pick,goals").order("game_id"));
+  const teams=[...new Set(picks.map(p=>p.team))];
+  const [games, board] = await Promise.all([gamesForTeams(sb,teams), username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : []]);
+  return computeBadges(picks, games, board, username);
+}
+// Another player's badges, from what anyone can see: their revealed picks (upcoming ones count as made).
+async function playerBadges(sb, username, board){
+  const teams=[...new Set(board.filter(r=>r.username.toLowerCase()===username.toLowerCase()).map(r=>r.team))];
+  const sets=await Promise.all(teams.map(t=>sb.rpc("sheet_picks",{p_username:username,p_team:t,p_season:SEASON})
+    .then(({data})=>(data||[]).map(r=>({team:t, game_id:r.game_id, pick:r.pick, goals:r.goals, hidden:!r.revealed})))));
+  const picks=sets.flat();
+  return computeBadges(picks, await gamesForTeams(sb,teams), board, username);
+}
+
+// "New badge" pop-up: compares with the badges this device has already shown you.
+function announceBadges(userId, earned){
+  const key=`stickpicks-badges-${userId}`;
+  let seen=null; try{ seen=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}
+  try{ localStorage.setItem(key, JSON.stringify(earned)); }catch(e){}
+  const fresh = seen ? earned.filter(id=>!seen.includes(id)) : earned;
+  if(!fresh.length) return;
+  document.querySelector(".badge-toast")?.remove();
+  const t=document.createElement("div"); t.className="badge-toast"; t.setAttribute("role","status");
+  const b=BADGE_BY_ID[fresh[0]];
+  const text=document.createElement("div"); text.className="badge-toast-text";
+  const k=document.createElement("small"); k.textContent = fresh.length===1 ? "New badge" : `${fresh.length} new badges`;
+  const n=document.createElement("b"); n.textContent = fresh.length===1 ? b.name : fresh.map(id=>BADGE_BY_ID[id].name).join(" · ");
+  const a=document.createElement("a"); a.href="profile.html#badges"; a.textContent="See your badges";
+  text.append(k,n,a);
+  const x=document.createElement("button"); x.type="button"; x.className="badge-toast-x"; x.setAttribute("aria-label","Close"); x.textContent="×";
+  x.addEventListener("click",()=>t.remove());
+  t.append(badgeEl(fresh[0],52), text, x);
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add("out"), 9000); setTimeout(()=>t.remove(), 9600);
+}
+
 /* ───────── Shared helpers ───────── */
 function makeClient(){
   const cfg=window.PICKS_CONFIG||{};

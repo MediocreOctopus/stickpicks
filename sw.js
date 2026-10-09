@@ -5,7 +5,7 @@
 // ?v=YYYY-MM-DD, so they can be served straight from the cache. Live data (Supabase) is never cached.
 //
 // When bumping the ?v= date in the pages, bump VERSION here too, so the old cache is cleared.
-const VERSION = "2026-10-27";
+const VERSION = "2026-10-28";
 const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 
@@ -64,5 +64,26 @@ self.addEventListener("fetch", event => {
     if(hit && url.hostname !== "fonts.googleapis.com") return hit;
     const net = fetch(req).then(res => { if(res.ok || res.type === "opaque") c.put(req, res.clone()); return res; });
     return hit ? (event.waitUntil(net.catch(() => {})), hit) : net;
+  })());
+});
+
+// Puck-drop reminders (sent by the GitHub Action): show the notification; tapping it opens Up next.
+self.addEventListener("push", event => {
+  let d = {};
+  try{ d = event.data ? event.data.json() : {}; }catch(e){ d = { body: event.data && event.data.text() }; }
+  event.waitUntil(self.registration.showNotification(d.title || "stickpicks", {
+    body: d.body || "Games on your sheets start soon.",
+    icon: "icon-192.png", badge: "icon-192.png",
+    tag: d.tag || "puckdrop", renotify: true,
+    data: { url: new URL(d.url || "index.html#upnext", self.registration.scope).href }
+  }));
+});
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = event.notification.data?.url || self.registration.scope;
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for(const w of wins){ if(w.url.startsWith(self.registration.scope) && "focus" in w){ await w.navigate(url).catch(() => {}); return w.focus(); } }
+    return self.clients.openWindow(url);
   })());
 });

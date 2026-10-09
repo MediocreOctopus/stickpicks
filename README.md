@@ -116,6 +116,34 @@ To appear on the leaderboard, a player needs a username (3–20 letters, numbers
 
 When you're signed in, the home page account box lists your **Current Picks** (each sheet you've started, with its points) and a **Continue** button for the last sheet you opened. Your total points, best rank, and settings (including sign out) are on your profile page.
 
+## Puck-drop reminders
+
+Players can turn on **Puck-drop reminders** in Settings on their profile (each device separately). About an hour before puck drop, if a game on one of their sheets doesn't have both a result and goals picked, they get one notification ("Kraken at Red Wings starts in 45 min. Your pick isn't in yet."); tapping it opens Up next on the home page. Each game is announced once.
+
+- Works in Chrome, Edge, Firefox and Safari, and in the installed app. On iPhone and iPad it only works in the installed app (Share → Add to Home Screen), iOS 16.4 or newer.
+- The **Update NHL games** workflow sends them right after each 15-minute sync (`scripts/send-reminders.mjs`).
+- Setup (once): the workflow needs a repository secret named `VAPID_PRIVATE_KEY` (the private half of the push key pair; the public half is in `config.js` and the workflow file). Without it, reminders are simply skipped. If you ever replace the key pair, update all three places; everyone then turns reminders on again.
+
+## Badges and streaks
+
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 12 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges.
+
+| Badge | How to earn it |
+|---|---|
+| First Faceoff | Make your first pick |
+| Hat Trick | 3 results right in a row on one sheet |
+| Top Shelf | Result and exact goals right in the same game |
+| Lamp Lighter | Exact combined goals 5 times |
+| Shutout | Every result right on a night with 3+ of your games |
+| Overtime Hero | A correct OTL call |
+| Shootout Ace | Result right in a game decided by a shootout |
+| Full Sheet | Every game on a sheet picked, result and goals |
+| Original Six | Sheets for BOS, CHI, DET, MTL, NYR and TOR |
+| Barnstormer | Sheets in all four divisions |
+| Hot Stick | 10 results right in a row |
+| Captain | #1 on a team leaderboard |
+
+Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
 ## Visitor stats
 
 Every page loads [GoatCounter](https://www.goatcounter.com/) (stickpicks.goatcounter.com), a free, privacy-friendly visitor counter: no cookies and no personal data. Page addresses are counted without usernames (for example `sheet.html?team=SEA`). Visits from `localhost` aren't counted. See the numbers by signing in at https://stickpicks.goatcounter.com.

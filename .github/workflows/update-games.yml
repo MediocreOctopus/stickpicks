@@ -21,3 +21,15 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      # Puck-drop reminders (push notifications). A problem here never undoes the sync above.
+      - name: Send puck-drop reminders
+        continue-on-error: true
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund web-push@3.6.7
+          node scripts/send-reminders.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          # The public half of the key pair (safe to publish; also in config.js)
+          VAPID_PUBLIC_KEY: BG-EBGfRfCx8oybaL6jGuiJNpwlQK4hJcd6rX-hTUr2w9R5ebdP_EaOMOn8rwjzn65hyoIy7cCNnKT3PIT3J_wo

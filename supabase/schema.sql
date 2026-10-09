@@ -351,3 +351,81 @@ drop policy if exists "Remove own avatar" on storage.objects;
 create policy "Remove own avatar" on storage.objects
   for delete to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- 13) Puck-drop reminders (web push). Each device that turns reminders on stores its push
+--     address here. Players never read or write this table directly: the two functions below
+--     save or remove the caller's own device, and only the GitHub Action (service role) reads it.
+create table if not exists public.push_subscriptions (
+  endpoint    text primary key,
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  p256dh      text not null,
+  auth        text not null,
+  created_at  timestamptz not null default now()
+);
+alter table public.push_subscriptions enable row level security;
+revoke all on public.push_subscriptions from anon, authenticated;
+
+-- Reminders already sent, so each game is only announced once per player and sheet.
+create table if not exists public.push_reminders_sent (
+  user_id  uuid not null references auth.users(id) on delete cascade,
+  game_id  bigint not null,
+  team     text not null,
+  sent_at  timestamptz not null default now(),
+  primary key (user_id, game_id, team)
+);
+alter table public.push_reminders_sent enable row level security;
+revoke all on public.push_reminders_sent from anon, authenticated;
+
+-- Save this device for the signed-in player (a device that moves to another account moves with it).
+create or replace function public.save_push_subscription(p_endpoint text, p_p256dh text, p_auth text)
+returns void language sql security definer set search_path = '' as $$
+  insert into public.push_subscriptions (endpoint, user_id, p256dh, auth)
+  values (p_endpoint, (select auth.uid()), p_p256dh, p_auth)
+  on conflict (endpoint) do update
+    set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth, created_at = now();
+$$;
+revoke all on function public.save_push_subscription(text, text, text) from public, anon;
+grant execute on function public.save_push_subscription(text, text, text) to authenticated;
+
+create or replace function public.remove_push_subscription(p_endpoint text)
+returns void language sql security definer set search_path = '' as $$
+  delete from public.push_subscriptions where endpoint = p_endpoint and user_id = (select auth.uid());
+$$;
+revoke all on function public.remove_push_subscription(text) from public, anon;
+grant execute on function public.remove_push_subscription(text) to authenticated;
+
+-- Is this device signed up for reminders? (true/false only)
+create or replace function public.has_push_subscription(p_endpoint text)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.push_subscriptions where endpoint = p_endpoint and user_id = (select auth.uid()));
+$$;
+revoke all on function public.has_push_subscription(text) from public, anon;
+grant execute on function public.has_push_subscription(text) to authenticated;
+
+-- For the GitHub Action: games starting within p_minutes on a sheet the player has started,
+-- where the result or the goals aren't picked yet, and no reminder was sent for it.
+create or replace function public.push_reminders_due(p_minutes int default 75)
+returns table (user_id uuid, team text, game_id bigint, start_utc timestamptz, home text, away text)
+language sql stable security definer set search_path = '' as $$
+  with subs as (select distinct s.user_id from public.push_subscriptions s),
+  sheets as (
+    select distinct tp.user_id, tp.team from public.team_picks tp
+    where tp.user_id in (select subs.user_id from subs)
+  ),
+  soon as (
+    select g.game_id, g.start_utc, g.home, g.away from public.games g
+    where g.start_utc > now() and g.start_utc <= now() + make_interval(mins => p_minutes)
+      and coalesce(g.schedule_state, 'OK') <> 'PPD'
+  )
+  select sh.user_id, sh.team, s.game_id, s.start_utc, s.home, s.away
+  from sheets sh
+  join soon s on s.home = sh.team or s.away = sh.team
+  left join public.team_picks tp on tp.user_id = sh.user_id and tp.team = sh.team and tp.game_id = s.game_id
+  where (tp.pick is null or tp.goals is null)
+    and not exists (select 1 from public.push_reminders_sent r
+                    where r.user_id = sh.user_id and r.game_id = s.game_id and r.team = sh.team)
+  order by s.start_utc;
+$$;
+revoke all on function public.push_reminders_due(int) from public, anon, authenticated;
+grant execute on function public.push_reminders_due(int) to service_role;
+grant select, insert, update, delete on public.push_subscriptions, public.push_reminders_sent to service_role;
