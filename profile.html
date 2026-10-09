@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-03">
+<link rel="stylesheet" href="styles.css?v=2026-11-04">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -197,8 +197,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-03"></script>
-<script src="teams.js?v=2026-11-03"></script>
+<script src="config.js?v=2026-11-04"></script>
+<script src="teams.js?v=2026-11-04"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -276,8 +276,8 @@ function showBadges(r, own){
   BADGES.forEach(b=>{
     const has=r.earned.includes(b.id), item=document.createElement("div"); item.className="badge-item"+(has?"":" is-locked");
     const name=document.createElement("b"); name.textContent=b.name;
-    const how=document.createElement("small"); how.textContent = has ? b.how : (r.progress[b.id] ? `${b.how} ${r.progress[b.id]}.` : b.how);
-    item.append(badgeEl(b.id,60,has), name, how);
+    const how=document.createElement("small"); how.textContent=b.how;
+    item.append(badgeEl(b.id,60,has), name, how, badgeProgressEl(b.id, r.meter[b.id]));   // progress bar ("Earned" when done)
     item.title = `${b.name}: ${has?"earned":"not yet"}. ${b.how}`;
     grid.appendChild(item);
   });

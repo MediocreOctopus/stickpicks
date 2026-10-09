@@ -775,8 +775,9 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .badge.locked{filter:grayscale(1);opacity:.32}
 .badge-count{font:italic .85rem var(--serif);letter-spacing:0;text-transform:none;color:var(--muted);margin-left:6px}
 .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px}
-.badge-item{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:10px;align-items:start}
-.badge-item .badge{grid-row:1 / span 2}
+.badge-item{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:10px;align-items:start}
+.badge-item .badge{grid-row:1 / span 3}
+.badge-item .bprog{margin-top:6px}
 .badge-item b{font:600 .9rem var(--display);letter-spacing:.08em;text-transform:uppercase;line-height:1.2;margin-top:4px}
 .badge-item small{font:italic .76rem/1.35 var(--serif);color:var(--muted);margin-top:2px}
 .badge-item.is-locked b{color:var(--muted)}
@@ -832,3 +833,20 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .mysheets a{box-shadow:inset 5px 0 0 var(--t-board,transparent);padding-left:14px}
 [data-scheme="dark"] .mysheets a{box-shadow:inset 5px 0 0 var(--t-stripe,transparent)}
 .mysheets a > span:not(.sw):not(.meta){font:500 .98rem var(--display);letter-spacing:.04em;text-transform:uppercase}
+/* ───── Badge progress bars (profile badges and "Badges in reach" on the home page) ───── */
+.bprog{--bp:#1C2B45}
+.bprog[data-ring="red"]{--bp:#9B1C1F} .bprog[data-ring="gold"]{--bp:#C08A2A}
+[data-scheme="dark"] .bprog{--bp:#EFE6D2} [data-scheme="dark"] .bprog[data-ring="red"]{--bp:#E8463F} [data-scheme="dark"] .bprog[data-ring="gold"]{--bp:#D9A33A}
+.bprog.compact{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+.bprog-body{display:grid;gap:4px;min-width:0}
+.bprog-body b{font:600 .85rem var(--display);letter-spacing:.08em;text-transform:uppercase}
+.bprog-bar{height:9px;border-radius:999px;background:color-mix(in srgb, var(--ink) 12%, transparent);overflow:hidden}
+.bprog-bar i{display:block;height:100%;min-width:0;border-radius:inherit;background:var(--bp);transition:width .4s ease}
+.bprog small{font:italic .76rem/1.3 var(--serif);color:var(--muted)}
+@media (prefers-reduced-motion:reduce){ .bprog-bar i{transition:none} }
+
+/* Home account box: Pick Now (never picked yet) and Badges in reach */
+.acct-picknow{display:flex;width:100%;box-sizing:border-box;margin-top:4px;padding:12px 18px;font-size:1.1rem}
+.acct-reach .acct-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.acct-reach .acct-label a{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--ink)}
+.reach-list{display:grid;gap:12px}

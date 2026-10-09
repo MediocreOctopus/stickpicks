@@ -360,8 +360,13 @@ function starArt(fill, ink, n){
     `<text x="32" y="37.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="11.5" fill="${ink}">${n}</text>`;
 }
 const BADGES=[
-  {id:"faceoff", name:"First Faceoff", ring:"navy", how:"Make your first pick.",
-   art:`<circle cx="32" cy="32" r="12" fill="none" stroke="${BI.r}" stroke-width="2.6"/><circle cx="32" cy="32" r="3.6" fill="${BI.r}"/><path d="M11 28h8M11 36h8M45 28h8M45 36h8" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/>`},
+  // (id stays "faceoff" so devices that already announced it don't announce it again)
+  {id:"faceoff", name:"Inaugural Season", ring:"navy", how:"Make your first pick of the 2026–27 season.",
+   // a felt rafter banner, like a championship banner hanging from the rafters
+   art:`<path d="M17 15h30" stroke="${BI.n}" stroke-width="2.6" stroke-linecap="round"/><circle cx="16.5" cy="15" r="2" fill="${BI.n}"/><circle cx="47.5" cy="15" r="2" fill="${BI.n}"/>`+
+       `<path d="M20.5 16.5H43.5V45L32 39L20.5 45Z" fill="${BI.r}"/><path d="M22.5 18.5H41.5" stroke="${BI.c}" stroke-width="1" opacity=".7"/>`+
+       `<path d="M32 21.3L33 23.9L35.8 24L33.6 25.8L34.4 28.5L32 27L29.6 28.5L30.4 25.8L28.2 24L31 23.9Z" fill="${BI.c}"/>`+
+       `<text x="32" y="35.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="7.4" fill="${BI.c}">26–27</text>`},
   {id:"hattrick", name:"Hat Trick", ring:"red", how:"Get a W, an L and an OTL right on one sheet.",
    art:`<path d="M20 38Q19 22 26 21Q29 24 32 22Q35 24 38 21Q45 22 44 38Z" fill="${BI.n}"/><rect x="20" y="32" width="24" height="4.5" fill="${BI.r}"/><ellipse cx="32" cy="39.5" rx="17" ry="4.2" fill="${BI.n}"/>`},
   // The three stars of the game: results right in a row on one sheet
@@ -442,6 +447,22 @@ function computeBadges(picks, games, board, who){
     const top={}; board.forEach(r=>{ const p=Number(r.points); if(top[r.team]===undefined || p>top[r.team]) top[r.team]=p; });
     captain=board.some(r=>r.username.toLowerCase()===who.toLowerCase() && Number(r.points)>0 && Number(r.points)===top[r.team]);
   }
+  // for progress bars
+  const maxPts=scored.reduce((m,x)=>Math.max(m,x.sc.points),0);
+  const nightBest=Object.values(nights).reduce((m,a)=>a.every(Boolean)?Math.max(m,a.length):m,0);
+  let fill=0, fillOf=84;
+  sheets.forEach(t=>{
+    const tg=games.filter(g=>g.home===t||g.away===t);
+    const mine=new Map(picks.filter(p=>p.team===t).map(p=>[Number(p.game_id),p]));
+    const n=tg.filter(g=>{ const p=mine.get(Number(g.game_id)); return p && (p.hidden || (p.pick && p.goals!=null)); }).length;
+    if(n>fill || (n===fill && tg.length)){ fill=n; fillOf=tg.length||84; }
+  });
+  let bestRank=null;
+  if(who && board?.length){
+    const ranks={}; board.forEach(r=>{ (ranks[r.team]=ranks[r.team]||[]).push(Number(r.points)); });
+    board.filter(r=>r.username.toLowerCase()===who.toLowerCase()).forEach(r=>{
+      const rk=1+ranks[r.team].filter(p=>p>Number(r.points)).length; if(bestRank===null || rk<bestRank) bestRank=rk; });
+  }
   const earned={
     faceoff: picks.length>0,
     hattrick: hatBest>=3,
@@ -463,7 +484,52 @@ function computeBadges(picks, games, board, who){
   const progress={ hattrick:`${hatBest} of 3 kinds on one sheet`, star3:run(3), star2:run(5), star1:run(10),
     lamp:`${exact} of 5`, pointstreak:`Best point streak: ${Math.min(ptBest,10)} of 10`,
     original6:`${o6} of 6 sheets`, barnstormer:`${divs.size} of 4 divisions` };
-  return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, streak:{current:cur, best}};
+  // [have, need, what's being counted] for each badge's progress bar
+  const meter={
+    faceoff:[Math.min(picks.length,1),1,"pick made"],
+    hattrick:[hatBest,3,"kinds (W, L, OTL) right on one sheet"],
+    star3:[Math.min(sheetBest,3),3,"right in a row on one sheet"],
+    star2:[Math.min(sheetBest,5),5,"right in a row on one sheet"],
+    star1:[Math.min(sheetBest,10),10,"right in a row on one sheet"],
+    topshelf:[maxPts,2,"points in your best game"],
+    lamp:[Math.min(exact,5),5,"exact goal totals"],
+    shutout:[Math.min(nightBest,3),3,"right on your best perfect night"],
+    overtime:[earned.overtime?1:0,1,"correct OTL call"],
+    shootout:[earned.shootout?1:0,1,"shootout game called right"],
+    fullsheet:[fill,fillOf,"games picked on your fullest sheet"],
+    original6:[o6,6,"Original Six sheets"],
+    barnstormer:[divs.size,4,"divisions"],
+    pointstreak:[Math.min(ptBest,10),10,"games in a row with a point"],
+    captain:[bestRank===1?1:0,1, bestRank ? `#1 spot (best so far: #${bestRank})` : "#1 spot"],
+  };
+  Object.keys(earned).forEach(id=>{ if(earned[id]) meter[id][0]=meter[id][1]; });
+  return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, meter, streak:{current:cur, best}};
+}
+
+// Roughly easiest to hardest, for "Badges in reach" on the home page.
+const BADGE_ORDER=["faceoff","star3","topshelf","overtime","hattrick","shootout","barnstormer","lamp","star2","original6","shutout","captain","pointstreak","star1","fullsheet"];
+// The n unearned badges you're closest to (highest share done; easier first on ties), listed easiest to hardest.
+function badgesInReach(r, n=3){
+  const rank=id=>BADGE_ORDER.indexOf(id), share=id=>{ const [h,need]=r.meter[id]; return need ? h/need : 0; };
+  return BADGE_ORDER.filter(id=>!r.earned.includes(id))
+    .sort((a,b)=>share(b)-share(a) || rank(a)-rank(b)).slice(0,n)
+    .sort((a,b)=>rank(a)-rank(b));
+}
+// A progress bar row: patch, name, bar, "3 of 5 ...". Bar colour follows the badge's ring.
+function badgeProgressEl(id, meter, compact=false){
+  const b=BADGE_BY_ID[id], [have,need,what]=meter, pct=need?Math.round(Math.min(have,need)/need*100):0;
+  const row=document.createElement("div"); row.className="bprog"+(compact?" compact":"");
+  row.dataset.ring=b.ring;
+  if(compact) row.append(badgeEl(id,40,have>=need));
+  const body=document.createElement("div"); body.className="bprog-body";
+  if(compact){ const nm=document.createElement("b"); nm.textContent=b.name; body.append(nm); }
+  const bar=document.createElement("div"); bar.className="bprog-bar";
+  bar.setAttribute("role","progressbar"); bar.setAttribute("aria-valuemin","0"); bar.setAttribute("aria-valuemax",String(need)); bar.setAttribute("aria-valuenow",String(Math.min(have,need)));
+  bar.setAttribute("aria-label",`${b.name}: ${have} of ${need}`);
+  const fillEl=document.createElement("i"); fillEl.style.width=pct+"%"; bar.append(fillEl);
+  const txt=document.createElement("small"); txt.textContent = have>=need ? "Earned" : `${have} of ${need} ${what}`;
+  body.append(bar,txt); row.append(body);
+  return row;
 }
 
 // Every row of a query, 1000 at a time (Supabase returns at most 1000 rows per request).

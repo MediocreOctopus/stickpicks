@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-03">
+<link rel="stylesheet" href="styles.css?v=2026-11-04">
 </head>
 <body>
 
@@ -175,13 +175,15 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
           <p class="formmsg" id="nmMsg" role="status"></p>
         </form>
 
-        <h3 class="acct-label">Current Picks</h3>
+        <h3 class="acct-label" id="curLabel">Current Picks</h3>
         <ul class="mysheets" id="mySheets"></ul>
-      </div>
-
-      <!-- Continue: the last sheet opened on this device (signed in, or the signed-out pitch) -->
-      <div class="cta acct-cta hidden" id="ctaRow">
-        <a class="btn teambtn" id="ctaContinue" href="sheet.html"></a>
+        <!-- Never picked yet: one big button to the Pick Team page -->
+        <a class="btn acct-picknow hidden" id="pickNow" href="teams.html">Pick Now</a>
+        <!-- Badges in reach: the three unearned badges you're closest to, easiest first -->
+        <section class="acct-reach hidden" id="reach" aria-label="Badges in reach">
+          <h3 class="acct-label">Badges in reach <a href="profile.html#badges">All badges</a></h3>
+          <div class="reach-list" id="reachList"></div>
+        </section>
       </div>
 
       <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
@@ -200,8 +202,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-03"></script>
-<script src="teams.js?v=2026-11-03"></script>
+<script src="config.js?v=2026-11-04"></script>
+<script src="teams.js?v=2026-11-04"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -221,16 +223,6 @@ function swatch(code){
 mountTeamMenu($("teamMenu"));
 // Older links point at index.html#teams; teams now have their own page
 if(location.hash==="#teams") location.replace("teams.html");
-
-/* ───────── Continue where you left off ───────── */
-(function continueButton(){
-  let code=null; try{ code=localStorage.getItem("nhl-picks-last-team"); }catch(e){}
-  const t=code && TEAMS[code]; if(!t) return;
-  const a=$("ctaContinue");
-  a.href=`sheet.html?team=${code}`; a.textContent=`Continue: ${t.name}`;
-  teamStyle(a,code);
-  $("ctaRow").dataset.ready="1";   // shown by show() under the account panel
-})();
 
 /* ───────── News ticker ───────── */
 function ago(iso){
@@ -441,8 +433,6 @@ function setBanner(){
 function show(id){
   PANELS.forEach(p=>$(p).classList.toggle("hidden",p!==id));
   panelNow=id; setBanner();
-  // Continue sits in the account box, under the welcome pitch or your current picks (not under the forms)
-  $("ctaRow").classList.toggle("hidden", !($("ctaRow").dataset.ready && (id==="pSignedIn" || id==="pWelcome")));
 }
 // Signed-out visitors see a short pitch; the forms open when they ask for them.
 function openForms(which){
@@ -605,9 +595,12 @@ async function loadMyStats(){
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const rows=sheets||[];
   list.innerHTML="";   // cleared again: two refreshes can overlap
-  if(!rows.length){
-    const li=document.createElement("li"); li.className="hint"; li.textContent="No picks yet. Use Pick Team to start your first sheet.";
-    list.appendChild(li); loadRecap([]); loadUpNext([lastTeam()]); return;
+  // never picked: a Pick Now button instead of Current Picks, and Inaugural Season as the badge in reach
+  const none=!rows.length;
+  $("curLabel").classList.toggle("hidden",none); list.classList.toggle("hidden",none); $("pickNow").classList.toggle("hidden",!none);
+  if(none){
+    showReach({meter:{faceoff:[0,1,"pick made"]}}, ["faceoff"]);
+    loadRecap([]); loadUpNext([lastTeam()]); return;
   }
   rows.forEach(r=>{
     const li=document.createElement("li"), a=document.createElement("a");
@@ -621,7 +614,16 @@ async function loadMyStats(){
   loadRecap(teams);
   loadUpNext([...teams, lastTeam()]);
   const uid=currentUser.id;   // pop-up for badges earned since this device last showed them
-  myBadges(sb, profile?.username||null).then(r=>{ if(currentUser?.id===uid) announceBadges(uid, r.earned); }).catch(()=>{});
+  myBadges(sb, profile?.username||null).then(r=>{
+    if(currentUser?.id!==uid) return;
+    announceBadges(uid, r.earned);
+    showReach(r, badgesInReach(r,3));
+  }).catch(()=>{});
+}
+// "Badges in reach": progress bars for a few badges (hidden when there's nothing left to earn).
+function showReach(r, ids){
+  $("reachList").replaceChildren(...ids.map(id=>badgeProgressEl(id, r.meter[id], true)));
+  $("reach").classList.toggle("hidden", !ids.length);
 }
 
 const lastTeam=()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } };
