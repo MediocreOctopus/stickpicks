@@ -127,7 +127,7 @@ footer{margin-top:28px;font:italic .82rem/1.5 var(--serif);color:var(--muted)}
 .neutral[data-scheme="dark"]{--bg:#1C2B45;--panel:#22355A;--home:#22355A;--line:#3A4C6E;--ink:#EFE6D2;--muted:#B8C0CF}
 .lb-board{position:static}
 .lb-board .board-top{justify-content:space-between}
-.board .lb-headline{font:clamp(2.3rem,7vw,3.6rem)/1.1 "Yellowtail",cursive;letter-spacing:0;word-spacing:.15em;color:var(--title);margin:14px 0 0;transform:rotate(-3deg);transform-origin:left center}
+.board .lb-headline{font:clamp(2.3rem,7vw,3.6rem)/1.1 "Yellowtail",cursive;letter-spacing:0;word-spacing:.15em;color:var(--title);margin:14px 0 0}
 .lb-sub{font:italic .85rem var(--serif);color:color-mix(in srgb, var(--board-ink) 75%, transparent);margin-top:8px}
 
 /* Table on the right, your standing in a sticky sidebar on the left */
