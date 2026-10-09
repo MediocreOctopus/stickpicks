@@ -892,3 +892,9 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .upday::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
 .uprows .upgame .gdate b{font:600 .95rem var(--display);letter-spacing:.02em}
 @media (max-width:760px){ .uprows .upgame .gdate b{font:italic .78rem var(--serif);letter-spacing:0} }
+/* ───── Leaderboard banner: the pick sheet's sweater banner, keeping the script headline ───── */
+.lbhead .lb-headline{font:clamp(2.1rem,5.5vw,3.2rem)/1.1 "Yellowtail",cursive;letter-spacing:0;word-spacing:.12em;color:var(--board-ink);margin:4px 0 0;padding-right:.3em}
+.lbhead .sh-chips{margin-top:12px}
+html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleeve and hem stripes */
+[data-scheme="dark"] .lbhead{box-shadow:0 0 0 2px var(--ink)}
+.lbpage .lb-layout{margin-top:22px}

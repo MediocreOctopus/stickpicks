@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" class="lbpage">
+<html lang="en" class="home lbpage">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Leaderboard · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
@@ -25,21 +27,36 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-08">
+<link rel="stylesheet" href="styles.css?v=2026-11-09">
 </head>
 <body>
+<div class="hem-top" aria-hidden="true"></div>
 <div class="wrap">
-  <header class="board lb-board">
-    <div class="board-top">
-      <div class="board-nav">
-        <a class="brand lb-brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
-        <a class="navlink" id="back" href="sheet.html">My picks</a>
-        <a class="navlink" href="rules.html">Rules</a>
-      </div>
-      <select class="teamsel" id="teamsel" aria-label="Show leaderboard for"></select>
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html" aria-current="page">Leaderboard</a>
+      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
     </div>
-    <h1 class="lb-headline" id="headline">stickpicks Leaderboard · 2026–27</h1>
-    <div class="lb-sub" id="updated">Loading…</div>
+  </nav>
+
+  <!-- Sweater banner in the board's colours (navy on All teams), like the pick sheet's -->
+  <header class="sheethead lbhead">
+    <div class="sh-in">
+      <div class="sh-main">
+        <div class="sh-kicker" id="lbKicker">2026–27 standings</div>
+        <h1 class="lb-headline" id="headline">stickpicks Leaderboard · 2026–27</h1>
+        <div class="sh-chips">
+          <span class="sh-chip" id="updated">Loading…</span>
+          <label class="sh-switch"><span aria-hidden="true">Switch board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>
+          <a class="sh-link ghost" id="back" href="sheet.html">My picks</a>
+        </div>
+      </div>
+    </div>
+    <div class="sh-hem" aria-hidden="true"><i style="width:100%"></i></div>
   </header>
 
   <!-- Your standing sits in a sidebar to the left of the table (above it on phones) -->
@@ -68,13 +85,15 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 
   <footer><span id="scope"></span> 1 point for the right result, 1 for the exact goals. Ties share a rank. <a href="rules.html">Rules</a></footer>
 </div>
+<div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-08"></script>
-<script src="teams.js?v=2026-11-08"></script>
+<script src="config.js?v=2026-11-09"></script>
+<script src="teams.js?v=2026-11-09"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
+mountTeamMenu(document.getElementById("teamMenu"));
 
 const sel=document.getElementById("teamsel");
 (function buildSelect(){
@@ -96,6 +115,7 @@ function setTeam(code){
   history.replaceState(null,"",url);
   const lastSheet = team || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
   document.getElementById("back").href = lastSheet ? `sheet.html?team=${lastSheet}` : "teams.html";
+  document.getElementById("lbKicker").textContent = team ? "2026–27 · team leaderboard" : "Every team, every sheet";
   const head=document.getElementById("headline");
   if(team) head.textContent=`${TEAMS[team].name} Leaderboard`;
   else{ // keep "· 2026–27" together if the headline wraps
