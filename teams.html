@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-30">
+<link rel="stylesheet" href="styles.css?v=2026-10-31">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -49,7 +49,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>Fan-made, not affiliated with the NHL. Team colors are approximations. <a href="rules.html">Rules</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-10-30"></script>
+<script src="teams.js?v=2026-10-31"></script>
 <script>
 // All 32 teams by division, as tiles in team colours. Marks the sheet you opened last
 // and any sheets with picks saved in this browser.

@@ -133,25 +133,29 @@ footer{margin-top:28px;font:italic .82rem/1.5 var(--serif);color:var(--muted)}
 /* Table on the right, your standing in a sticky sidebar on the left */
 .lb-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;align-items:start;margin-top:20px}
 .lb-layout > .you.hidden + .lb-main{grid-column:1 / -1}
-.you{position:sticky;top:16px;background:var(--panel);border:2px solid var(--ink);border-radius:8px;padding:0 16px 16px;overflow:hidden}
-.you::before{content:"";display:block;height:14px;margin:0 -16px 14px;
-  background:linear-gradient(to bottom,var(--red) 0 5px,transparent 5px 9px,var(--navy) 9px 14px)}
-[data-scheme="dark"] .you::before{background:linear-gradient(to bottom,var(--red) 0 5px,transparent 5px 9px,var(--wool) 9px 14px)}
-.you-label{font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+/* "Your spot": a sweater banner in the board's colours (sleeve stripes left, hem stripes along the bottom) */
+.you{position:sticky;top:16px;background:var(--board);color:var(--board-ink);border:2px solid var(--ink);border-radius:8px;padding:16px 16px 26px 38px;overflow:hidden}
+.you::before{content:"";position:absolute;left:0;top:0;bottom:10px;width:24px;
+  background:linear-gradient(to right,transparent 0 5px,var(--lb-stripe) 5px 10px,transparent 10px 14px,var(--lb-stripe) 14px 19px,transparent 19px)}
+.you::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;
+  background:linear-gradient(to bottom,var(--lb-stripe) 0 4px,transparent 4px 6px,var(--lb-stripe) 6px 10px)}
+.you-label{font:600 .76rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--title)}
 .you-team{display:flex;align-items:center;gap:8px;margin-top:10px;font:500 1rem var(--display);letter-spacing:.03em;text-transform:uppercase}
-.you-rank{font:600 3.4rem/1 var(--display);margin-top:10px;font-variant-numeric:tabular-nums}
-.you-rank span{font:italic 1rem var(--serif);color:var(--muted)}
-.you-pts{font:600 1.05rem var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--red);margin-top:4px}
-.you p{font:italic .9rem/1.5 var(--serif);color:var(--muted);margin:10px 0 0}
-.you .btn{width:100%;margin-top:14px}
+.you-rank{font:700 3.4rem/1 var(--display);margin-top:10px;font-variant-numeric:tabular-nums}
+.you-rank span{font:italic 1rem var(--serif);color:color-mix(in srgb, var(--board-ink) 72%, transparent)}
+.you-pts{display:inline-block;margin-top:8px;font:500 .8rem "Barlow",sans-serif;padding:2px 10px;border-radius:999px;border:1px solid color-mix(in srgb, var(--board-ink) 40%, transparent)}
+.you p{font:italic .9rem/1.5 var(--serif);color:color-mix(in srgb, var(--board-ink) 80%, transparent);margin:10px 0 0}
+.you .btn{width:100%;margin-top:14px;background:var(--title);border-color:var(--title);color:var(--board)}
 @media (max-width:760px){
   .lb-layout{grid-template-columns:1fr}
-  .you{position:static}
+  .you{position:relative;top:auto}
 }
 
+/* The table: the column headers are a band in the board's colours ending in two hem stripes */
 .lb-wrap{overflow-x:auto;border:2px solid var(--ink);border-radius:8px;background:var(--panel)}
 table.lb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.lb th{font:600 .78rem var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:right;padding:12px 12px 8px;border-bottom:4px double var(--ink);white-space:nowrap}
+.lb th{font:600 .76rem var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--board-ink);text-align:right;padding:12px 12px 20px;white-space:nowrap;
+  background:linear-gradient(to bottom,var(--board) 0 calc(100% - 10px),var(--lb-stripe) calc(100% - 10px) calc(100% - 6px),var(--board) calc(100% - 6px) calc(100% - 4px),var(--lb-stripe) calc(100% - 4px))}
 .lb th:nth-child(1),.lb th:nth-child(2){text-align:left}
 .lb td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .lb tr:last-child td{border-bottom:0}
@@ -160,13 +164,18 @@ table.lb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 /* medium widths: team tags only (no full team names) and no "Games picked", so player names keep their room */
 @media (max-width:900px){ .lb .tname{display:none} .lb .opt{display:none} }
 .lb td.pts{font:600 1.4rem var(--display)}
-/* rank medals: gold, silver, bronze */
-.rk{display:inline-flex;align-items:center;justify-content:center;min-width:2rem;height:2rem;border-radius:50%;font:600 1rem var(--display);color:var(--muted)}
-.rk.r1{background:var(--gold);color:#3A2A00}
-.rk.r2{background:#C9CDD3;color:#1E2A31}
-.rk.r3{background:#C98E5E;color:#3A1F08}
-.lb tr.me td{background:color-mix(in srgb, var(--red) 10%, var(--panel))}
-.lb tr.me td.name::after{content:"You";margin-left:8px;font:600 .68rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--red);border:1.5px solid var(--red);border-radius:3px;padding:0 5px}
+/* rank medals: stitched felt patches in gold, silver and bronze */
+.rk{display:inline-flex;align-items:center;justify-content:center;min-width:2.1rem;height:2.1rem;border-radius:50%;font:600 1rem var(--display);color:var(--muted)}
+.rk.r1,.rk.r2,.rk.r3{outline:1.4px dashed rgba(255,255,255,.8);outline-offset:-4px;box-shadow:0 1px 1px rgba(0,0,0,.25)}
+.rk.r1{background:#C08A2A;color:#2A1C02}
+.rk.r2{background:#AEB4BD;color:#1E2A31}
+.rk.r3{background:#B07447;color:#2E1605}
+/* your rows: a team-colour edge and a light gold tint (no label) */
+.lbpage{--edge:var(--board);--lb-stripe:var(--stripe)} .lbpage[data-scheme="dark"]{--edge:var(--stripe)}
+/* All teams board: the brand's cardinal red stripes */
+html.lbpage.neutral{--lb-stripe:var(--red)} html.lbpage.neutral[data-scheme="dark"]{--edge:var(--red)}
+.lb tr.me td{background:color-mix(in srgb, var(--gold) 13%, var(--panel))}
+.lb tr.me td:first-child{box-shadow:inset 5px 0 0 var(--edge)}
 @media (max-width:560px){
   .lb .opt,.lb .frac{display:none}
   .lb th,.lb td{padding:9px 6px}
