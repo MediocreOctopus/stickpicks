@@ -51,9 +51,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <h1 class="lb-headline" id="headline">stickpicks Leaderboard · 2026–27</h1>
         <div class="sh-chips">
           <span class="sh-chip" id="updated">Loading…</span>
-          <label class="sh-switch"><span aria-hidden="true">Switch board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>
-          <a class="sh-link ghost" id="back" href="sheet.html">My picks</a>
-        </div>
+          <label class="sh-switch"><span aria-hidden="true">Switch board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>        </div>
       </div>
     </div>
     <div class="sh-hem" aria-hidden="true"><i style="width:100%"></i></div>
@@ -113,8 +111,6 @@ function setTeam(code){
   const url=new URL(location.href);
   team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
   history.replaceState(null,"",url);
-  const lastSheet = team || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();
-  document.getElementById("back").href = lastSheet ? `sheet.html?team=${lastSheet}` : "teams.html";
   document.getElementById("lbKicker").textContent = team ? "2026–27 · team leaderboard" : "Every team, every sheet";
   const head=document.getElementById("headline");
   if(team) head.textContent=`${TEAMS[team].name} Leaderboard`;
