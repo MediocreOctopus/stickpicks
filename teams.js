@@ -354,11 +354,20 @@ async function disableReminders(sb){
 // gold = rare) and a simple pictogram in navy, cardinal red and stick-tape colours.
 const BADGE_RING={navy:"#1C2B45", red:"#9B1C1F", gold:"#C08A2A"};
 const BI={n:"#1C2B45", r:"#9B1C1F", w:"#B98245", s:"#8E98A6", p:"#FBF7EE", c:"#F4EDDC"};   // navy, red, wood, steel, paper, felt
+// A five-point felt star with its number (3rd, 2nd, 1st Star), outlined in navy.
+function starArt(fill, ink, n){
+  return `<path d="M32 14.5L36.6 26.6L49.6 27.2L39.5 35.4L43 48L32 40.8L21 48L24.5 35.4L14.4 27.2L27.4 26.6Z" fill="${fill}" stroke="${BI.n}" stroke-width="1.2" stroke-linejoin="round"/>`+
+    `<text x="32" y="37.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="11.5" fill="${ink}">${n}</text>`;
+}
 const BADGES=[
   {id:"faceoff", name:"First Faceoff", ring:"navy", how:"Make your first pick.",
    art:`<circle cx="32" cy="32" r="12" fill="none" stroke="${BI.r}" stroke-width="2.6"/><circle cx="32" cy="32" r="3.6" fill="${BI.r}"/><path d="M11 28h8M11 36h8M45 28h8M45 36h8" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/>`},
-  {id:"hattrick", name:"Hat Trick", ring:"red", how:"Get 3 results right in a row on one sheet.",
+  {id:"hattrick", name:"Hat Trick", ring:"red", how:"Get a W, an L and an OTL right on one sheet.",
    art:`<path d="M20 38Q19 22 26 21Q29 24 32 22Q35 24 38 21Q45 22 44 38Z" fill="${BI.n}"/><rect x="20" y="32" width="24" height="4.5" fill="${BI.r}"/><ellipse cx="32" cy="39.5" rx="17" ry="4.2" fill="${BI.n}"/>`},
+  // The three stars of the game: results right in a row on one sheet
+  {id:"star3", name:"3rd Star", ring:"navy", how:"Get 3 results right in a row on one sheet.", art:starArt(BI.n,BI.c,"3")},
+  {id:"star2", name:"2nd Star", ring:"red", how:"Get 5 results right in a row on one sheet.", art:starArt(BI.r,BI.c,"2")},
+  {id:"star1", name:"1st Star", ring:"gold", how:"Get 10 results right in a row on one sheet.", art:starArt("#C08A2A",BI.n,"1")},
   {id:"topshelf", name:"Top Shelf", ring:"red", how:"Get the result and the exact goals right in the same game.",
    art:`<path d="M24 22v20M30 22v20M36 22v20M42 22v20M19 28h26M19 34h26" stroke="${BI.n}" stroke-width=".9" opacity=".55"/><path d="M18 44V24q0-4 4-4h20q4 0 4 4v20" fill="none" stroke="${BI.r}" stroke-width="3"/><path d="M13 44h38" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="39.5" cy="25.5" rx="4.6" ry="2.4" fill="${BI.n}"/><rect x="34.9" y="25.5" width="9.2" height="2.2" fill="${BI.n}"/>`},
   {id:"lamp", name:"Lamp Lighter", ring:"red", how:"Nail the exact combined goals 5 times.",
@@ -375,7 +384,7 @@ const BADGES=[
    art:`<path d="M19.5 14v36" stroke="${BI.n}" stroke-width="2.8" stroke-linecap="round"/><path d="M21 16L49 26L21 36Z" fill="${BI.r}"/><text x="31" y="30" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="9.5" fill="${BI.c}">VI</text>`},
   {id:"barnstormer", name:"Barnstormer", ring:"navy", how:"Start sheets in all four divisions.",
    art:`<path d="M21 16h11l1.2 16Q44 32.5 46 37v4H21Z" fill="${BI.n}"/><path d="M26 22h5M26 26h5.4M26 30h5.8" stroke="${BI.c}" stroke-width="1.4" stroke-linecap="round"/><path d="M24.5 41v4M42 41v4" stroke="${BI.n}" stroke-width="2.2"/><path d="M17 45.5h29q4 0 4-4" fill="none" stroke="${BI.s}" stroke-width="2.6" stroke-linecap="round"/>`},
-  {id:"hotstick", name:"Hot Stick", ring:"gold", how:"Get 10 results right in a row.",
+  {id:"pointstreak", name:"Point Streak", ring:"gold", how:"Score at least a point in 10 straight finished games.",
    art:`<path d="M20 13L37 42" stroke="${BI.w}" stroke-width="3.6" stroke-linecap="round"/><path d="M36 42h11" stroke="${BI.n}" stroke-width="4.6" stroke-linecap="round"/><path d="M39 36q2.5-3 .5-6.5M44 36q2.5-3 .5-6.5M49 37q2-2.6.4-5.4" stroke="${BI.r}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M22.6 17.5l2.6-1.5M24.2 20.2l2.6-1.5" stroke="${BI.n}" stroke-width="1.4"/>`},
   {id:"captain", name:"Captain", ring:"gold", how:"Sit at #1 on a team leaderboard.",
    art:`<text x="32" y="44" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="31" fill="${BI.r}" stroke="${BI.n}" stroke-width="1.6" paint-order="stroke">C</text>`},
@@ -408,8 +417,14 @@ function computeBadges(picks, games, board, who){
   const results=scored.filter(x=>x.sc.outcomeHit!==null);
   // streaks: results right in a row, across every sheet in game order
   let cur=0, best=0; results.forEach(x=>{ cur = x.sc.outcomeHit ? cur+1 : 0; best=Math.max(best,cur); });
-  // longest run on a single sheet (Hat Trick)
+  // longest run on a single sheet (3rd, 2nd and 1st Star)
   let sheetBest=0; sheets.forEach(t=>{ let c=0; results.filter(x=>x.p.team===t).forEach(x=>{ c = x.sc.outcomeHit ? c+1 : 0; sheetBest=Math.max(sheetBest,c); }); });
+  // Hat Trick: a W, an L and an OTL all called right on the same sheet
+  let hatBest=0;
+  sheets.forEach(t=>{ const kinds=new Set(results.filter(x=>x.p.team===t && x.sc.outcomeHit).map(x=>x.p.pick)); hatBest=Math.max(hatBest,kinds.size); });
+  // Point Streak: at least one point in consecutive finished games (any sheet, in game order)
+  let ptRun=0, ptBest=0;
+  scored.filter(x=>x.sc.outcomeHit!==null || x.sc.goalsHit!==null).forEach(x=>{ ptRun = x.sc.points>0 ? ptRun+1 : 0; ptBest=Math.max(ptBest,ptRun); });
   const exact=scored.filter(x=>x.sc.goalsHit).length;
   // nights: every result right with 3+ results graded that day
   const nights={}; results.forEach(x=>{ const d=x.g.game_date; (nights[d]=nights[d]||[]).push(x.sc.outcomeHit); });
@@ -429,7 +444,10 @@ function computeBadges(picks, games, board, who){
   }
   const earned={
     faceoff: picks.length>0,
-    hattrick: sheetBest>=3,
+    hattrick: hatBest>=3,
+    star3: sheetBest>=3,
+    star2: sheetBest>=5,
+    star1: sheetBest>=10,
     topshelf: scored.some(x=>x.sc.points===2),
     lamp: exact>=5,
     shutout,
@@ -438,10 +456,12 @@ function computeBadges(picks, games, board, who){
     fullsheet: fullSheet,
     original6: o6===6,
     barnstormer: divs.size===4,
-    hotstick: best>=10,
+    pointstreak: ptBest>=10,
     captain,
   };
-  const progress={ hattrick:`Best run on a sheet: ${sheetBest} of 3`, lamp:`${exact} of 5`, hotstick:`Best run: ${best} of 10`,
+  const run=n=>`Best run on a sheet: ${Math.min(sheetBest,n)} of ${n}`;
+  const progress={ hattrick:`${hatBest} of 3 kinds on one sheet`, star3:run(3), star2:run(5), star1:run(10),
+    lamp:`${exact} of 5`, pointstreak:`Best point streak: ${Math.min(ptBest,10)} of 10`,
     original6:`${o6} of 6 sheets`, barnstormer:`${divs.size} of 4 divisions` };
   return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, streak:{current:cur, best}};
 }

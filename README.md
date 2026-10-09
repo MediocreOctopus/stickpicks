@@ -126,12 +126,15 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 12 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges.
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 15 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges.
 
 | Badge | How to earn it |
 |---|---|
 | First Faceoff | Make your first pick |
-| Hat Trick | 3 results right in a row on one sheet |
+| Hat Trick | A W, an L and an OTL all called right on one sheet |
+| 3rd Star | 3 results right in a row on one sheet |
+| 2nd Star | 5 results right in a row on one sheet |
+| 1st Star | 10 results right in a row on one sheet |
 | Top Shelf | Result and exact goals right in the same game |
 | Lamp Lighter | Exact combined goals 5 times |
 | Shutout | Every result right on a night with 3+ of your games |
@@ -140,7 +143,7 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Full Sheet | Every game on a sheet picked, result and goals |
 | Original Six | Sheets for BOS, CHI, DET, MTL, NYR and TOR |
 | Barnstormer | Sheets in all four divisions |
-| Hot Stick | 10 results right in a row |
+| Point Streak | At least a point in 10 straight finished games |
 | Captain | #1 on a team leaderboard |
 
 Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
