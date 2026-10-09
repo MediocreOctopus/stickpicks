@@ -25,7 +25,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-01">
+<link rel="stylesheet" href="styles.css?v=2026-11-02">
 </head>
 <body>
 <div class="wrap">
@@ -70,8 +70,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-01"></script>
-<script src="teams.js?v=2026-11-01"></script>
+<script src="config.js?v=2026-11-02"></script>
+<script src="teams.js?v=2026-11-02"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;

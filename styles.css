@@ -807,3 +807,4 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .daystrip::-webkit-scrollbar{display:none}
 .daypanel{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
 @media (prefers-reduced-motion:reduce){ .daystrip{transition:none} }
+.day-empty{margin:0;padding:22px 16px;border:2px dashed var(--line);border-radius:8px;text-align:center;font:italic .95rem var(--serif);color:var(--muted)}

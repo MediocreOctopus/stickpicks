@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-01">
+<link rel="stylesheet" href="styles.css?v=2026-11-02">
 </head>
 <body>
 
@@ -73,7 +73,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
           <button type="button" class="daybtn" id="dayNext" aria-label="Next game day" disabled>›</button>
         </div>
       </div>
-      <!-- One panel per game day: swipe sideways (or use ‹ ›) for the next or previous day -->
+      <!-- One panel per day: swipe sideways (or use ‹ ›) for the next or previous day -->
       <div class="daystrip" id="dayStrip" aria-label="Games by day. Swipe for other days."></div>
       <div class="empty hidden" id="todayEmpty"></div>
     </section>
@@ -195,8 +195,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-01"></script>
-<script src="teams.js?v=2026-11-01"></script>
+<script src="config.js?v=2026-11-02"></script>
+<script src="teams.js?v=2026-11-02"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -260,17 +260,26 @@ async function loadNews(){
 /* ───────── Today's games ───────── */
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"}); };
-// One panel per game day in a sideways strip. It opens on today (or the next day with games);
-// swiping, or the ‹ › buttons, moves a day at a time. Days are loaded as you reach them and
-// days without NHL games are skipped. You can also go back to earlier days' final scores.
+// One panel per calendar day in a sideways strip. It opens on today; swiping, or the ‹ › buttons,
+// moves one day at a time (days without NHL games say so). Days are loaded as you reach them,
+// from the season's first scheduled day to its last, so you can go back to earlier final scores.
 const GAME_COLS="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
 const strip=$("dayStrip");
 let days=[], dayIdx=0, noPrev=false, noNext=false, extending=false;   // days: [{day, data, el}]
 const gamesOn=day=>sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_date",day).order("start_utc");
-async function gameDayNear(day, dir){   // the closest date with games after (dir 1) or before (dir -1) `day`
-  let q=sb.from("games").select("game_date").eq("season",SEASON);
-  q = dir>0 ? q.gt("game_date",day).order("game_date") : q.lt("game_date",day).order("game_date",{ascending:false});
-  const {data}=await q.limit(1); return data?.[0]?.game_date||null;
+// Every calendar day, one at a time (no-game days included), within the season's schedule.
+let seasonFirst=null, seasonLast=null;
+async function seasonBounds(){
+  const q=asc=>sb.from("games").select("game_date").eq("season",SEASON).order("game_date",{ascending:asc}).limit(1);
+  const [a,b]=await Promise.all([q(true),q(false)]);
+  seasonFirst=a.data?.[0]?.game_date||null; seasonLast=b.data?.[0]?.game_date||null;
+}
+const shiftDay=(day,n)=>{ const [y,m,d]=day.split("-").map(Number); return ymd(new Date(y,m-1,d+n)); };
+async function gameDayNear(day, dir){   // the next (dir 1) or previous (dir -1) day, or null past the season's ends
+  const n=shiftDay(day,dir);
+  if(dir>0 && seasonLast && n>seasonLast) return null;
+  if(dir<0 && seasonFirst && n<seasonFirst) return null;
+  return n;
 }
 function dayTitle(day){
   const t=new Date(), add=n=>{ const d=new Date(t); d.setDate(t.getDate()+n); return ymd(d); };
@@ -283,7 +292,13 @@ function dayPanel(day, data){
   const el=document.createElement("div"); el.className="daypanel"; el.dataset.day=day;
   el.setAttribute("aria-label", dayTitle(day).replace("’s games","")+" games");
   const box=document.createElement("div"); box.className="games"; el.appendChild(box);
-  renderCards(box, data); return el;
+  renderCards(box, data); noGamesNote(box, day); return el;
+}
+function noGamesNote(box, day){
+  if(box.children.length) return;
+  const t=dayTitle(day), p=document.createElement("p"); p.className="day-empty";
+  p.textContent = t==="Today’s games" ? "No NHL games today." : t==="Tomorrow’s games" ? "No NHL games tomorrow." : t==="Yesterday’s games" ? "No NHL games yesterday." : `No NHL games on ${t}.`;
+  box.appendChild(p);
 }
 // Title, "Last updated" note, buttons and strip height follow the day in view.
 function showDay(i){
@@ -337,11 +352,16 @@ async function loadToday(){
   const empty=$("todayEmpty");
   if(!sb){ empty.textContent="Connect the database to see today’s games."; empty.classList.remove("hidden"); return; }
   if(days.length) return refreshDays();
+  await seasonBounds();
+  if(!seasonFirst){
+    empty.textContent = navigator.onLine ? "No games are in the database yet. Run the “Update NHL games” workflow once (see README)." : "You’re offline. Today’s games will show up when you reconnect.";
+    empty.classList.remove("hidden"); return;
+  }
+  // open on today (kept within the season's schedule, e.g. before opening night)
   const today=ymd(new Date());
-  let day=today, {data,error}=await gamesOn(today);
-  if(!error && !data.length){ const next=await gameDayNear(today,1); if(next){ day=next; ({data,error}=await gamesOn(day)); } }
+  const day = today<seasonFirst ? seasonFirst : today>seasonLast ? seasonLast : today;
+  const {data,error}=await gamesOn(day);
   if(error){ empty.textContent = navigator.onLine ? `Couldn’t load games: ${error.message}` : "You’re offline. Today’s games will show up when you reconnect."; empty.classList.remove("hidden"); return; }
-  if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
   const el=dayPanel(day,data); strip.replaceChildren(el); days=[{day,data,el}]; dayIdx=0;
   showDay(0);
@@ -350,7 +370,7 @@ async function loadToday(){
 async function refreshDays(){
   for(const d of days){
     const {data,error}=await gamesOn(d.day); if(error||!data) continue;
-    d.data=data; const box=d.el.querySelector(".games"); box.innerHTML=""; renderCards(box,data);
+    d.data=data; const box=d.el.querySelector(".games"); box.innerHTML=""; renderCards(box,data); noGamesNote(box,d.day);
   }
   showDay(dayIdx);
 }
