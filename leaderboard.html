@@ -47,8 +47,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <header class="sheethead lbhead">
     <div class="sh-in">
       <div class="sh-main">
-        <div class="sh-kicker" id="lbKicker">2026–27 standings</div>
-        <h1 class="lb-headline" id="headline">stickpicks Leaderboard · 2026–27</h1>
+        <div class="sh-kicker" id="lbKicker">2026–27 · All-Teams Leaderboard</div>
+        <h1 class="lb-headline" id="headline">stickpicks</h1>
         <div class="sh-chips">
           <span class="sh-chip" id="updated">Loading…</span>
           <label class="sh-switch"><span aria-hidden="true">Switch board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>        </div>
@@ -111,13 +111,9 @@ function setTeam(code){
   const url=new URL(location.href);
   team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
   history.replaceState(null,"",url);
-  document.getElementById("lbKicker").textContent = team ? "2026–27 · team leaderboard" : "Every team, every sheet";
-  const head=document.getElementById("headline");
-  if(team) head.textContent=TEAMS[team].name;   // the kicker above already says "team leaderboard"
-  else{ // keep "· 2026–27" together if the headline wraps
-    const yr=document.createElement("span"); yr.className="nowrap"; yr.textContent="· 2026–27";
-    head.replaceChildren("stickpicks Leaderboard ", yr);
-  }
+  // Same format on every board: "2026–27 · <which> leaderboard" above the name in script
+  document.getElementById("lbKicker").textContent = team ? "2026–27 · team leaderboard" : "2026–27 · All-Teams Leaderboard";
+  document.getElementById("headline").textContent = team ? TEAMS[team].name : "stickpicks";
   document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · stickpicks 2026–27`;
   document.getElementById("scope").textContent = team
     ? `Every ${TEAMS[team].name} pick sheet.`
