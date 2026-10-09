@@ -13,7 +13,7 @@
   --display:"Oswald","Arial Narrow",sans-serif; --serif:"Libre Caslon Text",Georgia,serif;
   --board-ink:#fff; --hem-a:var(--red); --hem-b:var(--navy); --btn:var(--navy); --btn-ink:var(--wool);
   /* logo.svg reads these */
-  --logo-ink:#9B1C1F; --logo-bg:var(--bg); --logo-wood:#B98245; --logo-grain:#7A4E22; --logo-tape:#1C2B45; --logo-wrap:#EFE6D2;
+  --logo-ink:#9B1C1F; --logo-bg:var(--bg); --logo-wood:#B98245; --logo-grain:#7A4E22; --logo-tape:#1C2B45; --logo-wrap:#EFE6D2; --logo-puck-rim:none;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -27,7 +27,7 @@
     --ctl:var(--ctl-dark); --ctl-ink:var(--ctl-ink-dark);
     --win:#5FD3B3; --winbg:#0F3A31; --loss:#FF8095; --lossbg:#3E1520; --otl:#F2C14E; --otlbg:#3A2D0C;
     --red:#E8463F; --hem-a:#E8463F; --hem-b:var(--wool); --btn:var(--wool); --btn-ink:var(--navy);
-    --logo-ink:#E8463F; --logo-wood:#C99456; --logo-tape:#F3EEE2; --logo-wrap:#1C2B45;
+    --logo-ink:#E8463F; --logo-wood:#C99456; --logo-tape:#F3EEE2; --logo-wrap:#1C2B45; --logo-puck-rim:#EFE6D2;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 190px)}
@@ -730,7 +730,7 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .pf-signedout .form-actions{justify-content:center}
 /* ───── Leaderboard header logo: the real logo on the coloured header ───── */
 /* script in the team's readable accent, light tape, outline in the header colour */
-.lb-brand{--logo-ink:var(--title);--logo-bg:var(--board);--logo-tape:#F3EEE2;--logo-wrap:var(--board);margin-right:6px}
+.lb-brand{--logo-ink:var(--title);--logo-bg:var(--board);--logo-tape:#F3EEE2;--logo-wrap:var(--board);--logo-puck-rim:#EFE6D2;margin-right:6px}
 html.neutral .lb-brand{--logo-ink:#E8463F}
 .lb-board .lb-brand .logo-svg{height:46px}
 @media (max-width:560px){ .lb-board .lb-brand .logo-svg{height:38px} }
