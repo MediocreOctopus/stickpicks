@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-10-31">
+<link rel="stylesheet" href="styles.css?v=2026-11-01">
 </head>
 <body>
 
@@ -65,8 +65,16 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </section>
 
     <section class="section" id="today">
-      <div class="section-head"><h2 id="todayTitle">Today’s games</h2><span id="todayNote"></span></div>
-      <div class="games" id="gameCards"></div>
+      <div class="section-head">
+        <h2 id="todayTitle">Today’s games</h2>
+        <div class="daynav">
+          <span id="todayNote"></span>
+          <button type="button" class="daybtn" id="dayPrev" aria-label="Previous game day" disabled>‹</button>
+          <button type="button" class="daybtn" id="dayNext" aria-label="Next game day" disabled>›</button>
+        </div>
+      </div>
+      <!-- One panel per game day: swipe sideways (or use ‹ ›) for the next or previous day -->
+      <div class="daystrip" id="dayStrip" aria-label="Games by day. Swipe for other days."></div>
       <div class="empty hidden" id="todayEmpty"></div>
     </section>
 
@@ -187,8 +195,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-10-31"></script>
-<script src="teams.js?v=2026-10-31"></script>
+<script src="config.js?v=2026-11-01"></script>
+<script src="teams.js?v=2026-11-01"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -252,31 +260,102 @@ async function loadNews(){
 /* ───────── Today's games ───────── */
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"}); };
-async function loadToday(){
-  if(!sb){ $("todayEmpty").textContent="Connect the database to see today’s games."; $("todayEmpty").classList.remove("hidden"); return; }
-  const today=ymd(new Date());
-  const cols="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
-  let {data,error}=await sb.from("games").select(cols).eq("season",SEASON).eq("game_date",today).order("start_utc");
-  let day=today;
-  if(!error && !data.length){
-    const next=await sb.from("games").select("game_date").eq("season",SEASON).gt("game_date",today).order("game_date").limit(1);
-    if(next.data?.length){
-      day=next.data[0].game_date;
-      ({data,error}=await sb.from("games").select(cols).eq("season",SEASON).eq("game_date",day).order("start_utc"));
-    }
-  }
-  const box=$("gameCards"), empty=$("todayEmpty"); box.innerHTML="";
-  if(error){ empty.textContent = navigator.onLine ? `Couldn’t load games: ${error.message}` : "You’re offline. Today’s games will show up when you reconnect."; empty.classList.remove("hidden"); return; }
-  if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
-  empty.classList.add("hidden");
-  $("todayTitle").textContent = day===today ? "Today’s games" : `Next up · ${fmtDay(day)}`;
-  // "Last updated": when the score sync last refreshed these games (the newest updated_at)
-  const last=data.reduce((m,g)=>g.updated_at && g.updated_at>m ? g.updated_at : m, "");
+// One panel per game day in a sideways strip. It opens on today (or the next day with games);
+// swiping, or the ‹ › buttons, moves a day at a time. Days are loaded as you reach them and
+// days without NHL games are skipped. You can also go back to earlier days' final scores.
+const GAME_COLS="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
+const strip=$("dayStrip");
+let days=[], dayIdx=0, noPrev=false, noNext=false, extending=false;   // days: [{day, data, el}]
+const gamesOn=day=>sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_date",day).order("start_utc");
+async function gameDayNear(day, dir){   // the closest date with games after (dir 1) or before (dir -1) `day`
+  let q=sb.from("games").select("game_date").eq("season",SEASON);
+  q = dir>0 ? q.gt("game_date",day).order("game_date") : q.lt("game_date",day).order("game_date",{ascending:false});
+  const {data}=await q.limit(1); return data?.[0]?.game_date||null;
+}
+function dayTitle(day){
+  const t=new Date(), add=n=>{ const d=new Date(t); d.setDate(t.getDate()+n); return ymd(d); };
+  if(day===add(0)) return "Today’s games";
+  if(day===add(1)) return "Tomorrow’s games";
+  if(day===add(-1)) return "Yesterday’s games";
+  return fmtDay(day);
+}
+function dayPanel(day, data){
+  const el=document.createElement("div"); el.className="daypanel"; el.dataset.day=day;
+  el.setAttribute("aria-label", dayTitle(day).replace("’s games","")+" games");
+  const box=document.createElement("div"); box.className="games"; el.appendChild(box);
+  renderCards(box, data); return el;
+}
+// Title, "Last updated" note, buttons and strip height follow the day in view.
+function showDay(i){
+  dayIdx=Math.max(0,Math.min(days.length-1,i)); const d=days[dayIdx]; if(!d) return;
+  $("todayTitle").textContent=dayTitle(d.day);
+  const last=d.data.reduce((m,g)=>g.updated_at && g.updated_at>m ? g.updated_at : m, "");
   if(last){
     const t=new Date(last), sameDay=ymd(t)===ymd(new Date());
     const time=t.toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"});
-    $("todayNote").textContent = `Last updated ${sameDay ? "" : t.toLocaleDateString([], {month:"short",day:"numeric"})+", "}${time}`;
+    $("todayNote").textContent = `Updated ${sameDay ? "" : t.toLocaleDateString([], {month:"short",day:"numeric"})+", "}${time}`;
   }else $("todayNote").textContent="";
+  $("dayPrev").disabled = dayIdx===0 && noPrev;
+  $("dayNext").disabled = dayIdx===days.length-1 && noNext;
+  days.forEach((x,j)=>x.el.setAttribute("aria-hidden", String(j!==dayIdx)));
+  strip.style.height = d.el.scrollHeight+"px";
+  extendDays();
+}
+// Keep one loaded day on each side of the one in view.
+async function extendDays(){
+  if(extending) return; extending=true;
+  try{
+    if(dayIdx>=days.length-1 && !noNext){
+      const next=await gameDayNear(days[days.length-1].day, 1);
+      if(!next) noNext=true;
+      else{ const {data}=await gamesOn(next); const el=dayPanel(next,data||[]); strip.appendChild(el); days.push({day:next,data:data||[],el}); }
+    }
+    if(dayIdx===0 && !noPrev){
+      const prev=await gameDayNear(days[0].day, -1);
+      if(!prev) noPrev=true;
+      else{
+        const {data}=await gamesOn(prev); const el=dayPanel(prev,data||[]);
+        strip.style.scrollSnapType="none";
+        strip.prepend(el); days.unshift({day:prev,data:data||[],el}); dayIdx++;
+        strip.scrollLeft = dayIdx*strip.clientWidth;     // stay on the same day after adding one before it
+        requestAnimationFrame(()=>{ strip.style.scrollSnapType=""; });
+      }
+    }
+  }finally{ extending=false; }
+  $("dayPrev").disabled = dayIdx===0 && noPrev;
+  $("dayNext").disabled = dayIdx===days.length-1 && noNext;
+}
+let scrollTimer=null;
+strip.addEventListener("scroll",()=>{ clearTimeout(scrollTimer); scrollTimer=setTimeout(()=>{ const i=Math.round(strip.scrollLeft/strip.clientWidth); if(i!==dayIdx) showDay(i); },90); }, {passive:true});
+const goDay=dir=>{ const at=Math.round(strip.scrollLeft/strip.clientWidth); strip.scrollTo({left:Math.max(0,Math.min(days.length-1,at+dir))*strip.clientWidth, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); };
+$("dayPrev").addEventListener("click",()=>goDay(-1));
+$("dayNext").addEventListener("click",()=>goDay(1));
+strip.addEventListener("keydown",e=>{ if(e.key==="ArrowRight"){ goDay(1); e.preventDefault(); } if(e.key==="ArrowLeft"){ goDay(-1); e.preventDefault(); } });
+addEventListener("resize",()=>{ if(days[dayIdx]){ strip.scrollLeft=dayIdx*strip.clientWidth; strip.style.height=days[dayIdx].el.scrollHeight+"px"; } });
+
+async function loadToday(){
+  const empty=$("todayEmpty");
+  if(!sb){ empty.textContent="Connect the database to see today’s games."; empty.classList.remove("hidden"); return; }
+  if(days.length) return refreshDays();
+  const today=ymd(new Date());
+  let day=today, {data,error}=await gamesOn(today);
+  if(!error && !data.length){ const next=await gameDayNear(today,1); if(next){ day=next; ({data,error}=await gamesOn(day)); } }
+  if(error){ empty.textContent = navigator.onLine ? `Couldn’t load games: ${error.message}` : "You’re offline. Today’s games will show up when you reconnect."; empty.classList.remove("hidden"); return; }
+  if(!data.length){ empty.textContent="No upcoming games are in the database yet. Run the “Update NHL games” workflow once (see README)."; empty.classList.remove("hidden"); return; }
+  empty.classList.add("hidden");
+  const el=dayPanel(day,data); strip.replaceChildren(el); days=[{day,data,el}]; dayIdx=0;
+  showDay(0);
+}
+// Every few minutes: fresh scores for the days already loaded.
+async function refreshDays(){
+  for(const d of days){
+    const {data,error}=await gamesOn(d.day); if(error||!data) continue;
+    d.data=data; const box=d.el.querySelector(".games"); box.innerHTML=""; renderCards(box,data);
+  }
+  showDay(dayIdx);
+}
+
+function renderCards(box, data){
   data.forEach(g=>{
     const final=!!g.period_type, started=hasStarted(g);
     const card=document.createElement("div"); card.className="gcard";
