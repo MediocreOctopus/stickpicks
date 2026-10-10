@@ -199,6 +199,20 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Breakaway Champ | Hold the #1 score on the Breakaway leaderboard (it stays) |
 
 Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. The exceptions depend on everyone's results over time, or on when picks were made, so the database works them out (`badge_honours()` in `schema.sql`, section 16): Captain (it replays the season one game day at a time to find every sheet that has held a #1 spot), MVP (only once every regular-season game is final), Player of the Week and Month (finished weeks and months only), Early Bird and Buzzer Beater (from when each pick was last changed), Recruiter (from the private `invites` table, section 14, filled in when someone who arrived from an invitation link makes their profile), and the Breakaway badges (from `breakaway_scores`, section 15). Badges about games (Iron Man, Full Slate, Opening Night, the big-game badges) count only games that have started, so filling a sheet in advance doesn't earn them early. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
+
+## Chiclets
+
+Chiclets are free, earned-only points shown on the home page's account banner and on profiles (with your recent history on your own profile). Nothing is stored: `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time:
+
+| Change | When |
+|---|---|
+| +1 | Right result (W, L or OTL) |
+| +2 | Exact combined goals |
+| +5 | Perfect night: 3+ picked results on one day, all right |
+| −1 | A game skipped on a started sheet after its first pick, at most −5 per week (Monday to Sunday) |
+
+The balance never goes below 0. Chiclets can't be bought with real money and have no cash value (see the Terms). A later update will let players spend them on cosmetic extras (profile borders, retro sweaters), with spends recorded in their own table and taken off the balance.
+
 ## Visitor stats
 
 Every page loads [GoatCounter](https://www.goatcounter.com/) (stickpicks.goatcounter.com), a free, privacy-friendly visitor counter: no cookies and no personal data. Page addresses are counted without usernames (for example `sheet.html?team=SEA`). Visits from `localhost` aren't counted. See the numbers by signing in at https://stickpicks.goatcounter.com.

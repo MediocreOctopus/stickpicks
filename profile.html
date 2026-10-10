@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-05">
+<link rel="stylesheet" href="styles.css?v=2026-12-06">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -86,6 +86,13 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <div class="pf-stat"><span class="pf-label">Points / game</span><b id="stPpg">—</b><small>max 2.00</small></div>
             <div class="pf-stat"><span class="pf-label">Hot streak</span><b id="stStreak">—</b><small id="stStreakBest">results right in a row</small></div>
           </div>
+          <!-- Chiclets: the balance (everyone), and the recent history (your own profile) -->
+          <section class="pf-card pf-chiclets" id="chiclets" style="margin-top:14px">
+            <h2>Chiclets</h2>
+            <div class="ch-total"><span id="chIcon"></span><b id="chBalance">—</b><small id="chNote">Loading…</small></div>
+            <ul class="ch-list hidden" id="chList"></ul>
+            <a class="ch-how" href="rules.html#chiclets">How do I earn Chiclets?</a>
+          </section>
           <section class="pf-card" style="margin-top:14px">
             <h2 id="pfSheetsTitle">Your sheets</h2>
             <ul class="mysheets" id="pfSheets"></ul>
@@ -222,8 +229,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-05"></script>
-<script src="teams.js?v=2026-12-05"></script>
+<script src="config.js?v=2026-12-06"></script>
+<script src="teams.js?v=2026-12-06"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -287,7 +294,30 @@ async function load(session){
   loadStats();
 }
 
+// Chiclets: the balance for anyone; your own profile also lists the most recent changes
+async function showChiclets(who, own){
+  $("chIcon").replaceChildren(chicletIcon(30));
+  if(!who){ $("chBalance").textContent="0"; $("chNote").textContent="Choose a username to start earning Chiclets."; return; }
+  const ledger=await chicletLedger(sb, who), bal=ledger.length ? ledger[ledger.length-1].balance : 0;
+  $("chBalance").textContent=Number(bal).toLocaleString();
+  $("chNote").textContent = own ? "Earned from your picks. Free to earn, and they’ll buy cool stuff soon." : `${who}’s Chiclets, earned from picks.`;
+  const list=$("chList"); list.innerHTML="";
+  if(!own || !ledger.length){ list.classList.add("hidden"); return; }
+  const when=iso=>new Date(iso).toLocaleDateString([], {month:"short",day:"numeric"});
+  ledger.slice(-6).reverse().forEach(r=>{
+    const li=document.createElement("li");
+    const d=document.createElement("b"); d.className=r.delta>0?"up":"down"; d.textContent=(r.delta>0?"+":"−")+Math.abs(r.delta);
+    const t=document.createElement("span"); t.className="ch-what";
+    const game = r.home && r.away ? ` · ${r.away} at ${r.home}` : "";
+    t.textContent = r.note + game;
+    const sm=document.createElement("small"); sm.textContent = `${when(r.at)}${r.team ? " · "+(TEAMS[r.team]?.name||r.team)+" sheet" : ""}`;
+    t.append(sm); li.append(d,t); list.append(li);
+  });
+  list.classList.remove("hidden");
+}
+
 async function loadStats(){
+  showChiclets(username, true);
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const board = username ? (await sb.rpc("leaderboard",{p_season:SEASON,p_team:null})).data : null;
   showStats(sheets||[], board||[], username, team=>`sheet.html?team=${team}`, "No picks yet. Use Pick Team to start your first sheet.");
@@ -604,6 +634,7 @@ async function loadPublic(name){
   const rows=(board||[]).filter(r=>r.username.toLowerCase()===who.toLowerCase())
     .map(r=>({team:r.team, points:Number(r.points), graded:Math.max(Number(r.outcome_graded),Number(r.goals_graded)), total_picks:r.total_picks}));
   showStats(rows, board||[], who, team=>`sheet.html?team=${team}&user=${encodeURIComponent(who)}`, `${who} hasn’t made any picks yet.`);
+  showChiclets(who, false);
   playerBadges(sb, who, board||[]).then(r=>showBadges(r,false,who))
     .catch(()=>{ $("badgeGrid").innerHTML='<p class="hint" style="margin:0">Couldn’t load badges right now.</p>'; });
 }

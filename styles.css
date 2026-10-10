@@ -1100,3 +1100,22 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .askdlg .bdlg-body p{font:600 1.05rem/1.4 var(--display);letter-spacing:.02em;font-style:normal;margin:4px 0 14px}
 .askdlg .form-actions{justify-content:center;gap:10px}
 .askdlg .btn{min-width:96px}
+
+/* ───── Chiclets (free, earned-only points: the icon, the home banner chip, the profile card) ───── */
+.chiclet-ico{display:inline-flex;flex:none;width:var(--ch,16px);height:calc(var(--ch,16px) * 1.1);vertical-align:-.2em}
+.chiclet-ico svg{width:100%;height:100%;display:block}
+.acct-chiclets{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 9px;border-radius:999px;
+  background:rgba(239,230,210,.08);border:1px solid rgba(239,230,210,.25);color:var(--wool);white-space:nowrap}
+.acct-chiclets b{font:700 1rem var(--display);font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.acct-chiclets.hidden{display:none}
+.ch-total{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ch-total b{font:700 2.2rem/1 var(--display);font-variant-numeric:tabular-nums}
+.ch-total small{flex:1 1 200px;font:italic .9rem var(--serif);color:var(--muted)}
+.ch-list{list-style:none;margin:12px 0 0;padding:0;border-top:1px solid var(--line)}
+.ch-list.hidden{display:none}
+.ch-list li{display:flex;align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.ch-list li > b{flex:none;min-width:2.4em;text-align:right;font:700 1.05rem var(--display);font-variant-numeric:tabular-nums}
+.ch-list .up{color:var(--win)} .ch-list .down{color:var(--loss)}
+.ch-what{display:grid;min-width:0}
+.ch-what small{color:var(--muted);font-size:.8rem}
+.ch-how{display:inline-block;margin-top:12px;color:var(--ink);font-weight:600}

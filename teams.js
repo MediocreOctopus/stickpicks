@@ -1309,6 +1309,28 @@ async function drawCard(o){
   return new Promise((ok,fail)=>c.toBlob(b=>b?ok(b):fail(new Error("no picture")),"image/png"));
 }
 
+/* ───────── Chiclets: the stickpicks currency ───────── */
+// Free to earn, never sold, no cash value, can't be transferred. Worked out by the database from picks and final
+// scores (chiclets_ledger / chiclets_balance in schema.sql): +1 right result, +2 exact goals, +5 perfect night,
+// -1 a missed game on a sheet you've started (at most -5 a week), never below 0.
+// The icon: a cream tooth (hockey players' "chiclets").
+function chicletIcon(px=16){
+  const s=document.createElement("span"); s.className="chiclet-ico"; s.setAttribute("aria-hidden","true"); s.style.setProperty("--ch",px+"px");
+  s.innerHTML='<svg viewBox="0 0 20 22"><path d="M5 2.2C2.4 2.2 1.4 4.4 1.8 7.2C2.3 10.6 3.4 12.4 3.8 16.6C4.1 19.6 5.2 21 6.2 21C7.4 21 7.6 19.4 8 17.4C8.4 15.4 8.9 14.2 10 14.2S11.6 15.4 12 17.4C12.4 19.4 12.6 21 13.8 21C14.8 21 15.9 19.6 16.2 16.6C16.6 12.4 17.7 10.6 18.2 7.2C18.6 4.4 17.6 2.2 15 2.2C13.2 2.2 12 3.2 10 3.2S6.8 2.2 5 2.2Z" fill="#FBF7EE" stroke="#1C2B45" stroke-width="1.5" stroke-linejoin="round"/><path d="M4.6 5.4q.6-1.6 2.4-1.6" fill="none" stroke="#C9D3DE" stroke-width="1.3" stroke-linecap="round"/></svg>';
+  return s;
+}
+const chicletsText=n=>`${Number(n||0).toLocaleString()} Chiclet${Number(n)===1?"":"s"}`;
+async function chicletBalance(sb, username){
+  if(!sb || !username) return null;
+  const {data,error}=await sb.rpc("chiclets_balance",{p_username:username});
+  return error ? null : Number(data)||0;
+}
+async function chicletLedger(sb, username){
+  if(!sb || !username) return [];
+  const {data,error}=await sb.rpc("chiclets_ledger",{p_username:username});
+  return error ? [] : data||[];
+}
+
 /* ───────── Shared helpers ───────── */
 function makeClient(){
   const cfg=window.PICKS_CONFIG||{};

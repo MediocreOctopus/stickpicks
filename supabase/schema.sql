@@ -665,3 +665,77 @@ as $$
 $$;
 revoke all on function public.badge_honours(text) from public;
 grant execute on function public.badge_honours(text) to anon, authenticated;
+
+-- 17) Chiclets: the stickpicks currency. Free to earn, never sold, no cash value, can't be transferred.
+--     Nothing is stored: every Chiclet is worked out from picks and final scores, in game order, so the
+--     balance is always right and can't be faked. (Phase 2's shop will subtract spending kept in its own table.)
+--       +1  right result                 +2  exact combined goals (so a perfect game is +3)
+--       +5  perfect night: every result right on a night with 3 or more of your games
+--       -1  each game missed on a sheet you've started (a game that started with no pick, after your
+--           first pick on that sheet), at most -5 a week (Monday to Sunday). The balance never goes below 0.
+--     chiclets_ledger() returns every change in order with the running balance; chiclets_balance() just the total.
+create or replace function public.chiclets_ledger(p_username text)
+returns table (at timestamptz, delta int, balance int, kind text, team text, home text, away text, note text)
+language plpgsql stable security definer set search_path = '' as $$
+#variable_conflict use_column
+declare
+  uid uuid;
+  r record;
+  bal int := 0;
+  nb int;
+begin
+  select p.user_id into uid from public.profiles p where lower(p.username) = lower(p_username);
+  if uid is null then return; end if;
+  for r in
+    with my as (select tp.team, tp.game_id, tp.pick, tp.goals from public.team_picks tp where tp.user_id = uid),
+    fin as (
+      select m.team, g.game_date, g.start_utc, g.home, g.away, (m.pick is not null) as picked,
+        (m.pick is not null and m.pick =
+          (case when (case when g.home = m.team then g.home_score else g.away_score end)
+                   > (case when g.home = m.team then g.away_score else g.home_score end) then 'W'
+                when g.period_type = 'REG' then 'L' else 'OTL' end)) as rh,
+        (m.goals is not null and m.goals = g.home_score + g.away_score) as gh
+      from my m join public.games g on g.game_id = m.game_id
+      where g.period_type is not null and g.home_score is not null and g.away_score is not null
+    ),
+    earn as (
+      select f.start_utc as at, (case when f.rh then 1 else 0 end) + (case when f.gh then 2 else 0 end) as delta,
+        'pick'::text as kind, f.team, f.home, f.away,
+        (case when f.rh and f.gh then 'Right result and exact goals' when f.rh then 'Right result' else 'Exact goals' end) as note
+      from fin f where f.rh or f.gh
+    ),
+    nights as (
+      select max(f.start_utc) + interval '1 second', 5, 'night'::text, null::text, null::text, null::text,
+        'Perfect night: every result right (' || count(*) || ' games)'
+      from fin f where f.picked group by f.game_date having count(*) >= 3 and bool_and(f.rh)
+    ),
+    sheets as (select m.team, min(g.start_utc) as first_at from my m join public.games g on g.game_id = m.game_id group by m.team),
+    missed as (
+      select g.start_utc, g.game_date, s.team, g.home, g.away
+      from sheets s join public.games g on (g.home = s.team or g.away = s.team)
+      where g.start_utc > s.first_at and g.start_utc <= now() and coalesce(g.schedule_state, 'OK') = 'OK'
+        and not exists (select 1 from my m where m.team = s.team and m.game_id = g.game_id)
+    ),
+    capped as (select x.*, row_number() over (partition by date_trunc('week', x.game_date) order by x.start_utc) as k from missed x),
+    loss as (select c.start_utc, -1, 'miss'::text, c.team, c.home, c.away, 'Missed pick on a started sheet' from capped c where c.k <= 5)
+    select * from earn union all select * from nights union all select * from loss
+    order by 1, 2 desc
+  loop
+    nb := greatest(0, bal + r.delta);
+    if nb <> bal then
+      at := r.at; delta := nb - bal; balance := nb; kind := r.kind; team := r.team; home := r.home; away := r.away; note := r.note;
+      bal := nb;
+      return next;
+    end if;
+  end loop;
+end $$;
+revoke all on function public.chiclets_ledger(text) from public;
+grant execute on function public.chiclets_ledger(text) to anon, authenticated;
+
+create or replace function public.chiclets_balance(p_username text)
+returns int language sql stable security definer set search_path = '' as $$
+  select coalesce((select l.balance from public.chiclets_ledger(p_username) with ordinality as l(at, delta, balance, kind, team, home, away, note, n)
+                   order by l.n desc limit 1), 0);
+$$;
+revoke all on function public.chiclets_balance(text) from public;
+grant execute on function public.chiclets_balance(text) to anon, authenticated;

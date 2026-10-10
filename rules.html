@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-05">
+<link rel="stylesheet" href="styles.css?v=2026-12-06">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -135,11 +135,23 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       </ul>
     </details>
 
+    <details id="chiclets">
+      <summary>Chiclets</summary>
+      <p><b>Chiclets</b> are stickpicks’ free points for your account (named for the gaps in a hockey player’s smile). You earn them by picking well, and soon you’ll spend them on fun extras like profile borders and retro sweaters. They’re separate from your leaderboard points and never change your score or rank.</p>
+      <ul class="bullets">
+        <li><b>+1</b> for each right result (W, L or OTL).</li>
+        <li><b>+2</b> for each exact combined-goals pick.</li>
+        <li><b>+5</b> for a perfect night: at least 3 games on one day, with every result right.</li>
+        <li><b>−1</b> for each game you skip on a sheet you’ve started, from your first pick onward, but never more than −5 in one week (Monday to Sunday). Your balance never drops below 0.</li>
+      </ul>
+      <p>You need a username to earn Chiclets. Your balance is on the home page and your <a href="profile.html#chiclets">profile</a>, and other players can see your total. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
+    </details>
+
     <section id="faq">
       <h2>FAQ</h2>
       <details><summary>Can I predict both teams in the same game?</summary><p>Yes. If you have sheets for both teams, the game appears on each one, and each sheet scores its own picks separately.</p></details>
       <details><summary>Do I have to make both predictions?</summary><p>No. Make just the result, just the goals, or both. A blank prediction simply earns no point.</p></details>
-      <details><summary>Does a game count if I didn’t pick it?</summary><p>An unpicked game simply earns 0 points. There’s no penalty beyond the missed chance.</p></details>
+      <details><summary>Does a game count if I didn’t pick it?</summary><p>An unpicked game simply earns 0 points, and your leaderboard score is never reduced. The one cost: a skipped game on a sheet you’ve started costs 1 <a href="#chiclets">Chiclet</a> (at most 5 a week).</p></details>
       <details><summary>When do points show up?</summary><p>Scores are checked every 15 minutes, so points usually appear within about half an hour of a game ending. The leaderboard refreshes on its own.</p></details>
       <details><summary>What are the W–L–OTL record and “standings pts” on my sheet?</summary><p>That’s your predicted season record for the team, using NHL standings points (2 for a win, 1 for an overtime loss). It’s just for fun and doesn’t affect your stickpicks score.</p></details>
       <details><summary>Can other players see my picks?</summary><p>Yes, once each game starts. Anyone can open your sheet from the leaderboard, but your picks for upcoming games stay hidden until puck drop, so nobody can copy them.</p></details>
@@ -158,7 +170,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-12-05"></script>
+<script src="teams.js?v=2026-12-06"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section
