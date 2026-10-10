@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
-<meta name="description" content="The stickpicks shop: spend the Chiclets you earn picking NHL games on profile borders and more. Free to play, no real money.">
+<meta name="description" content="The stickpicks shop: spend the Chiclets you earn picking NHL games on profile borders, throwback sweaters and more. Free to play, no real money.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
 <meta property="og:title" content="Shop · stickpicks">
@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-12">
+<link rel="stylesheet" href="styles.css?v=2026-12-13">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -71,16 +71,21 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-12"></script>
-<script src="teams.js?v=2026-12-12"></script>
+<script src="config.js?v=2026-12-13"></script>
+<script src="teams.js?v=2026-12-13"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
 mountTeamMenu($("teamMenu"));
 mountChicletNav(sb);
 const TIERS={starter:"Starter", classic:"Classic", premium:"Premium", legendary:"Legendary"};
-const SLOTS=[{slot:"border", name:"Profile borders", note:"A ring around your picture, everywhere it shows: leaderboards, profiles and the top bar."}];
-let me=null, items=[], owned=new Set(), balance=0, signedIn=false;
+const SLOTS=[
+  {slot:"border",  field:"border",        name:"Profile borders", note:"A ring around your picture, everywhere it shows: leaderboards, profiles and the top bar."},
+  {slot:"sweater", field:"sweater_style", name:"Sweater styles",  note:"New looks for your profile-picture sweater, in your team’s colors. (They show when your picture is a sweater.)"},
+  {slot:"skater",  field:"skater",        name:"Breakaway skater", note:"Your skater in the Intermission game wears the stickpicks house sweater until you unlock one of these."},
+];
+const FIELD=Object.fromEntries(SLOTS.map(s=>[s.slot,s.field]));
+let me=null, items=[], soon=[], owned=new Set(), balance=0, signedIn=false;
 
 function setBalance(n){
   balance=Number(n||0);
@@ -102,6 +107,7 @@ async function start(){
   if(error) return $("shop").replaceChildren(Object.assign(document.createElement("p"),{className:"hint",textContent:friendly(error)}));
   const today=new Date().toISOString().slice(0,10);
   items=(list||[]).filter(i=>(!i.available_from || today>=i.available_from) && (!i.available_to || today<=i.available_to));
+  soon=(list||[]).filter(i=>i.available_from && today<i.available_from);   // limited-time items on the way
   if(me?.username){
     await claimBadgeChiclets(sb);
     const [{data:mine},bal]=await Promise.all([sb.rpc("my_items"), chicletBalance(sb, me.username)]);
@@ -114,10 +120,16 @@ async function start(){
   render();
 }
 
-// Your own picture wearing a border (or a plain picture when signed out)
-function preview(border, px){
-  const av = me ? {...avatarFromProfile(me), border} : {border, fav:null};
-  return avatarEl(av, me?.username || "S", px);
+// A preview of an item on you: your picture with the border; your sweater in the style (your picture's team and number,
+// or your favorite team's sweater if your picture isn't a sweater); for the skater, the sweater it would wear.
+function preview(item, px){
+  const mine=me ? avatarFromProfile(me) : null;
+  const team=(mine?.kind==="sweater" && mine.team) || me?.fav_team || "SEA";
+  const number=mine?.kind==="sweater" ? mine.number : 0;
+  if(item.slot==="border") return avatarEl(mine ? {...mine, border:item.id} : {border:item.id}, me?.username || "S", px);
+  if(item.slot==="sweater") return avatarEl({kind:"sweater", team, number, style:item.id}, "S", px);
+  if(item.id==="skater_fav") return avatarEl({kind:"sweater", team:me?.fav_team || "SEA", number:""}, "S", px);   // no number, like the skater
+  return avatarEl({kind:"sweater", team, number, style:mine?.style}, "S", px);   // skater_profile
 }
 
 function render(){
@@ -132,26 +144,25 @@ function render(){
     const note=document.createElement("p"); note.className="shop-slotnote"; note.textContent=s.note;
     const grid=document.createElement("div"); grid.className="shop-grid";
     list.forEach(i=>grid.append(card(i)));
+    soon.filter(i=>i.slot===s.slot).forEach(i=>grid.append(card(i, true)));   // limited-time items coming later
     sec.append(head,note,grid); root.append(sec);
   });
-  // what's coming next
-  const soon=document.createElement("section"); soon.className="bgroup shop-group";
-  soon.innerHTML='<h2 class="bgroup-head"><span>Coming soon</span><small>Keep earning</small></h2>'+
-    '<p class="shop-slotnote">Retro sweaters for your picture, sweaters for your Breakaway skater, and limited-time items around the season’s big games.</p>';
-  root.append(soon);
 }
 
-function card(i){
-  const has=owned.has(i.id), wearing=me?.border===i.id;
-  const c=document.createElement("article"); c.className="shop-card"+(wearing?" is-worn":""); c.dataset.tier=i.tier;
-  const pv=document.createElement("div"); pv.className="shop-pv"; pv.append(preview(i.id, 76));
+const dayName=d=>new Date(d+"T12:00:00").toLocaleDateString([], {month:"short",day:"numeric"});
+function card(i, upcoming){
+  const has=owned.has(i.id), wearing=me?.[FIELD[i.slot]]===i.id;
+  const c=document.createElement("article"); c.className="shop-card"+(wearing?" is-worn":"")+(upcoming?" is-soon":""); c.dataset.tier=i.tier;
+  const pv=document.createElement("div"); pv.className="shop-pv"; pv.append(preview(i, 76));
   const tier=document.createElement("small"); tier.className="shop-tier"; tier.textContent=TIERS[i.tier]||i.tier;
   const nm=document.createElement("h3"); nm.textContent=i.name;
   const bl=document.createElement("p"); bl.className="shop-blurb"; bl.textContent=i.blurb;
   const price=document.createElement("div"); price.className="shop-price"; price.append(chicletIcon(16), Object.assign(document.createElement("b"),{textContent:i.price.toLocaleString()}));
-  if(i.available_to){ const lt=document.createElement("small"); lt.className="shop-limited"; lt.textContent=`Until ${new Date(i.available_to+"T12:00:00").toLocaleDateString([], {month:"short",day:"numeric"})}`; price.append(lt); }
+  if(i.available_to){ const lt=document.createElement("small"); lt.className="shop-limited"; lt.textContent = upcoming ? `Limited: ${dayName(i.available_from)} to ${dayName(i.available_to)}` : `Limited: until ${dayName(i.available_to)}`; price.append(lt); }
   const act=document.createElement("div"); act.className="shop-act";
-  if(!me?.username){
+  if(upcoming){
+    const s=document.createElement("span"); s.className="shop-soon"; s.textContent=`On sale ${dayName(i.available_from)}`; act.append(s);
+  }else if(!me?.username){
     if(!signedIn){ const a=document.createElement("a"); a.className="btn ghost"; a.href="index.html#signin"; a.textContent="Sign in to buy"; act.append(a); }
   }else if(has){
     if(wearing){
@@ -180,7 +191,7 @@ function card(i){
 let buying=null;
 function askBuy(i){
   buying=i;
-  $("buyPreview").replaceChildren(preview(i.id, 96));
+  $("buyPreview").replaceChildren(preview(i, 96));
   $("buyText").textContent=`${i.name} for ${chicletsText(i.price)}?`;
   $("buyLeft").textContent=`You’ll have ${(balance-i.price).toLocaleString()} left. Purchases are final.`;
   $("buyYes").disabled=false; $("buyDlg").showModal();
@@ -200,10 +211,11 @@ $("buyYes").addEventListener("click", async ()=>{
 async function wear(slot, id, message){
   const {error}=await sb.rpc("equip_item",{p_slot:slot, p_item:id});
   if(error) return toast(friendly(error), true);
-  me={...me, border:id};
-  rememberMe(me.username, avatarFromProfile(me));   // top bar and Me tab pick it up
+  me={...me, [FIELD[slot]]:id};
+  rememberMe(me.username, avatarFromProfile(me));   // top bar, Me tab and the Breakaway skater pick it up
   render();
-  toast(message || (id ? `You’re wearing ${items.find(x=>x.id===id)?.name||"it"}.` : "Border taken off."));
+  const off={border:"Border taken off.", sweater:"Back to your plain sweater.", skater:"Your skater is back in the house sweater."}[slot];
+  toast(message || (id ? `You’re wearing ${items.find(x=>x.id===id)?.name||"it"}.` : off));
 }
 
 function toast(text, bad){

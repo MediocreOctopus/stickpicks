@@ -2,7 +2,7 @@
 // Jump over pucks, cones and nets; duck under slap shots. Everything is drawn with canvas shapes
 // (no images): a stickpicks arena (navy stands, rafter banners, branded boards) and an NHL skater in
 // full gear (helmet and visor, jersey with hem and sleeve stripes, breezers, striped socks, skates,
-// two hands on a wooden stick) wearing the colours of the last team sheet you opened.
+// two hands on a wooden stick) in the stickpicks house sweater, or a sweater unlocked in the Chiclets shop.
 // Space / ↑ / W to jump (hold for higher), ↓ / S to duck; tap the rink (top jumps, hold the bottom to duck).
 //
 // The page listens for "breakaway:end" (detail: {score, ms}) to post scores, and can call
@@ -31,16 +31,15 @@
 
   try{ hi=Number(localStorage.getItem(HI_KEY))||0; }catch(e){}
 
-  // Sweater colours follow the last team sheet opened; the number comes from your sweater picture, if you made one.
+  // The skater's sweater: the stickpicks house sweater (navy and red, no number) unless you've unlocked another in the
+  // Chiclets shop and are wearing it: your favorite team's sweater, or your profile-picture sweater (with its number
+  // and Alternate or throwback colours).
   let kit={main:C.navy, trim:C.red2, num:""};
   try{
-    const code=localStorage.getItem("nhl-picks-last-team");
-    if(code && typeof TEAMS!=="undefined" && TEAMS[code]){
-      const tm=TEAMS[code];
-      kit.main=tm.board; kit.trim=tm.stripe||firstReadable(tm.board,[tm.accent,tm.brand,"#FFFFFF"],2);
-    }
-    const me=typeof readMe==="function" ? readMe() : null;
-    if(me?.avatar?.kind==="sweater" && me.avatar.number!=null) kit.num=String(me.avatar.number);
+    const av=(typeof readMe==="function" ? readMe() : null)?.avatar;
+    const set=(team, style)=>{ const c=typeof sweaterColours==="function" ? sweaterColours(team, style) : null; if(c){ kit.main=c[0]; kit.trim=c[1]; } return !!c; };
+    if(av?.skater==="skater_fav") set(av.fav);
+    else if(av?.skater==="skater_profile" && av.kind==="sweater" && set(av.team, av.style) && av.number!=null) kit.num=String(av.number);
   }catch(e){}
   kit.dark=shade(kit.main,-0.45);                     // breezers and gloves
   kit.numInk=typeof firstReadable==="function" ? firstReadable(kit.main,["#FFFFFF",kit.trim,"#111111"],3) : "#FFFFFF";

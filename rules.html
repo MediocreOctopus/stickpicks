@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-12">
+<link rel="stylesheet" href="styles.css?v=2026-12-13">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -147,7 +147,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li><b>−1</b> for each game you skip on a sheet you’ve started, from your first pick onward, but never more than −5 in one week (Monday to Sunday). Your balance never drops below 0.</li>
       </ul>
       <p>You need a username to earn Chiclets. Your count is in the top-right corner of the home, Pick Teams, Leaderboard, Intermission and profile pages; tap it to open your <a href="chiclets.html">Chiclets statement</a>, a list of every Chiclet gained or lost. Other players can see your total.</p>
-      <p><b>The shop:</b> spend Chiclets in the <a href="shop.html">shop</a> on things that change how you look, like a border around your profile picture. Starter items cost 150, Classic 400, Premium 800 and Legendary 1,500. Each item is bought once and is yours for good; wear it, take it off, or switch any time. Purchases are final, and nothing in the shop changes your score. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
+      <p><b>The shop:</b> spend Chiclets in the <a href="shop.html">shop</a> on things that change how you look: a border around your profile picture, a throwback style for your sweater picture, or a sweater for your Breakaway skater (who otherwise wears the stickpicks house sweater). Some items are only on sale for a short time. Starter items cost 150, Classic 400, Premium 800 and Legendary 1,500. Each item is bought once and is yours for good; wear it, take it off, or switch any time. Purchases are final, and nothing in the shop changes your score. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
     </details>
 
     <section id="faq">
@@ -173,7 +173,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-12-12"></script>
+<script src="teams.js?v=2026-12-13"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section

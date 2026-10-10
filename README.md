@@ -225,7 +225,8 @@ The balance never goes below 0. Chiclets can't be bought with real money and hav
 `shop.html` sells cosmetic items for Chiclets (never real money). The items and prices live in the database (`shop_items`, `schema.sql` section 19), so the browser can't change a price: Starter 150, Classic 400, Premium 800, Legendary 1,500. `available_from` / `available_to` make an item limited-time, and `active = false` takes it out of the shop (owners keep it). To add or re-price an item, edit the `insert into public.shop_items` list in section 19 and run it again.
 
 - `buy_item()` checks the item is on sale, not owned yet, and affordable, then records it in `chiclet_spends` (one purchase at a time per player). Purchases show on the statement as minus lines.
-- `equip_item()` wears an owned item. The worn border is `profiles.border`, so every page that shows a profile picture draws it (`avatarEl()` in `teams.js`, `.av-b-*` in `styles.css`). A trigger ignores any other attempt to change it.
+- `equip_item()` wears an owned item in its slot. What's worn is on the profile (`profiles.border`, `profiles.sweater_style`, `profiles.skater`), so every page that shows a profile picture draws it (`avatarEl()` in `teams.js`, `.av-b-*` in `styles.css`), and Breakaway dresses the skater from it (`game.js`). A trigger ignores any other attempt to change those columns.
+- The sweater is one drawing (`jerseyMarkup()` in `teams.js`): a hockey sweater laid flat, with long angled sleeves and a V-neck. Sweater styles are drawn there too; sleeve stripes are drawn in each sleeve's own frame so they wrap the arm.
 - Statements are private (`chiclets_ledger()` only answers for your own username); totals are public (`chiclets_balance()`).
 
 | Border | Tier | Price |
@@ -233,6 +234,13 @@ The balance never goes below 0. Chiclets can't be bought with real money and hav
 | Stitched, Hem Stripes, Team Colors | Starter | 150 |
 | Gold, Championship | Premium | 800 |
 | Hall of Fame (animated) | Legendary | 1,500 |
+
+| Sweater style / skater | Tier | Price |
+|---|---|---|
+| Alternate (team colors swapped) | Starter | 150 |
+| Barber Pole, '70s Chest Stripe, '80s Shoulder Yoke | Classic | 400 |
+| Frozen Pond (limited: Dec 26 to Jan 6) | Classic | 400 |
+| Breakaway skater: Favorite Team, Profile Sweater | Starter | 150 |
 
 ## Visitor stats
 

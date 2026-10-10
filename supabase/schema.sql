@@ -1026,7 +1026,19 @@ insert into public.shop_items (id, slot, name, blurb, tier, price, sort) values
   ('border_team',       'border', 'Team Colors',  'Your favorite team''s colors (set your favorite team in Settings).', 'starter', 150, 30),
   ('border_gold',       'border', 'Gold',         'A polished gold ring.',                                             'premium',   800, 40),
   ('border_champion',   'border', 'Championship', 'Gold and red, like a championship banner.',                         'premium',   800, 50),
-  ('border_halloffame', 'border', 'Hall of Fame', 'Shimmering gold that never stops moving. For the true grinders.',  'legendary', 1500, 60)
+  ('border_halloffame', 'border', 'Hall of Fame', 'Shimmering gold that never stops moving. For the true grinders.',  'legendary', 1500, 60),
+  ('sweater_alt',       'sweater', 'Alternate',         'Your sweater with the team''s two colors swapped.',                  'starter', 150, 110),
+  ('sweater_barber',    'sweater', 'Barber Pole',       'Even stripes down the body and around the arms.',                    'classic', 400, 120),
+  ('sweater_chest',     'sweater', '''70s Chest Stripe', 'A wide band across the chest, matched around the arms.',            'classic', 400, 130),
+  ('sweater_yoke',      'sweater', '''80s Shoulder Yoke','Contrast shoulders down to a V, edged in a third team color.',      'classic', 400, 140),
+  ('skater_fav',        'skater',  'Favorite Team',     'Your Breakaway skater wears your favorite team''s sweater.',         'starter', 150, 210),
+  ('skater_profile',    'skater',  'Profile Sweater',   'Your Breakaway skater wears your profile-picture sweater and number.', 'starter', 150, 220)
+on conflict (id) do update set slot = excluded.slot, name = excluded.name, blurb = excluded.blurb, tier = excluded.tier,
+  price = excluded.price, sort = excluded.sort, available_from = excluded.available_from,
+  available_to = excluded.available_to, active = excluded.active;
+-- Limited-time: the Frozen Pond sweater, on sale around the New Year's outdoor game
+insert into public.shop_items (id, slot, name, blurb, tier, price, sort, available_from, available_to) values
+  ('sweater_winter', 'sweater', 'Frozen Pond', 'An outdoor-game throwback: cream wool, a team band, a laced collar.', 'classic', 400, 150, '2026-12-26', '2027-01-06')
 on conflict (id) do update set slot = excluded.slot, name = excluded.name, blurb = excluded.blurb, tier = excluded.tier,
   price = excluded.price, sort = excluded.sort, available_from = excluded.available_from,
   available_to = excluded.available_to, active = excluded.active;
@@ -1042,14 +1054,19 @@ alter table public.chiclet_spends enable row level security;
 -- No policies: only buy_item() writes it; my_items() and the ledger read it.
 revoke all on public.chiclet_spends from anon, authenticated;
 
--- The worn border (public, like the profile picture). Only equip_item() can change it.
+-- What's worn (public, like the profile picture): the border, the sweater style, and the Breakaway skater's sweater.
+-- Only equip_item() can change them.
 alter table public.profiles add column if not exists border text;
+alter table public.profiles add column if not exists sweater_style text;
+alter table public.profiles add column if not exists skater text;
 create or replace function public.profiles_guard_cosmetics()
 returns trigger language plpgsql set search_path = '' as $$
 begin
   if coalesce(current_setting('stickpicks.equip', true), '') <> 'on' then
-    if tg_op = 'INSERT' then new.border := null;
-    elsif new.border is distinct from old.border then new.border := old.border;
+    if tg_op = 'INSERT' then
+      new.border := null; new.sweater_style := null; new.skater := null;
+    else
+      new.border := old.border; new.sweater_style := old.sweater_style; new.skater := old.skater;
     end if;
   end if;
   return new;
@@ -1105,13 +1122,17 @@ declare
   uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Sign in first.'; end if;
-  if p_slot <> 'border' then raise exception 'That can''t be worn yet.'; end if;
+  if p_slot not in ('border','sweater','skater') then raise exception 'That can''t be worn.'; end if;
   if p_item is not null and not exists (
     select 1 from public.chiclet_spends s join public.shop_items i on i.id = s.item_id
     where s.user_id = uid and s.item_id = p_item and i.slot = p_slot
   ) then raise exception 'You don''t own that.'; end if;
   perform set_config('stickpicks.equip', 'on', true);
-  update public.profiles set border = p_item where user_id = uid;
+  update public.profiles set
+    border        = case when p_slot = 'border'  then p_item else border end,
+    sweater_style = case when p_slot = 'sweater' then p_item else sweater_style end,
+    skater        = case when p_slot = 'skater'  then p_item else skater end
+  where user_id = uid;
   perform set_config('stickpicks.equip', 'off', true);
 end $$;
 revoke all on function public.equip_item(text, text) from public, anon;

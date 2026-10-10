@@ -1234,6 +1234,8 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .shop-save{width:80%;height:7px}
 .shop-save i{background:var(--gold)}
 .shop-need{font:italic .8rem var(--serif);color:var(--muted)}
+.shop-card.is-soon{opacity:.75;border-style:dashed}
+.shop-soon{font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
 .buy-preview{display:grid;place-items:center;margin:4px 0 6px}
 .buy-left{display:block;margin:-6px 0 14px;font:italic .85rem var(--serif);color:var(--muted)}
 .shop-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;max-width:calc(100% - 32px);

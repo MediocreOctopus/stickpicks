@@ -156,18 +156,67 @@ function mountTabBar(){
 document.addEventListener("DOMContentLoaded", mountTabBar);
 
 /* ───────── Avatars: sweater (team + number), photo, or initial ───────── */
-// The jersey is drawn once per page (hidden <svg> with a <symbol>) and reused at any size.
-// Sleeves have two equal bands parallel to the cuff, matching the two hem stripes.
+// The sweater, drawn flat like a hockey sweater laid out: a wide, boxy body; long sleeves angled down to square cuffs at
+// the wrists; a V-neck with a trim band, the inside of the back collar showing through the V. Every sweater on the site
+// (profile pictures, the Pick Team menu and tiles, the #1 Fan patch) is this one drawing, in a 100×100 box.
+const JERSEY_OUTLINE="M39 8 Q50 13 61 8 L77 14 L95.2 46.05 L81.65 54.5 L72 36 L72 93 L28 93 L28 36 L18.35 54.5 L4.8 46.05 L23 14 Z";
+const JERSEY_SLEEVE="77,14 95.2,46.05 81.65,54.5 72,36";   // the right sleeve (the left is its mirror image)
+// Sleeve stripes are drawn in the right sleeve's own frame: x runs down the arm from the shoulder seam (0) to the cuff
+// (about 29), so a band across x wraps around the arm, square to it like a knit stripe. Mirrored for the left sleeve.
+const SLEEVE_FRAME="translate(74.5 25) rotate(61)";
+// Sweater styles from the Chiclets shop (worn one: profiles.sweater_style). Alternate swaps the team's two colours;
+// the others are throwback designs in the team's colours.
+const SWEATER_STYLES=["sweater_alt","sweater_barber","sweater_chest","sweater_yoke","sweater_winter"];
+const WINTER_CREAM="#E8D8B2";
+// The colours a sweater is drawn in: [body, stripes, edge] (edge: a third team colour, for the '80s yoke's trim)
+function sweaterColours(team, style){
+  const t=TEAMS[team]; if(!t) return null;
+  const stripe=t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2);
+  const [j1,j2] = style==="sweater_alt" ? [stripe, t.board] : style==="sweater_winter" ? [WINTER_CREAM, t.board] : [t.board, stripe];
+  const same=(a,b)=>String(a).toLowerCase()===String(b).toLowerCase();
+  const j3=firstReadable(j2, [t.accent,t.brand,"#FFFFFF","#111111"].filter(c=>c && !same(c,j1) && !same(c,j2)), 1.6);
+  return [j1, j2, j3];
+}
+// The whole drawing for a style (null = the plain sweater: two stripes on each sleeve and two at the hem).
+// c = {j1, j2, j3}: colours, or CSS var() references (the shared <symbol> uses var(--j1) / var(--j2)).
+function jerseyMarkup(style, c){
+  const fill=col=>`style="fill:${col}"`;
+  const armBand=(from,to,col=c.j2)=>`<rect x="${from}" y="-30" width="${to-from}" height="60" ${fill(col)}/>`;
+  const bodyBand=(from,to,col=c.j2)=>`<rect x="0" y="${from}" width="100" height="${to-from}" ${fill(col)}/>`;
+  // the pattern is painted across the whole sweater in one piece (no seam lines), then each sleeve is repainted on top:
+  // its plain colour from baseFrom down the arm, then its own bands
+  const body=inner=>`<g clip-path="url(#spjBody)">${inner}</g>`;
+  const sleeves=(inner, baseFrom=-10)=>{ const r=`<g clip-path="url(#spjSleeve)"><g transform="${SLEEVE_FRAME}">${armBand(baseFrom,40,c.j1)}${inner}</g></g>`;
+    return r+`<g transform="translate(100 0) scale(-1 1)">${r}</g>`; };
+  let art="";
+  if(style==="sweater_barber")        // barber pole: even bands down the body, and the same rhythm around each arm to the cuff
+    art=body([24,37,50,63,76,89].map(y=>bodyBand(y,y+6.5)).join(""))+sleeves(armBand(3,7.2)+armBand(10.8,15)+armBand(18.6,22.8)+armBand(26.4,40));
+  else if(style==="sweater_chest")    // '70s: a wide band across the chest with a thin line under it, matched around the upper arms
+    art=body(bodyBand(33,43)+bodyBand(46,48))+sleeves(armBand(7,13)+armBand(14.6,16.2));
+  else if(style==="sweater_yoke")     // '80s: contrast shoulders that dip to a V on the chest and cover the top of each sleeve, edged in a third colour
+    art=body(`<path d="M0 0H100V30L50 43L0 30Z" ${fill(c.j2)}/><path d="M0 30L50 43L100 30" fill="none" style="stroke:${c.j3}" stroke-width="2.4"/>`)+
+      sleeves(armBand(-10,11)+armBand(11,13.2,c.j3), 13.2);   // the yoke colour underneath already covers the top of the arm
+  else if(style==="sweater_winter")   // outdoor-game throwback: cream wool, a team band across the chest and around the arms
+    art=body(bodyBand(30,38)+bodyBand(40.5,42.5))+sleeves(armBand(14,18.5)+armBand(20,21.4));
+  else                                // plain (and Alternate): two stripes around each forearm and two at the hem
+    art=body(bodyBand(78,81.5)+bodyBand(84,87.5))+sleeves(armBand(17,20.5)+armBand(22.5,26));
+  // the collar: the inside of the back showing through the V, the back collar band, then the V trim edged in the body
+  // colour so it stands out on any design (including a yoke in the trim's own colour)
+  const collar=`<path d="M39 8 Q50 13 61 8 L50 21 Z" style="fill:${c.j1}"/><path d="M39 8 Q50 13 61 8 L50 21 Z" fill="#000" opacity=".28"/>`+
+    `<path d="M39.5 8.6 Q50 13.4 60.5 8.6" fill="none" style="stroke:${c.j2}" stroke-width="2.2"/>`+
+    `<path d="M38.2 7.6 L50 21.8 L61.8 7.6" fill="none" style="stroke:${c.j1}" stroke-width="5.6" stroke-linejoin="round"/>`+
+    `<path d="M38.2 7.6 L50 21.8 L61.8 7.6" fill="none" style="stroke:${c.j2}" stroke-width="3" stroke-linejoin="round"/>`+
+    (style==="sweater_winter"   // laces across the V
+      ? `<path d="M43.6 12.4L54.9 15.6M56.4 12.4L45.1 15.6M45.6 15.4L52.6 18.4M54.4 15.4L47.4 18.4" fill="none" stroke="#F4EDDC" stroke-width="1.3" stroke-linecap="round"/>` : "");
+  // a fine outline so pale sweaters (cream, white, ice) still read on the cream circle
+  const edge=`<path d="${JERSEY_OUTLINE}" fill="none" stroke="#000" stroke-opacity=".22" stroke-width="1" stroke-linejoin="round"/>`;
+  return `<defs><clipPath id="spjBody" clipPathUnits="userSpaceOnUse"><path d="${JERSEY_OUTLINE}"/></clipPath>`+
+    `<clipPath id="spjSleeve" clipPathUnits="userSpaceOnUse"><polygon points="${JERSEY_SLEEVE}"/></clipPath></defs>`+
+    `<path d="${JERSEY_OUTLINE}" ${fill(c.j1)}/>${art}${collar}${edge}`;
+}
+// The plain sweater as a shared <symbol>, coloured by --j1 / --j2 (the Pick Team menu and tiles)
 const JERSEY_DEFS='<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>'
- +'<clipPath id="spSlR" clipPathUnits="userSpaceOnUse"><polygon points="69,12 93,31 82,47 74,41"/></clipPath>'
- +'<clipPath id="spSlL" clipPathUnits="userSpaceOnUse"><polygon points="31,12 7,31 18,47 26,41"/></clipPath>'
- +'<symbol id="spJersey" viewBox="0 0 100 100">'
- +'<path d="M31 12 L44 7 Q50 15 56 7 L69 12 L93 31 L82 47 L74 41 L74 93 L26 93 L26 41 L18 47 L7 31 Z" style="fill:var(--j1)"/>'
- +'<g clip-path="url(#spSlR)" style="fill:var(--j2)"><polygon points="95.06,22.71 75,51.89 72.53,50.19 92.59,21.01"/><polygon points="90.94,19.88 70.88,49.06 68.41,47.36 88.47,18.18"/></g>'
- +'<g clip-path="url(#spSlL)" style="fill:var(--j2)"><polygon points="4.94,22.71 25,51.89 27.47,50.19 7.41,21.01"/><polygon points="9.06,19.88 29.12,49.06 31.59,47.36 11.53,18.18"/></g>'
- +'<rect x="26" y="82" width="48" height="3" style="fill:var(--j2)"/><rect x="26" y="87" width="48" height="3" style="fill:var(--j2)"/>'
- +'<path d="M44 7 Q50 15 56 7" fill="none" style="stroke:var(--j2)" stroke-width="3"/>'
- +'</symbol></defs></svg>';
+ +'<symbol id="spJersey" viewBox="0 0 100 100">'+jerseyMarkup(null,{j1:"var(--j1)",j2:"var(--j2)",j3:"#FFFFFF"})+'</symbol></defs></svg>';
 function ensureJerseyDefs(){
   if(document.getElementById("spJersey")) return;
   const host=document.createElement("div"); host.innerHTML=JERSEY_DEFS; document.body.prepend(host.firstChild);
@@ -176,7 +225,7 @@ function ensureJerseyDefs(){
 const AVATAR_BASE=((window.PICKS_CONFIG||{}).SUPABASE_URL||"").replace(/\/$/,"")+"/storage/v1/object/public/avatars/";
 // A profile row (from Supabase) → the avatar settings the pages pass around.
 function avatarFromProfile(p){ return p ? {kind:p.avatar_kind||null, team:p.avatar_team||null, number:p.avatar_number??null, url:p.avatar_url||null,
-  border:p.border||null, fav:p.fav_team||null} : null; }
+  border:p.border||null, fav:p.fav_team||null, style:p.sweater_style||null, skater:p.skater||null} : null; }
 // Shop borders (bought with Chiclets; the worn one is profiles.border). Drawn in CSS: .avatar.av-b-<id>.
 const AVATAR_BORDERS=["border_stitch","border_hem","border_team","border_gold","border_champion","border_halloffame"];
 function applyAvatarBorder(el, border, fav){
@@ -198,12 +247,15 @@ function avatarEl(av, name, px){
     const img=document.createElement("img"); img.src=av.url; img.alt=""; img.loading="lazy"; img.decoding="async";
     el.classList.add("avatar-photo"); el.appendChild(img);
   }else if(team){
-    ensureJerseyDefs();
-    const stripe=team.stripe||firstReadable(team.board,[team.accent,team.brand,"#FFFFFF"],2);
+    const style=SWEATER_STYLES.includes(av.style) ? av.style : null;
+    const [j1,j2,j3]=sweaterColours(av.team, style);
     const num=Math.max(0,Math.min(99,parseInt(av.number,10)||0));
     el.classList.add("avatar-sweater");
-    el.style.setProperty("--j1",team.board); el.style.setProperty("--j2",stripe); el.style.setProperty("--av-ring",firstReadable("#F4EDDC",[stripe,team.board],1.5));   // white stripes would vanish on the cream ring
-    el.innerHTML=`<svg viewBox="0 0 100 100"><use href="#spJersey"/><text x="50" y="70"text-anchor="middle" fill="${inkOn(team.board)}">${num}</text></svg>`;
+    el.style.setProperty("--av-ring",firstReadable("#F4EDDC",[j2,j1],1.5));   // white stripes would vanish on the cream ring
+    // on striped styles the number gets an outline in the body colour so it reads across the stripes
+    const edge = style==="sweater_barber" || style==="sweater_chest" ? ` stroke="${j1}" stroke-width="4" paint-order="stroke"` : "";
+    const numText = av.number==="" ? "" : `<text x="50" y="73" text-anchor="middle" fill="${inkOn(j1)}"${edge}>${num}</text>`;   // "" = no number (the shop's skater preview)
+    el.innerHTML=`<svg viewBox="0 0 100 100">${jerseyMarkup(style,{j1,j2,j3})}${numText}</svg>`;
   }else if(name){
     el.textContent=name[0].toUpperCase();
   }else{
@@ -526,14 +578,8 @@ BADGES.push(
    // (brand red with cream stripes until they pick a favourite)
    art:()=>{ const t=TEAMS[BADGE_FAV_TEAM];
      const j1=t ? t.board : BI.r, j2=t ? (t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)) : BI.c;
-     return `<g transform="translate(8.5 9.2) scale(.47)">`+
-       `<clipPath id="spFanSlR"><polygon points="69,12 93,31 82,47 74,41"/></clipPath><clipPath id="spFanSlL"><polygon points="31,12 7,31 18,47 26,41"/></clipPath>`+
-       `<path d="M31 12 L44 7 Q50 15 56 7 L69 12 L93 31 L82 47 L74 41 L74 93 L26 93 L26 41 L18 47 L7 31 Z" fill="${j1}"/>`+
-       `<g clip-path="url(#spFanSlR)" fill="${j2}"><polygon points="95.06,22.71 75,51.89 72.53,50.19 92.59,21.01"/><polygon points="90.94,19.88 70.88,49.06 68.41,47.36 88.47,18.18"/></g>`+
-       `<g clip-path="url(#spFanSlL)" fill="${j2}"><polygon points="4.94,22.71 25,51.89 27.47,50.19 7.41,21.01"/><polygon points="9.06,19.88 29.12,49.06 31.59,47.36 11.53,18.18"/></g>`+
-       `<rect x="26" y="82" width="48" height="3" fill="${j2}"/><rect x="26" y="87" width="48" height="3" fill="${j2}"/>`+
-       `<path d="M44 7 Q50 15 56 7" fill="none" stroke="${j2}" stroke-width="3"/>`+
-       `<text x="50" y="70" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="600" font-size="30" letter-spacing="-.6" fill="${inkOn(j1)}">1</text></g>`; }},
+     return `<g transform="translate(8.5 9.2) scale(.47)">${jerseyMarkup(null,{j1,j2,j3:"#FFFFFF"})}`+
+       `<text x="50" y="73" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="600" font-size="30" letter-spacing="-.6" fill="${inkOn(j1)}">1</text></g>`; }},
   {id:"mixedfeelings", name:"Mixed Feelings", ring:"navy", how:"Start a sheet for your least favorite team (set it in Settings on your profile).",
    // a felt heart patch torn in two: a red half and a navy half, each still edged with cream stitching,
    // and loose threads hanging across the tear
