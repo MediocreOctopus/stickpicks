@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-17">
+<link rel="stylesheet" href="styles.css?v=2026-11-20">
 </head>
 <body>
 
@@ -208,8 +208,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-17"></script>
-<script src="teams.js?v=2026-11-17"></script>
+<script src="config.js?v=2026-11-20"></script>
+<script src="teams.js?v=2026-11-20"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -518,7 +518,7 @@ $("fUp").addEventListener("submit", async e=>{
   if(e1){ busy(e.target,false); return msg("upMsg",friendly(e1),"err"); }
   if(!free){ busy(e.target,false); return msg("upMsg","That username is taken. Try another.","err"); }
   msg("upMsg","Creating your account…");
-  const {data,error}=await sb.auth.signUp({email,password,options:{data:{username},emailRedirectTo:HOME_URL}});
+  const {data,error}=await sb.auth.signUp({email,password,options:{data:INVITER ? {username, invited_by:INVITER} : {username}, emailRedirectTo:HOME_URL}});
   busy(e.target,false);
   if(error) return msg("upMsg",friendly(error),"err");
   if(data.user && data.user.identities && data.user.identities.length===0)
@@ -561,10 +561,16 @@ async function ensureProfile(user){
     const wanted=user.user_metadata?.username; // chosen at sign-up
     if(wanted && USERNAME_RULE.test(wanted)){
       const {error}=await sb.from("profiles").insert({user_id:user.id, username:wanted});
-      if(!error) data={username:wanted};
+      if(!error){ data={username:wanted}; noteInvite(user); }
     }
   }
   return data||null;
+}
+// A new player who came from an invitation link: credit whoever invited them (the Recruiter badge).
+// The inviter's name is kept with the sign-up, so it still counts after the confirmation email.
+function noteInvite(user){
+  const by=user?.user_metadata?.invited_by || INVITER;
+  if(by && USERNAME_RULE.test(by)) sb.rpc("record_invite",{p_inviter:by}).then(()=>{},()=>{});
 }
 
 async function renderSignedIn(session, note=""){
@@ -605,6 +611,7 @@ $("fName").addEventListener("submit", async e=>{
   const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
   if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
+  if(!profile) noteInvite(currentUser);   // first profile: credit an invitation, if they came from one
   profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner(); showInvite();
   showNameForm(false); loadMyStats();
 });

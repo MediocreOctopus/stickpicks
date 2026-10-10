@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-17">
+<link rel="stylesheet" href="styles.css?v=2026-11-20">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -73,6 +73,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li><b>Your picks:</b> each result and goals prediction you make, with the team sheet and game it belongs to and when you last changed it.</li>
         <li><b>Your profile picture,</b> if you choose one: either a team sweater with a number, or a photo you upload. Photos are cropped and shrunk on your device before they’re uploaded.</li>
         <li><b>Your settings:</b> the Look you pick (Auto, Home sweater or Road sweater), so it follows you to other devices.</li>
+        <li><b>Who invited you,</b> if you joined from a friend&rsquo;s invitation link (see Sharing and invitations below).</li>
         <li><b>Puck-drop reminders,</b> if you turn them on: an address your browser gives us for sending notifications to that device, and a note of which games we’ve already reminded you about, so you only get one reminder per game.</li>
       </ul>
       <p>We use this to run the game: to sign you in, save your picks, score them, show the leaderboards, profiles and badges, and send the emails and reminders you asked for. Emails are only for your account: confirming it, resetting your password, and confirming a new email address. We don’t send newsletters or marketing.</p>
@@ -91,7 +92,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <p>We count visits with <a href="https://www.goatcounter.com/" rel="noopener">GoatCounter</a>, a privacy-friendly counter that uses <b>no cookies</b> and stores no personal information. It records which page was visited (without usernames), the browser and screen size, the country, and the site you came from, and it tells us when someone uses a Share or Invite button, without saying who. We use these totals to see which parts of stickpicks people use.</p>
 
       <h3>Sharing and invitations</h3>
-      <p>When you tap a Share or Invite button, your device makes the picture and message, and your phone’s or computer’s share sheet sends it wherever you choose. We don’t see who you send it to. Invitation links include your username, so the person you invite sees who invited them.</p>
+      <p>When you tap a Share or Invite button, your device makes the picture and message, and your phone’s or computer’s share sheet sends it wherever you choose. We don’t see who you send it to. Invitation links include your username, so the person you invite sees who invited them. If they create an account from your link, we note that you invited them, so you earn the Recruiter badge. That note is private: other players only see your badge, never who you invited.</p>
 
       <h3>Services that help run stickpicks</h3>
       <p>We don’t run our own servers; these services do the work, and each has its own privacy policy:</p>
@@ -176,7 +177,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="rules.html">Rules</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-11-17"></script>
+<script src="teams.js?v=2026-11-20"></script>
 <script>mountTeamMenu(document.getElementById("teamMenu"));</script>
 <!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
 <script>window.goatcounter={path:function(){var t=new URLSearchParams(location.search).get("team");return location.pathname+(t?"?team="+t:"")}};</script>

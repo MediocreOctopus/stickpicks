@@ -142,7 +142,7 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 18 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 41 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
 
 | Badge | How to earn it |
 |---|---|
@@ -164,8 +164,29 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Point Streak | At least a point in 10 straight finished games |
 | Captain | #1 on a team leaderboard at the end of any game day (it stays, even if you drop later) |
 | MVP | #1 on the All-Teams leaderboard when the regular season ends (ties share it) |
+| Player of the Week | #1 on the All-Teams weekly board when a week (Mon–Sun) ends |
+| Player of the Month | #1 on the All-Teams monthly board when a month ends |
+| Dynasty | Player of the Week 3 times |
+| Iron Man | Picks on games in 4 weeks in a row |
+| Early Bird | 10 picks made at least a day before puck drop |
+| Buzzer Beater | A right result picked in the last 5 minutes before puck drop |
+| Full Slate | Every game on all your sheets fully picked for a whole week (3+ games) |
+| Half Season | Half of a team's games picked on one sheet |
+| Opening Night | A pick on the season's first night of games |
+| Winter Classic / Stadium Series / Global Series | A pick on that game (found from neutral-site games: outdoor stadiums around New Year's, other outdoor games Jan–Mar, and games overseas) |
+| Rivalry Night | Sheets for both sides of a rivalry (Battle of Alberta, Battle of Ontario, Battle of Pennsylvania, and more) |
+| Natural Hat Trick | 2-point games (result and exact goals) 3 in a row on one sheet |
+| Road Warrior | 5 road wins called right |
+| Goal Fest | Exact goals in a game with 9+ goals |
+| Goalie Duel | Exact goals in a game with 3 or fewer goals |
+| Perfect Week | Every result right in a week with 5+ of your games |
+| O, Canada | Sheets for all 7 Canadian teams |
+| Division Champ | Sheets for every team in one division |
+| Commissioner | Sheets for all 32 teams |
+| 100pt Player | 100 points on one sheet in a season |
+| Recruiter | A friend you invited creates an account |
 
-Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. The exceptions are Captain and MVP, which depend on everyone's results over time: the database works those out (`badge_honours()` in `schema.sql`, section 14). It replays the season one game day at a time to find every sheet that has held a #1 spot, and it names MVPs only once every regular-season game is final. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
+Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. The exceptions depend on everyone's results over time, or on when picks were made, so the database works them out (`badge_honours()` in `schema.sql`, section 15): Captain (it replays the season one game day at a time to find every sheet that has held a #1 spot), MVP (only once every regular-season game is final), Player of the Week and Month (finished weeks and months only), Early Bird and Buzzer Beater (from when each pick was last changed), and Recruiter (from the private `invites` table, section 14, filled in when someone who arrived from an invitation link makes their profile). Badges about games (Iron Man, Full Slate, Opening Night, the big-game badges) count only games that have started, so filling a sheet in advance doesn't earn them early. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
 ## Visitor stats
 
 Every page loads [GoatCounter](https://www.goatcounter.com/) (stickpicks.goatcounter.com), a free, privacy-friendly visitor counter: no cookies and no personal data. Page addresses are counted without usernames (for example `sheet.html?team=SEA`). Visits from `localhost` aren't counted. See the numbers by signing in at https://stickpicks.goatcounter.com.

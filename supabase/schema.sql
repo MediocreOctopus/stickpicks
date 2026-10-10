@@ -435,30 +435,61 @@ $$;
 revoke all on function public.push_reminders_due(int) from public, anon, authenticated;
 grant execute on function public.push_reminders_due(int) to service_role;
 grant select, insert, update, delete on public.push_subscriptions, public.push_reminders_sent to service_role;
--- 14) Honours: badges that depend on everyone's results over the season, worked out here.
---     captain: a sheet that was #1 (with points) on its team's leaderboard at the end of any
---              game day. Once earned it stays, even if the sheet drops later.
---     mvp:     only once every regular-season game is final: the player(s) whose best sheet is
---              #1 on the All-Teams season leaderboard (ties share it).
---     Returns usernames and dates only, never anyone's picks.
-create or replace function public.badge_honours(p_season text default '20262027')
-returns table (username text, badge text, team text, earned_on date)
+-- 14) Invitations: who invited each new player (for the Recruiter badge). Private: nobody can read
+--     this table; record_invite() saves it once, when a player who arrived from an invitation link
+--     makes their profile, and badge_honours() only reports how many players each person recruited.
+create table if not exists public.invites (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  invited_by  uuid not null references auth.users(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  constraint invites_not_self check (user_id <> invited_by)
+);
+alter table public.invites enable row level security;
+revoke all on public.invites from anon, authenticated;
+
+create or replace function public.record_invite(p_inviter text)
+returns void language sql security definer set search_path = '' as $$
+  insert into public.invites (user_id, invited_by)
+  select (select auth.uid()), p.user_id from public.profiles p
+  where lower(p.username) = lower(p_inviter) and (select auth.uid()) is not null and p.user_id <> (select auth.uid())
+  on conflict (user_id) do nothing;
+$$;
+revoke all on function public.record_invite(text) from public, anon;
+grant execute on function public.record_invite(text) to authenticated;
+
+-- 15) Honours: badges that depend on everyone's results over time, or on when picks were made,
+--     worked out here. One row per player and honour; n is a count where one is useful.
+--     captain:     a sheet that was #1 (with points) on its team's leaderboard at the end of any
+--                  game day. Once earned it stays, even if the sheet drops later.
+--     mvp:         only once every regular-season game is final: the player(s) whose best sheet is
+--                  #1 on the All-Teams season leaderboard (ties share it).
+--     playerweek:  #1 on the All-Teams board for a finished week (Monday to Sunday); one row per week.
+--     playermonth: #1 on the All-Teams board for a finished calendar month; one row per month.
+--     earlybird:   n = picks on games that have started that were last changed 24+ hours before puck drop.
+--     buzzer:      n = right results last changed in the 5 minutes before puck drop.
+--     recruiter:   n = players who joined from your invitation link.
+--     Returns usernames, dates and counts only, never anyone's picks.
+drop function if exists public.badge_honours(text);
+create function public.badge_honours(p_season text default '20262027')
+returns table (username text, badge text, team text, earned_on date, n int)
 language sql stable security definer set search_path = ''
 as $$
-  with daily as (        -- points each sheet earned on each game day (finished games only)
-    select tp.user_id, tp.team, g.game_date,
-      sum(
-        (case when tp.pick is not null and tp.pick =
-           (case when (case when g.home = tp.team then g.home_score else g.away_score end)
-                    > (case when g.home = tp.team then g.away_score else g.home_score end) then 'W'
-                 when g.period_type = 'REG' then 'L' else 'OTL' end) then 1 else 0 end)
-      + (case when tp.goals is not null and tp.goals = g.home_score + g.away_score then 1 else 0 end)
-      ) as pts
+  with graded as (       -- every pick on a finished game, with its points
+    select tp.user_id, tp.team, g.game_date, g.start_utc, tp.updated_at,
+      (tp.pick is not null and tp.pick =
+         (case when (case when g.home = tp.team then g.home_score else g.away_score end)
+                  > (case when g.home = tp.team then g.away_score else g.home_score end) then 'W'
+               when g.period_type = 'REG' then 'L' else 'OTL' end)) as result_hit,
+      (tp.goals is not null and tp.goals = g.home_score + g.away_score) as goals_hit
     from public.team_picks tp
     join public.profiles p on p.user_id = tp.user_id
     join public.games g on g.game_id = tp.game_id and g.season = p_season
     where g.period_type is not null and g.home_score is not null and g.away_score is not null
-    group by tp.user_id, tp.team, g.game_date
+  ),
+  daily as (             -- points each sheet earned on each game day
+    select x.user_id, x.team, x.game_date,
+      sum((case when x.result_hit then 1 else 0 end) + (case when x.goals_hit then 1 else 0 end)) as pts
+    from graded x group by x.user_id, x.team, x.game_date
   ),
   sheets as (select distinct d.user_id, d.team from daily d),
   days as (select distinct d.team, d.game_date from daily d),
@@ -469,14 +500,34 @@ as $$
     join days dy on dy.team = s.team
     left join daily d on d.user_id = s.user_id and d.team = s.team and d.game_date = dy.game_date
   ),
-  ranked as (
-    select r.*, max(r.total) over (partition by r.team, r.game_date) as top from running r
-  ),
+  ranked as (select r.*, max(r.total) over (partition by r.team, r.game_date) as top from running r),
   captains as (
     select k.user_id, k.team, min(k.game_date) as earned_on
     from ranked k where k.total > 0 and k.total = k.top
     group by k.user_id, k.team
   ),
+  -- weeks and months whose games are all over (postponed games move to their new date)
+  periods as (
+    select 'week' as kind, date_trunc('week', g.game_date)::date as start, max(g.game_date) as last_day,
+      count(*) filter (where g.period_type is null and coalesce(g.schedule_state, 'OK') = 'OK') as open
+    from public.games g where g.season = p_season group by 2
+    union all
+    select 'month', date_trunc('month', g.game_date)::date, max(g.game_date),
+      count(*) filter (where g.period_type is null and coalesce(g.schedule_state, 'OK') = 'OK')
+    from public.games g where g.season = p_season group by 2
+  ),
+  period_pts as (        -- each sheet's points in each week and month
+    select 'week' as kind, date_trunc('week', d.game_date)::date as start, d.user_id, d.team, sum(d.pts) as pts
+    from daily d group by 2, 3, 4
+    union all
+    select 'month', date_trunc('month', d.game_date)::date, d.user_id, d.team, sum(d.pts)
+    from daily d group by 2, 3, 4
+  ),
+  period_top as (
+    select pp.*, max(pp.pts) over (partition by pp.kind, pp.start) as top from period_pts pp
+    join periods pr on pr.kind = pp.kind and pr.start = pp.start and pr.open = 0 and pr.last_day < current_date
+  ),
+  period_wins as (select distinct t.kind, t.start, t.user_id from period_top t where t.pts > 0 and t.pts = t.top),
   season_over as (       -- every regular-season game final (cancelled games don't count)
     select max(g.game_date) as last_day from public.games g
     where g.season = p_season
@@ -490,10 +541,36 @@ as $$
     from best b
     where exists (select 1 from season_over)
       and b.pts > 0 and b.pts = (select max(x.pts) from best x)
+  ),
+  early as (             -- picks on games that have started, last changed a day or more before puck drop
+    select tp.user_id, count(*)::int as n
+    from public.team_picks tp
+    join public.profiles p on p.user_id = tp.user_id
+    join public.games g on g.game_id = tp.game_id and g.season = p_season
+    where g.start_utc <= now() and tp.updated_at <= g.start_utc - interval '24 hours'
+    group by tp.user_id
+  ),
+  buzzer as (            -- right results last changed in the final 5 minutes before puck drop
+    select x.user_id, count(*)::int as n from graded x
+    where x.result_hit and x.updated_at > x.start_utc - interval '5 minutes' and x.updated_at <= x.start_utc
+    group by x.user_id
+  ),
+  recruits as (
+    select i.invited_by as user_id, count(*)::int as n
+    from public.invites i join public.profiles p on p.user_id = i.user_id
+    group by i.invited_by
   )
-  select p.username, 'captain', c.team, c.earned_on from captains c join public.profiles p on p.user_id = c.user_id
+  select p.username, 'captain', c.team, c.earned_on, null::int from captains c join public.profiles p on p.user_id = c.user_id
   union all
-  select p.username, 'mvp', null, m.earned_on from mvps m join public.profiles p on p.user_id = m.user_id;
+  select p.username, 'mvp', null, m.earned_on, null from mvps m join public.profiles p on p.user_id = m.user_id
+  union all
+  select p.username, 'player' || w.kind, null, w.start, null from period_wins w join public.profiles p on p.user_id = w.user_id
+  union all
+  select p.username, 'earlybird', null, null, e.n from early e join public.profiles p on p.user_id = e.user_id
+  union all
+  select p.username, 'buzzer', null, null, b.n from buzzer b join public.profiles p on p.user_id = b.user_id
+  union all
+  select p.username, 'recruiter', null, null, r.n from recruits r join public.profiles p on p.user_id = r.user_id;
 $$;
 revoke all on function public.badge_honours(text) from public;
 grant execute on function public.badge_honours(text) to anon, authenticated;
