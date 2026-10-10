@@ -473,6 +473,11 @@ BADGES.push(
    // a snowflake
    art:`<g stroke="${BI.n}" stroke-width="2.2" stroke-linecap="round">`+[0,60,120].map(a=>`<path d="M32 18.5v27" transform="rotate(${a} 32 32)"/>`).join("")+`</g>`+
        `<g stroke="${BI.r}" stroke-width="1.6" stroke-linecap="round" fill="none">`+[0,60,120,180,240,300].map(a=>`<path d="M28.6 20.8L32 24.2L35.4 20.8" transform="rotate(${a} 32 32)"/>`).join("")+`</g><circle cx="32" cy="32" r="2.6" fill="${BI.r}"/>`},
+  {id:"heritageclassic", name:"Heritage Classic", ring:"red", how:"Make a pick on the NHL Heritage Classic, the outdoor game in Canada.",
+   // a knit toque with a pom-pom, in heritage-sweater stripes
+   art:`<circle cx="32" cy="16.8" r="3.8" fill="${BI.c}" stroke="${BI.n}" stroke-width="1.3"/><path d="M19 36q0-16 13-16t13 16Z" fill="${BI.r}"/>`+
+       `<path d="M20.2 29.5h23.6" stroke="${BI.c}" stroke-width="2.4"/><path d="M19.6 33.4h24.8" stroke="${BI.n}" stroke-width="1.6"/>`+
+       `<rect x="17" y="35.5" width="30" height="9" rx="2.2" fill="${BI.n}"/>`+[21,25,29,33,37,41].map(x=>`<path d="M${x} 37.2v5.6" stroke="${BI.c}" stroke-width="1.1" opacity=".55"/>`).join("")},
   {id:"stadiumseries", name:"Stadium Series", ring:"navy", how:"Make a pick on an NHL Stadium Series game.",
    // a stadium bowl under the lights
    art:`<path d="M17 42V18M47 42V18" stroke="${BI.s}" stroke-width="1.6"/><rect x="13.5" y="15" width="7" height="4.6" rx=".8" fill="#C08A2A"/><rect x="43.5" y="15" width="7" height="4.6" rx=".8" fill="#C08A2A"/>`+
@@ -530,7 +535,7 @@ BADGES.push(
 // The order badges are listed on profiles: joining, everyday, scoring, habit, collecting, events, then the big ones.
 const BADGE_SHOW=["inaugural","faceoff","season2627","openingnight","hattrick","naturalhattrick","star3","star2","star1","topshelf","lamp","goalfest","goalieduel",
   "overtime","shootout","roadwarrior","shutout","perfectweek","earlybird","buzzer","ironman","fullslate","halfseason","fullsheet","original6","ocanada","rivalry",
-  "barnstormer","divisionchamp","commissioner","winterclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter"];
+  "barnstormer","divisionchamp","commissioner","winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter"];
 BADGES.sort((a,b)=>BADGE_SHOW.indexOf(a.id)-BADGE_SHOW.indexOf(b.id));
 const badgeArt=b=>typeof b.art==="function" ? b.art() : b.art;
 const BADGE_BY_ID=Object.fromEntries(BADGES.map(b=>[b.id,b]));
@@ -636,7 +641,9 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const kindOf=g=>{
     if(!g.neutral_site) return null;
     const outdoor=/stadium|field|park|bowl/i.test(g.venue||"") && !/dome/i.test(g.venue||""), [,m,d]=String(g.game_date).split("-").map(Number);
-    if(outdoor) return (m===12 && d>=30) || (m===1 && d<=3) ? "winterclassic" : (m>=1 && m<=3) ? "stadiumseries" : "outdoor";
+    const canadian=["CGY","EDM","MTL","OTT","TOR","VAN","WPG"].includes(g.home);
+    if(outdoor) return (m===12 && d>=30) || (m===1 && d<=3) ? "winterclassic" : (m>=1 && m<=3) ? "stadiumseries"
+      : canadian ? "heritageclassic" : "outdoor";   // the fall outdoor game in Canada is the Heritage Classic
     return "globalseries";
   };
   const onKind=k=>picked.some(x=>kindOf(x.g)===k);
@@ -684,6 +691,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     halfseason: fill>=half,
     openingnight: !!firstDay && picked.some(x=>x.g.game_date===firstDay),
     winterclassic: onKind("winterclassic"),
+    heritageclassic: onKind("heritageclassic"),
     stadiumseries: onKind("stadiumseries"),
     globalseries: onKind("globalseries"),
     rivalry: rival===2,
@@ -732,6 +740,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     halfseason:[Math.min(fill,half),half,"games picked on your fullest sheet"],
     openingnight:[earned.openingnight?1:0,1,"pick on opening night"],
     winterclassic:[0,1,"pick on the Winter Classic"],
+    heritageclassic:[0,1,"pick on the Heritage Classic"],
     stadiumseries:[0,1,"pick on a Stadium Series game"],
     globalseries:[0,1,"pick on a Global Series game"],
     rivalry:[rival,2,"sides of one rivalry"],
@@ -753,7 +762,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
 // Roughly easiest to hardest, for "Badges in reach" on the home page.
 // (Badges you can't chase any more, or only win at the end, like Opening Night and MVP, sit last.)
 const BADGE_ORDER=["inaugural","faceoff","season2627","star3","topshelf","rivalry","overtime","goalieduel","hattrick","shootout","barnstormer","earlybird","ironman","fullslate",
-  "lamp","roadwarrior","goalfest","star2","original6","ocanada","winterclassic","stadiumseries","globalseries","buzzer","shutout","recruiter","halfseason","captain",
+  "lamp","roadwarrior","goalfest","star2","original6","ocanada","heritageclassic","winterclassic","stadiumseries","globalseries","buzzer","shutout","recruiter","halfseason","captain",
   "divisionchamp","naturalhattrick","perfectweek","playerweek","pointstreak","star1","playermonth","dynasty","fullsheet","pt100","commissioner","mvp","openingnight"];
 // The n unearned badges you're closest to (highest share done; easier first on ties), listed easiest to hardest.
 function badgesInReach(r, n=3){
@@ -875,7 +884,7 @@ const BADGE_BRAG={
   playerweek:"finished a week #1 on the All-Teams leaderboard", playermonth:"finished a month #1 on the All-Teams leaderboard",
   dynasty:"was Player of the Week 3 times", ironman:"made picks 4 weeks in a row", earlybird:"made 10 picks a day or more before puck drop",
   buzzer:"called a result right with a pick made in the last 5 minutes before puck drop", fullslate:"picked every game on all my sheets for a whole week",
-  halfseason:"picked half a team’s season on one sheet", openingnight:"made a pick on Opening Night", winterclassic:"made a pick on the Winter Classic",
+  halfseason:"picked half a team’s season on one sheet", openingnight:"made a pick on Opening Night", winterclassic:"made a pick on the Winter Classic", heritageclassic:"made a pick on the Heritage Classic",
   stadiumseries:"made a pick on a Stadium Series game", globalseries:"made a pick on a Global Series game", rivalry:"picked both sides of a rivalry",
   naturalhattrick:"nailed the result and the exact goals 3 games in a row", roadwarrior:"called 5 road wins right",
   goalfest:"nailed the exact goals in a 9+ goal game", goalieduel:"nailed the exact goals in a game with 3 or fewer goals",

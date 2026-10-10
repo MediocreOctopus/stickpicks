@@ -142,7 +142,7 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 41 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 42 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
 
 | Badge | How to earn it |
 |---|---|
@@ -173,7 +173,7 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Full Slate | Every game on all your sheets fully picked for a whole week (3+ games) |
 | Half Season | Half of a team's games picked on one sheet |
 | Opening Night | A pick on the season's first night of games |
-| Winter Classic / Stadium Series / Global Series | A pick on that game (found from neutral-site games: outdoor stadiums around New Year's, other outdoor games Jan–Mar, and games overseas) |
+| Winter Classic / Heritage Classic / Stadium Series / Global Series | A pick on that game (found from neutral-site games: outdoor stadiums around New Year's, the fall outdoor game in Canada, other outdoor games Jan–Mar, and games overseas) |
 | Rivalry Night | Sheets for both sides of a rivalry (Battle of Alberta, Battle of Ontario, Battle of Pennsylvania, and more) |
 | Natural Hat Trick | 2-point games (result and exact goals) 3 in a row on one sheet |
 | Road Warrior | 5 road wins called right |
