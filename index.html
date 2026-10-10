@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-13">
+<link rel="stylesheet" href="styles.css?v=2026-11-14">
 </head>
 <body>
 
@@ -207,8 +207,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-13"></script>
-<script src="teams.js?v=2026-11-13"></script>
+<script src="config.js?v=2026-11-14"></script>
+<script src="teams.js?v=2026-11-14"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -721,7 +721,7 @@ async function loadRecap(teams){
     const bits=[oOf?`${oHit} of ${oOf} results right`:null, gHit?`${gHit} exact goal total${gHit===1?"":"s"}`:null, rank?`now #${rank} of ${of}`:null].filter(Boolean);
     const stats=[oOf?[`${oHit}/${oOf}`,"results right"]:null, gOf?[`${gHit}/${gOf}`,"exact goals"]:null, rank?[`#${rank}`,`of ${of}${moved>0?` · up ${moved}`:""}`]:null].filter(Boolean);
     shareBox.append(shareButton("Share my results", {kind:"result", title:"My stickpicks results", url:inviteUrl(profile?.username),
-      text:`+${pts} point${pts===1?"":"s"} on stickpicks since ${day}${bits.length?": "+bits.join(", "):""}. Think you can call the NHL better?`,
+      text:`+${pts} point${pts===1?"":"s"} on stickpicks since ${day}${bits.length?": "+bits.join(", "):""}. Think you can pick better?`,
       card:{kicker:`${profile?.username||"My picks"} · since ${day}`, title:`+${pts} point${pts===1?"":"s"}`,
         sub:`${finals} game${finals===1?"":"s"} called on stickpicks.`, stats}}, "linkbtn"));
   }

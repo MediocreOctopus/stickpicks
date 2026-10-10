@@ -617,7 +617,7 @@ const BADGE_BRAG={
 function badgeSpec(id, who){
   const b=BADGE_BY_ID[id];
   return {kind:"badge", title:`${b.name} · stickpicks`, url:inviteUrl(who),
-    text:`I just earned the ${b.name} badge on stickpicks: ${BADGE_BRAG[id]||b.how}. Think you can call the NHL better?`,
+    text:`I just earned the ${b.name} badge on stickpicks: ${BADGE_BRAG[id]||b.how}. Think you can pick better?`,
     card:{kicker:"New badge", title:b.name, sub:b.how, badge:id, who}};
 }
 function inviteSpec(who){
