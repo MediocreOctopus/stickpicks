@@ -306,7 +306,7 @@ function renderYou(total, mine){
   // Share your spot: links straight to this board and time frame
   const board = team ? `${teamName} leaderboard` : "All-Teams leaderboard";
   youEl.append(shareButton("Share my spot", {kind:"standing", title:`stickpicks ${board}`, url:SITE_URL+"leaderboard.html"+location.search,
-    text:`I’m #${best.rank} of ${total} on the stickpicks ${board} ${w.phrase}, with ${best.pts} point${best.pts===1?"":"s"} on my ${teamName} sheet. Think you can call it better?`,
+    text:`I’m #${best.rank} of ${total} on the stickpicks ${board} ${w.phrase}, with ${best.pts} point${best.pts===1?"":"s"} on my ${teamName} sheet. Think you can pick better?`,
     card:{kicker:`${w.kicker} · ${team ? teamName : "All-Teams"} board`, title:`#${best.rank} of ${total}`,
       sub:`${myName} · ${best.pts} point${best.pts===1?"":"s"} on the ${teamName} sheet.`}}, "btn you-share"));
   invite();
