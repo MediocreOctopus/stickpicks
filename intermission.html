@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-29">
+<link rel="stylesheet" href="styles.css?v=2026-11-30">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -56,9 +56,11 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <div class="rinkwrap">
       <canvas id="rink" tabindex="0" aria-label="Breakaway, a hockey running game. Press Space or the Up arrow to jump and the Down arrow to duck."></canvas>
     </div>
+    <!-- On phones the buttons sit right under the rink, with a short hint below; computers get the keyboard keys -->
     <div class="runbar">
-      <p class="hint"><kbd>Space</kbd> / <kbd>↑</kbd> jump · <kbd>↓</kbd> duck · hold jump to leap higher. On a phone, tap or use the buttons.</p>
       <div class="runbtns"><button type="button" class="btn ghost" data-run="duck">▼ Duck</button><button type="button" class="btn" data-run="jump">▲ Jump</button></div>
+      <p class="hint run-keys"><kbd>Space</kbd> / <kbd>↑</kbd> jump · <kbd>↓</kbd> duck · hold jump to leap higher.</p>
+      <p class="hint run-touch">Hold Jump to leap higher. Hold Duck under shots.</p>
     </div>
   </section>
 
@@ -83,10 +85,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </div>
 <div class="hem" aria-hidden="true"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-29"></script>
-<script src="teams.js?v=2026-11-29"></script>
+<script src="config.js?v=2026-11-30"></script>
+<script src="teams.js?v=2026-11-30"></script>
 <script>mountTeamMenu(document.getElementById("teamMenu"));</script>
-<script src="game.js?v=2026-11-29"></script>
+<script src="game.js?v=2026-11-30"></script>
 <script>
 // Posts each finished run (signed in), shows the Breakaway leaderboard and your Breakaway badges.
 const sb=makeClient(), $=id=>document.getElementById(id);
@@ -151,6 +153,8 @@ async function loadBadges(){
 addEventListener("breakaway:end", async e=>{
   if(!sb) return;
   if(!me?.username){ window.breakaway?.setNote(uid ? "Choose a username to post scores" : "Sign in to post your score"); return; }
+  // a game counts once it lasts over 3 seconds and you've jumped or ducked (shorter runs aren't posted)
+  if(!e.detail.counted){ window.breakaway?.setNote("Too quick to count: play 3+ seconds and jump or duck"); return; }
   window.breakaway?.setNote("Posting your score…");
   const {data,error}=await sb.rpc("submit_breakaway",{p_score:e.detail.score, p_ms:e.detail.ms, p_season:SEASON});
   if(error){ window.breakaway?.setNote("Couldn’t post this score"); return; }
@@ -158,6 +162,12 @@ addEventListener("breakaway:end", async e=>{
   if(row) window.breakaway?.setNote(row.is_best ? `New best · #${row.rank} on the Breakaway board` : `Your best ${Number(row.best).toLocaleString()} · #${row.rank} on the board`);
   loadBoard(); loadBadges();
 });
+
+// Phones held sideways: when you tap to play, line the rink up with the top of the screen so it and the buttons both fit
+const shortTouch=matchMedia("(pointer:coarse) and (max-height:520px)");
+const fitRink=()=>{ if(!shortTouch.matches) return; const r=document.querySelector(".rinkwrap").getBoundingClientRect(); if(Math.abs(r.top)>6) scrollBy({top:r.top, behavior:"smooth"}); };
+document.getElementById("rink").addEventListener("pointerdown",fitRink);
+document.querySelectorAll("[data-run]").forEach(b=>b.addEventListener("pointerdown",fitRink));
 
 init();
 </script>

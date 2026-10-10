@@ -27,6 +27,7 @@
   let speed, dist, score, hi=0, t, spawnIn, obstacles, flashUntil=0, message="", note="", newBest=false, sparks=[];
   const P={y:0, vy:0, ducking:false, onIce:true, stride:0};
   let jumpHeld=false, downHeld=false, last=0, visible=true, raf=0;
+  let moved=false;   // jumped or ducked at least once this run (a run only counts as a game with that, and 3+ seconds)
 
   try{ hi=Number(localStorage.getItem(HI_KEY))||0; }catch(e){}
 
@@ -63,7 +64,7 @@
 
   function reset(){
     speed=START_SPEED; dist=0; score=0; t=0; obstacles=[]; spawnIn=W*0.6; sparks=[];
-    P.y=0; P.vy=0; P.ducking=false; P.onIce=true; P.stride=0; message=""; note=""; newBest=false;
+    P.y=0; P.vy=0; P.ducking=false; P.onIce=true; P.stride=0; message=""; note=""; newBest=false; moved=false;
     lastGround=-9; lastShot=-9; per=0; callout={text:"",until:0};
   }
 
@@ -151,6 +152,7 @@
     }
     const wasDucking=P.ducking;
     P.ducking = downHeld && P.onIce;
+    if(!P.onIce || P.ducking) moved=true;
     if(P.ducking && !wasDucking) spray(5);
     // stride rate: long, gliding strides that quicken only a little with speed (about 1.1 to 1.5 a second)
     if(P.onIce && !P.ducking) P.stride += dt*2*Math.PI*(0.85+speed/1500);
@@ -192,7 +194,8 @@
     if(s>hi){ hi=s; newBest=true; try{ localStorage.setItem(HI_KEY,String(hi)); }catch(e){} }
     draw();
     // t is the game's own clock (the same one the score is built from), so the server can check the score
-    window.dispatchEvent(new CustomEvent("breakaway:end",{detail:{score:s, ms:Math.round(t*1000)}}));
+    // counted: the run lasted over 3 seconds and you jumped or ducked (only those post, and count toward Rink Rat)
+    window.dispatchEvent(new CustomEvent("breakaway:end",{detail:{score:s, ms:Math.round(t*1000), counted:t>3 && moved}}));
   }
 
   /* ───── Input ───── */

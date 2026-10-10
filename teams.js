@@ -551,7 +551,7 @@ BADGES.push(
    // a strip of film with a star
    art:`<rect x="14" y="21" width="36" height="22" rx="1.6" fill="${BI.n}"/>`+[16,22,28,34,40,46].map(x=>`<rect x="${x}" y="22.6" width="2.6" height="2.4" rx=".5" fill="${BI.c}"/><rect x="${x}" y="39" width="2.6" height="2.4" rx=".5" fill="${BI.c}"/>`).join("")+
        `<rect x="18" y="26.6" width="28" height="10.8" fill="#33476A"/>`+bStar(32,32,5.6,"#C08A2A")},
-  {id:"rinkrat", name:"Rink Rat", ring:"navy", how:"Play 50 games of Breakaway.",
+  {id:"rinkrat", name:"Rink Rat", ring:"navy", how:"Play 50 games of Breakaway. A game counts once you last more than 3 seconds and jump or duck at least once.",
    // the ice resurfacer
    art:`<path d="M15 39V27q0-2.4 2.4-2.4H31l3-6.6h7.4q2 0 2 2V27h3.2q2 0 2 2v10Z" fill="${BI.r}"/><rect x="36" y="20.4" width="5.6" height="5" rx=".6" fill="#C9DCE6"/>`+
        `<path d="M15 33.6h34" stroke="${BI.c}" stroke-width="1.6"/><rect x="13" y="39" width="5" height="3.4" rx=".6" fill="${BI.s}"/>`+

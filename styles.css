@@ -571,7 +571,19 @@ html.sheetpage[data-scheme="dark"]{--edge:var(--stripe)}
 kbd{font:600 .8rem "Barlow",sans-serif;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--panel)}
 .runbtns{display:none;gap:8px}
 .runbtns .btn{min-width:110px;user-select:none;-webkit-user-select:none;touch-action:none}
-@media (pointer:coarse){ .runbtns{display:flex;flex:1 1 100%} .runbtns .btn{flex:1;padding:14px} }
+.run-touch{display:none}
+/* Phones and tablets: Jump and Duck right under the rink, then a short, small hint (no keyboard keys) */
+@media (pointer:coarse){
+  .runbtns{display:flex;flex:1 1 100%} .runbtns .btn{flex:1;padding:14px}
+  .runbar .run-keys{display:none}
+  .runbar .run-touch{display:block;flex:1 1 100%;margin:0;font:italic .78rem/1.3 var(--serif);color:var(--muted);text-align:center}
+}
+/* Phones held sideways (short screens): slimmer buttons and hint, so the rink and buttons fit together */
+@media (pointer:coarse) and (max-height:520px){
+  .runbar{gap:6px}
+  .runbtns .btn{padding:8px}
+  .runbar .run-touch{font-size:.72rem}
+}
 .lede a{color:inherit}
 
 /* ───── Rules page ───── */
