@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-11">
+<link rel="stylesheet" href="styles.css?v=2026-11-12">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -52,6 +52,15 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <div class="sh-chips">
           <span class="sh-chip" id="updated">Loading…</span>
           <label class="sh-switch"><span aria-hidden="true">Switch board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>        </div>
+        <!-- Time frame: the whole season, one month or one week (‹ › steps back through earlier ones) -->
+        <div class="lb-when">
+          <div class="lb-period" role="group" aria-label="Time frame">
+            <button type="button" data-period="season">Season</button><button type="button" data-period="month">Month</button><button type="button" data-period="week">Week</button>
+          </div>
+          <div class="lb-step hidden" id="lbStep">
+            <button type="button" id="pPrev" aria-label="Earlier">‹</button><span id="pLabel" aria-live="polite"></span><button type="button" id="pNext" aria-label="Later">›</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="sh-hem" aria-hidden="true"><i style="width:100%"></i></div>
@@ -86,8 +95,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-11"></script>
-<script src="teams.js?v=2026-11-11"></script>
+<script src="config.js?v=2026-11-12"></script>
+<script src="teams.js?v=2026-11-12"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -103,22 +112,78 @@ const sel=document.getElementById("teamsel");
   });
 })();
 
+/* ───────── Time frame: season, month or week ───────── */
+// Weeks run Monday to Sunday and months are calendar months, by the date each game is played.
+// Only games in that window count, so everyone starts each week and month level.
+let period="season", pStart=null, seasonFirst=null;
+const ymdOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function startOf(kind, d){
+  const x=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  if(kind==="month") x.setDate(1);
+  if(kind==="week") x.setDate(x.getDate()-((x.getDay()+6)%7));   // back to Monday
+  return x;
+}
+function endOf(kind, s){ const e=new Date(s); kind==="month" ? e.setMonth(e.getMonth()+1,0) : e.setDate(e.getDate()+6); return e; }
+function stepped(dir){ const s=new Date(pStart); period==="month" ? s.setMonth(s.getMonth()+dir,1) : s.setDate(s.getDate()+7*dir); return s; }
+const isCurrent=()=>period!=="season" && pStart.getTime()===startOf(period,new Date()).getTime();
+const md=d=>d.toLocaleDateString([], {month:"short",day:"numeric"});
+// Words for the time frame: kicker ("This week"), step label ("Oct 5 – 11") and a phrase for sharing ("this week")
+function when(){
+  if(period==="season") return {kicker:"2026–27", label:"", phrase:"this season"};
+  const end=endOf(period,pStart), cur=isCurrent();
+  if(period==="month"){
+    const name=pStart.toLocaleDateString([], {month:"long",year:"numeric"});
+    return {kicker: cur ? "This month" : name, label:name, phrase: cur ? "this month" : `in ${pStart.toLocaleDateString([], {month:"long"})}`};
+  }
+  const last=stepped(1).getTime()===startOf("week",new Date()).getTime();
+  const label = pStart.getMonth()===end.getMonth() ? `${md(pStart)} – ${end.getDate()}` : `${md(pStart)} – ${md(end)}`;
+  return {kicker: cur ? "This week" : last ? "Last week" : `Week of ${md(pStart)}`, label, phrase: cur ? "this week" : last ? "last week" : `the week of ${md(pStart)}`};
+}
+function setPeriod(kind, start, reload=true){
+  period = ["month","week"].includes(kind) ? kind : "season";
+  if(period==="season") pStart=null;
+  else{
+    const now=startOf(period,new Date());
+    pStart = start ? startOf(period,start) : now;
+    if(pStart>now) pStart=now;
+    if(seasonFirst && pStart<startOf(period,seasonFirst)) pStart=startOf(period,seasonFirst);
+  }
+  document.querySelectorAll(".lb-period button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.period===period)));
+  document.getElementById("lbStep").classList.toggle("hidden", period==="season");
+  if(period!=="season"){
+    document.getElementById("pLabel").textContent=when().label;
+    document.getElementById("pNext").disabled = isCurrent();
+    document.getElementById("pPrev").disabled = !!seasonFirst && pStart<=startOf(period,seasonFirst);
+  }
+  if(reload){ describe(); load(); }
+}
+document.querySelectorAll(".lb-period button").forEach(b=>b.addEventListener("click",()=>setPeriod(b.dataset.period)));
+document.getElementById("pPrev").addEventListener("click",()=>setPeriod(period, stepped(-1)));
+document.getElementById("pNext").addEventListener("click",()=>setPeriod(period, stepped(1)));
+
+// Banner, page title, footer and address for the board and time frame showing
+function describe(){
+  const url=new URL(location.href);
+  team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
+  period==="season" ? url.searchParams.delete("period") : url.searchParams.set("period",period);
+  period==="season" ? url.searchParams.delete("from") : url.searchParams.set("from",ymdOf(pStart));
+  history.replaceState(null,"",url);
+  const w=when();
+  // Same format on every board: "<when> · <which> leaderboard" above the name in script
+  document.getElementById("lbKicker").textContent = `${w.kicker} · ${team ? "team leaderboard" : "Leaderboard"}`;
+  document.getElementById("headline").textContent = team ? TEAMS[team].name : "All-Teams";
+  document.title = `${team?TEAMS[team].name+" ":""}Leaderboard${period==="season"?"":" · "+w.kicker} · stickpicks 2026–27`;
+  document.getElementById("scope").textContent = (team
+    ? `Every ${TEAMS[team].name} pick sheet.`
+    : "Every pick sheet, each ranked on its own.") + (period==="season" ? "" : ` Only games played ${w.phrase} count.`);
+}
+
 function setTeam(code){
   team = code && TEAMS[code] ? code : null;
   sel.value = team || "";
   applyTheme(team || NEUTRAL_THEME);
   document.documentElement.classList.toggle("neutral", !team); // All teams: plain wool page
-  const url=new URL(location.href);
-  team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
-  history.replaceState(null,"",url);
-  // Same format on every board: "2026–27 · <which> leaderboard" above the name in script
-  document.getElementById("lbKicker").textContent = team ? "2026–27 · team leaderboard" : "2026–27 · Leaderboard";
-  document.getElementById("headline").textContent = team ? TEAMS[team].name : "All-Teams";
-  document.title = `${team?TEAMS[team].name+" ":""}Leaderboard · stickpicks 2026–27`;
-  document.getElementById("scope").textContent = team
-    ? `Every ${TEAMS[team].name} pick sheet.`
-    : "Every pick sheet, each ranked on its own.";
-  load();
+  describe(); load();
 }
 sel.addEventListener("change",()=>setTeam(sel.value));
 
@@ -131,7 +196,9 @@ let loading=0;
 async function load(){
   if(!sb){ showEmpty("Database not connected yet: add your Supabase URL and key to config.js (see README)."); document.getElementById("updated").textContent="Not connected"; return; }
   const ticket=++loading, want=team;
-  const {data,error}=await sb.rpc("leaderboard",{p_season:SEASON, p_team:team});
+  const args={p_season:SEASON, p_team:team};
+  if(period!=="season"){ args.p_from=ymdOf(pStart); args.p_to=ymdOf(endOf(period,pStart)); }
+  const {data,error}=await sb.rpc("leaderboard",args);
   if(ticket!==loading || want!==team) return; // a newer request replaced this one
   if(error){ showEmpty(`Couldn’t load the leaderboard: ${error.message}`); return; }
   await loadFaces((data||[]).map(r=>r.username));
@@ -161,7 +228,9 @@ const frac=(hit,of)=>of?`${hit}<span class="muted frac">/${of}</span>`:"—";
 function render(list){
   rowsEl.innerHTML="";
   if(!list.length){
-    showEmpty(team ? `No one has made ${TEAMS[team].name} picks with a username yet.` : "No one is on the leaderboard yet. Sign in on the home page, choose a username, and make some picks.");
+    showEmpty(period!=="season"
+      ? `No picks for games played ${when().phrase}${team?` on ${TEAMS[team].name} sheets`:""} yet.`
+      : team ? `No one has made ${TEAMS[team].name} picks with a username yet.` : "No one is on the leaderboard yet. Sign in on the home page, choose a username, and make some picks.");
   }else{ emptyEl.classList.add("hidden"); wrapEl.classList.remove("hidden"); }
 
   let rank=0, prevPts=null; const mine=[];
@@ -213,22 +282,34 @@ function renderYou(total, mine){
     else { el("p",null,"Sign in and choose a username to get your sheets on the leaderboard."); link("index.html#signin","Sign in"); }
     return;
   }
+  const w=when(), invite=()=>youEl.append(shareButton("Invite friends", inviteSpec(myName), "linkbtn you-invite"));
   if(!mine.length){
     el("div","you-label","Your sheets");
-    el("p",null, team ? `You haven’t made any ${TEAMS[team].name} picks yet.` : "You haven’t made any picks yet.");
-    link(team ? `sheet.html?team=${team}` : "teams.html", team ? "Start this sheet" : "Pick Team");
+    el("p",null, period!=="season"
+      ? `You don’t have picks for games played ${w.phrase}${team?` on your ${TEAMS[team].name} sheet`:""}.`
+      : team ? `You haven’t made any ${TEAMS[team].name} picks yet.` : "You haven’t made any picks yet.");
+    link(team ? `sheet.html?team=${team}` : "teams.html", team ? "Open this sheet" : "Pick Team");
+    invite();
     return;
   }
   const best=mine[0]; // the list is sorted, so the first match is the best
-  el("div","you-label", team ? "Your spot" : "Your best sheet");
+  el("div","you-label", (team ? "Your spot" : "Your best sheet") + (period==="season" ? "" : ` · ${w.kicker.toLowerCase()}`));
+  const teamName=TEAMS[best.team]?.name||best.team;
   if(!team){
     const t=el("div","you-team"); t.append(swatch(best.team));
-    const nm=document.createElement("span"); nm.textContent=TEAMS[best.team]?.name||best.team; t.append(nm);
+    const nm=document.createElement("span"); nm.textContent=teamName; t.append(nm);
   }
   const r=el("div","you-rank"); r.textContent=`#${best.rank}`;
   const of=document.createElement("span"); of.textContent=` of ${total}`; r.append(of);
   el("div","you-pts",`${best.pts} point${best.pts===1?"":"s"}`);
   if(mine.length>1) el("p",null,`You have ${mine.length} sheets on the board, highlighted in the table.`);
+  // Share your spot: links straight to this board and time frame
+  const board = team ? `${teamName} leaderboard` : "All-Teams leaderboard";
+  youEl.append(shareButton("Share my spot", {kind:"standing", title:`stickpicks ${board}`, url:SITE_URL+"leaderboard.html"+location.search,
+    text:`I’m #${best.rank} of ${total} on the stickpicks ${board} ${w.phrase}, with ${best.pts} point${best.pts===1?"":"s"} on my ${teamName} sheet. Think you can call it better?`,
+    card:{kicker:`${w.kicker} · ${team ? teamName : "All-Teams"} board`, title:`#${best.rank} of ${total}`,
+      sub:`${myName} · ${best.pts} point${best.pts===1?"":"s"} on the ${teamName} sheet.`}}, "btn you-share"));
+  invite();
 }
 
 let signedIn=false;
@@ -243,8 +324,13 @@ async function start(){
     }
     setInterval(load, 60*1000);
     document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load(); });
+    // the season's first game day: the earliest week and month you can step back to
+    const {data:first}=await sb.from("games").select("game_date").eq("season",SEASON).order("game_date").limit(1);
+    if(first?.[0]) seasonFirst=new Date(first[0].game_date+"T12:00:00");
   }
-  setTeam(new URL(location.href).searchParams.get("team")?.toUpperCase());
+  const q=new URL(location.href).searchParams, from=/^\d{4}-\d{2}-\d{2}$/.test(q.get("from")||"") ? new Date(q.get("from")+"T12:00:00") : null;
+  setPeriod(q.get("period"), from, false);
+  setTeam(q.get("team")?.toUpperCase());
 }
 start();
 </script>

@@ -45,7 +45,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - Storage bucket `avatars` (public read, 2 MB, webp/jpeg/png): one file per player at `<user_id>/avatar`; players can only write their own folder. The profile page crops photos square to 256 px and saves WebP (JPEG fallback) before upload; the stored URL ends `?v=<timestamp>` to bust caches.
 - `news`: ESPN headlines for the ticker. Public read.
 - `user_settings` (PK user_id): `look` (auto/home/road). **Private**: owner-only RLS (unlike `profiles`, which is public).
-- Functions (security definer unless noted): `delete_my_account()` (deletes the caller from auth.users; cascades remove profile, picks, settings); `leaderboard(p_season, p_team)` returns one row **per user per team sheet**; `sheet_picks(p_username, p_team, p_season)` returns another player's picks with **upcoming picks hidden** (`revealed=false`, pick/goals null); `username_available(p_username)`; `my_sheets(p_season)` (security invoker); `pick_is_open(game_id, team)`.
+- Functions (security definer unless noted): `delete_my_account()` (deletes the caller from auth.users; cascades remove profile, picks, settings); `leaderboard(p_season, p_team, p_from, p_to)` returns one row **per user per team sheet** (optional `p_from`/`p_to` game dates make the weekly and monthly boards); `sheet_picks(p_username, p_team, p_season)` returns another player's picks with **upcoming picks hidden** (`revealed=false`, pick/goals null); `username_available(p_username)`; `my_sheets(p_season)` (security invoker); `pick_is_open(game_id, team)`.
 
 ## Game rules (enforce everywhere: JS, SQL, rules page)
 
@@ -86,3 +86,5 @@ Owner is not a professional developer: explain changes in plain language, and sa
 ## Testing
 
 There's no automated test suite. When changing pages, check them in a browser with real or stubbed Supabase data, including a phone-width viewport (~390px) and dark mode. Verify scoring changes against the examples table in `rules.html`. After editing `supabase/schema.sql`, re-read it for idempotency before telling the owner to run it in Supabase's SQL Editor.
+- Sharing (teams.js): `shareButton(label, spec, cls, lazy)` pre-draws a 1200x630 picture card (`drawCard`, cached by `cardFor`) and opens `navigator.share` with the file, falling back to `openShareSheet` (a <dialog>). Specs: `inviteSpec(name)`, `badgeSpec(id, name)`; result and standing specs are built in index.html and leaderboard.html. Invitation links are `SITE_URL?invite=Name`; index.html reads `invite` into `INVITER` for the welcome panel. Cards are drawn on canvas, so web fonts must be loaded first (document.fonts.load) and the logo's Yellowtail script is drawn as canvas text between the stick and puck images.
+- Leaderboard time frames (leaderboard.html): `period` = season | month | week (Mon-Sun), `pStart` = first day; URL params `period` and `from`; `when()` gives the kicker/label/phrase.

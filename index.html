@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-11">
+<link rel="stylesheet" href="styles.css?v=2026-11-12">
 </head>
 <body>
 
@@ -164,6 +164,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <div><b id="recapRank">—</b><span id="recapRankLbl">best rank</span></div>
           </div>
           <p class="recap-note" id="recapNote"></p>
+          <div class="recap-share" id="recapShare"></div>
         </section>
 
         <form id="fName" class="hidden" novalidate>
@@ -184,6 +185,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
           <h3 class="acct-label">Badges in reach <a href="profile.html#badges">All badges</a></h3>
           <div class="reach-list" id="reachList"></div>
         </section>
+        <!-- Invite friends: shares a link that says who invited them -->
+        <div class="acct-invite hidden" id="acctInvite">
+          <p>Picks are better with rivals.</p>
+        </div>
       </div>
 
       <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
@@ -202,8 +207,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-11"></script>
-<script src="teams.js?v=2026-11-11"></script>
+<script src="config.js?v=2026-11-12"></script>
+<script src="teams.js?v=2026-11-12"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -420,6 +425,13 @@ const PANELS=["pLoading","pWelcome","pSignedOut","pForgot","pRecover","pSignedIn
 const BANNERS={pLoading:["stickpicks","Loading…"], pWelcome:["Free to play","Join the board"], pSignedOut:["Your account","Sign in"],
   pForgot:["Your account","Reset password"], pRecover:["Your account","New password"], pSignedIn:["Welcome back","Welcome!"], pOffline:["stickpicks","Not connected"]};
 let panelNow="pLoading";
+// Invitation links (?invite=Name) say who sent them on the welcome panel.
+const INVITER=(()=>{ const n=new URL(location.href).searchParams.get("invite"); return n && USERNAME_RULE.test(n) ? n : null; })();
+if(INVITER){
+  BANNERS.pWelcome=[`${INVITER} invited you`,"Join the board"];
+  document.querySelector("#pWelcome .hint").textContent=`${INVITER} wants you on the leaderboard. A free account saves your picks on every device and puts you in the rankings.`;
+  addEventListener("load",()=>{ try{ window.goatcounter?.count?.({path:"invite-landing", title:"Arrived from an invitation", event:true}); }catch(e){} });
+}
 function setBanner(){
   let [kicker,title]=BANNERS[panelNow]||BANNERS.pLoading;
   if(panelNow==="pSignedOut" && $("tabUp").getAttribute("aria-selected")==="true") title="Create account";
@@ -565,7 +577,13 @@ async function renderSignedIn(session, note=""){
   showNameForm(!profile);
   $("welcome").textContent = profile ? `Welcome back, ${profile.username}` : "Welcome!";
   setBanner();
+  showInvite();
   await loadMyStats();
+}
+function showInvite(){
+  const box=$("acctInvite"); box.querySelector(".sharebtn")?.remove();
+  box.classList.toggle("hidden", !profile?.username);
+  if(profile?.username) box.append(shareButton("Invite friends", inviteSpec(profile.username)));
 }
 
 // Only for players without a username yet; changing it lives on the profile page.
@@ -586,7 +604,7 @@ $("fName").addEventListener("submit", async e=>{
   const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
   if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
-  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner();
+  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner(); showInvite();
   showNameForm(false); loadMyStats();
 });
 
@@ -616,7 +634,7 @@ async function loadMyStats(){
   const uid=currentUser.id;   // pop-up for badges earned since this device last showed them
   myBadges(sb, profile?.username||null).then(r=>{
     if(currentUser?.id!==uid) return;
-    announceBadges(uid, r.earned);
+    announceBadges(uid, r.earned, profile?.username);
     showReach(r, badgesInReach(r,3));
   }).catch(()=>{});
 }
@@ -696,6 +714,17 @@ async function loadRecap(teams){
   $("recapNote").textContent = finals
     ? `${finals} game${finals===1?"":"s"} you picked went final${gOf?` · exact goals ${gHit}/${gOf}`:""}.`
     : "No new finals, but the board moved.";
+  // Share a good run (any points, or a climb up the board)
+  const shareBox=$("recapShare"); shareBox.replaceChildren();
+  if(pts>0 || moved>0){
+    const day=new Date(base.at).toLocaleDateString([], {month:"short",day:"numeric"});
+    const bits=[oOf?`${oHit} of ${oOf} results right`:null, gHit?`${gHit} exact goal total${gHit===1?"":"s"}`:null, rank?`now #${rank} of ${of}`:null].filter(Boolean);
+    const stats=[oOf?[`${oHit}/${oOf}`,"results right"]:null, gOf?[`${gHit}/${gOf}`,"exact goals"]:null, rank?[`#${rank}`,`of ${of}${moved>0?` · up ${moved}`:""}`]:null].filter(Boolean);
+    shareBox.append(shareButton("Share my results", {kind:"result", title:"My stickpicks results", url:inviteUrl(profile?.username),
+      text:`+${pts} point${pts===1?"":"s"} on stickpicks since ${day}${bits.length?": "+bits.join(", "):""}. Think you can call the NHL better?`,
+      card:{kicker:`${profile?.username||"My picks"} · since ${day}`, title:`+${pts} point${pts===1?"":"s"}`,
+        sub:`${finals} game${finals===1?"":"s"} called on stickpicks.`, stats}}, "linkbtn"));
+  }
   box.classList.remove("hidden");
 }
 

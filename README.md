@@ -113,11 +113,23 @@ To appear on the leaderboard, a player needs a username (3–20 letters, numbers
 - **All teams:** shows every sheet for every team in one ranking, with a team column, so the same player can appear more than once. Use the team menu at the top to switch to one team's leaderboard.
 - **Columns:** points, then correct results and exact goal totals, each shown as hits out of graded picks.
 - **Viewing sheets:** click any player on a leaderboard to open that sheet in view-only mode. Picks for games that have started are shown, along with the points each one earned. Picks for upcoming games stay hidden until puck drop, and the sheet shows only that a pick was made. The database enforces this, so it can't be worked around from the page. Clicking your own entry opens your normal, editable sheet. From someone else's sheet, **Compare side by side** opens `compare.html`, which lines up your picks and theirs for the same team, game by game. It shows both point totals, the result and goals hit rates, who won each finished game, and how many picks you agree on. It can filter to finished games, upcoming games, or only the games where your picks differ. Their upcoming picks stay hidden there too.
+- **Season, Month or Week:** a switch in the leaderboard banner shows the whole season, one calendar month, or one week (Monday to Sunday). Monthly and weekly boards count only games played in that window, so everyone starts level; ‹ › steps back to earlier months and weeks, as far as the season's first game. The address keeps the choice (for example `leaderboard.html?period=week&from=2026-10-05`). The database does the counting (`leaderboard()` takes optional `p_from` and `p_to` dates).
 - **Ties:** sheets with the same points share a rank.
 - **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the 15-minute job records final results.
 - **Locking:** both predictions lock at **puck drop**. The database enforces this, so nobody can change a pick after a game starts, even by editing the page. "Clear all picks" only clears games that haven't started yet.
 
 When you're signed in, the home page account box lists your **Current Picks** (each sheet you've started, with its points) and **Badges in reach**: progress bars for the three badges you're closest to earning, easiest first. If you haven't made a pick yet, it shows a **Pick Now** button (to the Pick Team page) and the Inaugural Season badge instead. Your total points, best rank, and settings (including sign out) are on your profile page.
+
+## Sharing and invitations
+
+Players can share how they're doing and invite friends:
+
+- **Share my results** in "Since your last visit" on the home page (after a run with points, or a climb up the board).
+- **Share my spot** in the "Your standing" card on the leaderboard, for whichever board and time frame is showing; the link opens that same board.
+- **Share** on the "New badge" pop-up, and under each badge you've earned on your profile.
+- **Invite friends** on the home page, your profile and the leaderboard. Invitation links look like `https://stickpicks.hockey/?invite=Name`, and the home page then greets the visitor with "Name invited you".
+
+Each share draws a 1200 × 630 picture card in the browser (road-sweater navy with sleeve and hem stripes, the logo, the news, and stickpicks.hockey), then opens the phone's or computer's own share sheet with the picture, a line of text and a link. Browsers without a share sheet get a stickpicks share box instead: Copy link, Email, WhatsApp, X, Facebook and Save picture. It's all in `teams.js` (`shareButton()`, `drawCard()`, `inviteSpec()`, `badgeSpec()`), with no database changes. GoatCounter counts shares (`share-result`, `share-badge`, `share-standing`, `share-invite`) and arrivals from invitations (`invite-landing`) as events, without usernames.
 
 ## Puck-drop reminders
 

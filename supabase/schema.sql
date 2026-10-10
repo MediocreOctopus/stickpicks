@@ -136,9 +136,13 @@ grant insert, update on public.profiles to authenticated;
 --    1 point for the right result and 1 point for the exact combined goals.
 --    Combined goals = home_score + away_score from the official final score.
 --    p_team = null returns every sheet for every team; otherwise one team's sheets.
+--    p_from / p_to (game dates, inclusive) make a weekly or monthly board: only games
+--    played in that window count. Leave them out for the whole season.
 --    Returns only totals per username and team, never anyone's individual picks.
 drop function if exists public.leaderboard(text, text);
-create function public.leaderboard(p_season text default '20262027', p_team text default null)
+drop function if exists public.leaderboard(text, text, date, date);
+create function public.leaderboard(p_season text default '20262027', p_team text default null,
+                                   p_from date default null, p_to date default null)
 returns table (username text, team text, points bigint, outcome_points bigint, goals_points bigint,
                outcome_graded bigint, goals_graded bigint, total_picks bigint)
 language sql stable security definer set search_path = ''
@@ -155,7 +159,9 @@ as $$
       case when g.period_type is null then null else g.home_score + g.away_score end as total_goals
     from public.team_picks tp
     join public.games g on g.game_id = tp.game_id and g.season = p_season
-    where p_team is null or tp.team = p_team
+    where (p_team is null or tp.team = p_team)
+      and (p_from is null or g.game_date >= p_from)
+      and (p_to is null or g.game_date <= p_to)
   ), totals as (
     select s.user_id, s.team,
       count(*) filter (where s.result is not null and s.pick = s.result) as outcome_points,
@@ -173,8 +179,8 @@ as $$
   order by 3 desc, t.outcome_graded + t.goals_graded asc, lower(p.username), t.team;
 $$;
 
-revoke all on function public.leaderboard(text, text) from public;
-grant execute on function public.leaderboard(text, text) to anon, authenticated;
+revoke all on function public.leaderboard(text, text, date, date) from public;
+grant execute on function public.leaderboard(text, text, date, date) to anon, authenticated;
 revoke all on function public.pick_is_open(bigint, text) from public;
 grant execute on function public.pick_is_open(bigint, text) to authenticated;
 

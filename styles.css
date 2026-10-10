@@ -922,3 +922,45 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .rulespage details[open] > summary::after{content:"–"}
 .rulespage details[open] > summary::before{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
 .rulespage #faq summary{font-size:.9rem;letter-spacing:.04em}
+/* ───── Sharing: Share buttons, Invite friends, and the share box for browsers without a share sheet ───── */
+.sharebtn{display:inline-flex;align-items:center;gap:6px}
+.sharebtn svg{width:1.05em;height:1.05em;flex:none}
+.linkbtn.sharebtn{text-decoration:none;font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;padding:4px 0}
+.linkbtn.sharebtn span{text-decoration:underline;text-underline-offset:3px}
+.recap-share{margin-top:6px}
+.recap-share:empty{display:none}
+.acct-invite{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;padding-top:14px;border-top:1px dashed var(--line)}
+.acct-invite p{margin:0;font:italic .9rem var(--serif);color:var(--muted)}
+.badge-toast-acts{display:flex;align-items:center;gap:14px;margin-top:2px}
+.badge-toast-acts .linkbtn{color:var(--ink)}
+.badge-item .badge-share{grid-column:2;justify-self:start;margin-top:4px}
+.pf-acts{margin-left:auto}
+.pf-acts:empty{display:none}
+.pf-invite{background:var(--wool);border-color:var(--wool);color:var(--navy)}
+.pf-public .pf-acts{display:none}
+.you .you-share{margin-top:14px}
+.you .you-invite{display:flex;margin:10px auto 0;color:var(--board-ink)}
+.sharesheet{width:min(520px,calc(100% - 32px));padding:0;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);box-shadow:0 18px 44px rgba(0,0,0,.35)}
+.sharesheet::backdrop{background:rgba(15,24,40,.55)}
+.ss-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--navy);color:var(--wool);
+  font:600 .9rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+.ss-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:linear-gradient(to bottom,#E8463F 0 3px,transparent 3px 4px,var(--wool) 4px 7px)}
+.ss-x{border:0;background:transparent;color:var(--wool);font:600 1.5rem/1 var(--display);cursor:pointer;padding:0 4px}
+.ss-body{padding:14px}
+.ss-body img{display:block;width:100%;border-radius:6px;border:1px solid var(--line)}
+.ss-body p{margin:12px 0;font-size:.9rem;overflow-wrap:anywhere}
+.ss-acts{display:flex;flex-wrap:wrap;gap:8px}
+.ss-acts .btn{padding:7px 12px;font-size:.8rem}
+.ss-status{display:block;min-height:1.2em;margin-top:8px;font:italic .82rem var(--serif);color:var(--muted)}
+
+/* ───── Leaderboard: Season / Month / Week switch, and ‹ › for earlier months and weeks ───── */
+.lb-when{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:12px}
+.lb-period{display:inline-flex;border:1.5px solid color-mix(in srgb, var(--board-ink) 45%, transparent);border-radius:999px;padding:2px}
+.lb-period button{border:0;background:transparent;color:var(--board-ink);font:600 .75rem var(--display);letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:999px;cursor:pointer}
+.lb-period button[aria-pressed="true"]{background:var(--title);color:var(--board)}
+.lb-period button:focus-visible,.lb-step button:focus-visible{outline:3px solid var(--alarm);outline-offset:1px}
+.lb-step{display:inline-flex;align-items:center;gap:8px;font:500 .9rem "Barlow",sans-serif;font-variant-numeric:tabular-nums}
+.lb-step.hidden{display:none}
+.lb-step button{width:1.9rem;height:1.9rem;border:1.5px solid color-mix(in srgb, var(--board-ink) 45%, transparent);border-radius:4px;background:transparent;color:var(--board-ink);
+  font:600 1.2rem/1 var(--display);cursor:pointer;padding:0 0 2px}
+.lb-step button:disabled{opacity:.3;cursor:default}

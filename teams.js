@@ -573,7 +573,7 @@ async function playerBadges(sb, username, board){
 }
 
 // "New badge" pop-up: compares with the badges this device has already shown you.
-function announceBadges(userId, earned){
+function announceBadges(userId, earned, who){
   const key=`stickpicks-badges-${userId}`;
   let seen=null; try{ seen=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}
   try{ localStorage.setItem(key, JSON.stringify(earned)); }catch(e){}
@@ -586,12 +586,196 @@ function announceBadges(userId, earned){
   const k=document.createElement("small"); k.textContent = fresh.length===1 ? "New badge" : `${fresh.length} new badges`;
   const n=document.createElement("b"); n.textContent = fresh.length===1 ? b.name : fresh.map(id=>BADGE_BY_ID[id].name).join(" · ");
   const a=document.createElement("a"); a.href="profile.html#badges"; a.textContent="See your badges";
-  text.append(k,n,a);
+  const row=document.createElement("div"); row.className="badge-toast-acts";
+  row.append(shareButton("Share", badgeSpec(fresh[0], who), "linkbtn"), a);
+  text.append(k,n,row);
   const x=document.createElement("button"); x.type="button"; x.className="badge-toast-x"; x.setAttribute("aria-label","Close"); x.textContent="×";
   x.addEventListener("click",()=>t.remove());
   t.append(badgeEl(fresh[0],52), text, x);
   document.body.appendChild(t);
-  setTimeout(()=>t.classList.add("out"), 9000); setTimeout(()=>t.remove(), 9600);
+  // fades after 12 seconds, unless you're pointing at it or using it
+  let hold=false; t.addEventListener("pointerenter",()=>hold=true); t.addEventListener("focusin",()=>hold=true);
+  setTimeout(()=>{ if(hold) return; t.classList.add("out"); setTimeout(()=>t.remove(), 600); }, 12000);
+}
+
+/* ───────── Sharing: results, badges, standings and invitations ───────── */
+// Each Share button draws a picture card (sweater banner, logo, the news) ahead of time, then opens the
+// phone's or computer's own share sheet with the picture, a line of text and a link. Browsers without
+// one get a small stickpicks share box instead (copy, email, WhatsApp, X, Facebook, save picture).
+const SITE_URL="https://stickpicks.hockey/";
+// Invitation links name the player who sent them, so the home page can say "Name invited you".
+function inviteUrl(name){ return SITE_URL+(name && USERNAME_RULE.test(name) ? `?invite=${encodeURIComponent(name)}` : ""); }
+// What each badge means, as a brag ("I just earned the Hat Trick badge on stickpicks: …")
+const BADGE_BRAG={
+  faceoff:"made my first pick of the 2026–27 season", hattrick:"called a W, an L and an OTL right on one sheet",
+  star3:"got 3 results right in a row on one sheet", star2:"got 5 results right in a row on one sheet", star1:"got 10 results right in a row on one sheet",
+  topshelf:"nailed the result and the exact goals in the same game", lamp:"nailed the exact combined goals 5 times",
+  shutout:"got every result right on a night with 3+ games", overtime:"called an overtime loss right", shootout:"called a shootout game right",
+  fullsheet:"picked every game on a sheet", original6:"started sheets for all of the Original Six", barnstormer:"started sheets in all four divisions",
+  pointstreak:"scored a point in 10 straight games", captain:"took the #1 spot on a team leaderboard" };
+
+function badgeSpec(id, who){
+  const b=BADGE_BY_ID[id];
+  return {kind:"badge", title:`${b.name} · stickpicks`, url:inviteUrl(who),
+    text:`I just earned the ${b.name} badge on stickpicks: ${BADGE_BRAG[id]||b.how}. Think you can call the NHL better?`,
+    card:{kicker:"New badge", title:b.name, sub:b.how, badge:id, who}};
+}
+function inviteSpec(who){
+  return {kind:"invite", title:"Join me on stickpicks", url:inviteUrl(who),
+    text:"Join me on stickpicks: call every NHL game (W, L or OTL, plus the combined goals) and climb the leaderboard. Free to play.",
+    card:{kicker: who ? `${who} invited you` : "You're invited", title:"Join me on stickpicks", sub:"Call every NHL game this season. Free to play.", medals:true}};
+}
+
+const SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M7 11H5v10h14V11h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// A Share button. spec: {kind, title, text, url, card:{kicker, title, sub, stats:[[value,label]], badge, medals, who}}
+// lazy: draw the card only once the button scrolls into view (for long lists, like the profile's badges).
+function shareButton(label, spec, cls="btn ghost", lazy=false){
+  const b=document.createElement("button"); b.type="button"; b.className=cls+" sharebtn";
+  const t=document.createElement("span"); t.textContent=label; b.innerHTML=SHARE_ICON; b.append(t);
+  let file=null, ready=null;
+  const draw=()=>ready ||= (spec.card ? cardFor(spec.card).then(blob=>{ file=new File([blob],"stickpicks.png",{type:"image/png"}); }).catch(()=>{}) : Promise.resolve());
+  if(lazy && "IntersectionObserver" in window){
+    const io=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting)){ io.disconnect(); draw(); } }); io.observe(b);
+  }else draw();
+  b.addEventListener("click", async ()=>{
+    draw();
+    if(!file) await Promise.race([ready, new Promise(r=>setTimeout(r,1500))]);
+    shareNow(spec, file);
+  });
+  return b;
+}
+// Cards already drawn on this page, so a refreshed button doesn't draw the same picture again
+const cardCache=new Map();
+function cardFor(card){
+  const key=JSON.stringify(card);
+  if(!cardCache.has(key)) cardCache.set(key, drawCard(card).catch(e=>{ cardCache.delete(key); throw e; }));
+  return cardCache.get(key);
+}
+async function shareNow(spec, file){
+  try{ window.goatcounter?.count?.({path:`share-${spec.kind}`, title:`Share: ${spec.kind}`, event:true}); }catch(e){}
+  if(navigator.share){
+    try{
+      if(file && navigator.canShare?.({files:[file]})) await navigator.share({title:spec.title, text:`${spec.text}\n${spec.url}`, files:[file]});
+      else await navigator.share({title:spec.title, text:spec.text, url:spec.url});
+      return;
+    }catch(e){ if(e.name==="AbortError") return; }   // cancelled; anything else falls through to our own box
+  }
+  openShareSheet(spec, file);
+}
+// Our own share box, for browsers without a share sheet.
+function openShareSheet(spec, file){
+  document.querySelector(".sharesheet")?.remove();
+  const d=document.createElement("dialog"); d.className="sharesheet"; d.setAttribute("aria-label","Share");
+  const head=document.createElement("div"); head.className="ss-head";
+  const h=document.createElement("b"); h.textContent = spec.kind==="invite" ? "Invite friends" : "Share";
+  const x=document.createElement("button"); x.type="button"; x.className="ss-x"; x.setAttribute("aria-label","Close"); x.textContent="×";
+  x.addEventListener("click",()=>d.close()); head.append(h,x);
+  const body=document.createElement("div"); body.className="ss-body";
+  if(file){ const img=document.createElement("img"); img.alt=""; img.src=URL.createObjectURL(file); body.append(img); }
+  const p=document.createElement("p"); p.textContent=`${spec.text} ${spec.url}`; body.append(p);
+  const acts=document.createElement("div"); acts.className="ss-acts";
+  const status=document.createElement("small"); status.className="ss-status"; status.setAttribute("role","status");
+  const copy=document.createElement("button"); copy.type="button"; copy.className="btn"; copy.textContent="Copy link";
+  copy.addEventListener("click", async ()=>{
+    try{ await navigator.clipboard.writeText(`${spec.text} ${spec.url}`); status.textContent="Copied. Paste it anywhere."; }
+    catch(e){ status.textContent="Couldn’t copy. Select the text above instead."; }
+  });
+  acts.append(copy);
+  const enc=encodeURIComponent, link=(label,href)=>{ const a=document.createElement("a"); a.className="btn ghost"; a.textContent=label; a.href=href; a.target="_blank"; a.rel="noopener"; acts.append(a); };
+  link("Email", `mailto:?subject=${enc(spec.title)}&body=${enc(`${spec.text}\n\n${spec.url}`)}`);
+  link("WhatsApp", `https://wa.me/?text=${enc(`${spec.text} ${spec.url}`)}`);
+  link("X", `https://x.com/intent/post?text=${enc(spec.text)}&url=${enc(spec.url)}`);
+  link("Facebook", `https://www.facebook.com/sharer/sharer.php?u=${enc(spec.url)}`);
+  if(file){ const a=document.createElement("a"); a.className="btn ghost"; a.textContent="Save picture"; a.href=URL.createObjectURL(file); a.download="stickpicks.png"; acts.append(a); }
+  body.append(acts, status); d.append(head, body);
+  d.addEventListener("close",()=>d.remove());
+  d.addEventListener("click",e=>{ if(e.target===d) d.close(); });   // click outside the box
+  document.body.append(d); d.showModal();
+}
+
+// ── The picture card: 1200 × 630, the road sweater (navy knit, red and cream sleeve and hem stripes) ──
+const CARD={w:1200, h:630, navy:"#1C2B45", red:"#E8463F", wool:"#EFE6D2", gold:"#D9A33A"};
+function svgImage(svg){
+  return new Promise((ok,fail)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=fail; i.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
+}
+let cardLogo=null;
+// The logo as two pictures (the stick, then the puck that dots the "i"); the script itself is drawn as text.
+function cardLogoParts(){
+  if(cardLogo) return cardLogo;
+  cardLogo=fetch(`logo.svg?v=${ASSET_V}`).then(r=>r.text()).then(svg=>{
+    const col={"--logo-wood":"#C99456","--logo-grain":"#7A4E22","--logo-tape":"#F3EEE2","--logo-wrap":"#1C2B45","--logo-puck-rim":"#EFE6D2"};
+    svg=svg.replace(/var\((--logo-[a-z-]+)(?:,\s*none)?\)/g,(m,k)=>col[k]||"none").replace("<svg ",'<svg width="1144" height="405" ');
+    const noText=svg.replace(/<text[\s\S]*?<\/text>/,"");
+    return Promise.all([
+      svgImage(noText.replace(/<path d="M134\.9[^>]*\/>/,"").replace(/<ellipse[^>]*\/>/,"")),   // stick
+      svgImage(noText.replace(/<g transform="translate[\s\S]*?<\/g>/,"")),                        // puck
+    ]);
+  }).catch(()=>null);
+  return cardLogo;
+}
+function badgeSvg(id){
+  const b=BADGE_BY_ID[id];
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
+    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${b.art}</svg>`;
+}
+async function drawCard(o){
+  await Promise.all(["700 90px Oswald","600 28px Oswald","italic 30px 'Libre Caslon Text'","64px Yellowtail"].map(f=>document.fonts?.load(f).catch(()=>{})));
+  const {w:W,h:H}=CARD, c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+  const spaced=(px)=>{ if("letterSpacing" in x) x.letterSpacing=px; };
+  // navy knit
+  x.fillStyle=CARD.navy; x.fillRect(0,0,W,H);
+  x.strokeStyle="rgba(239,230,210,.045)"; x.lineWidth=2;
+  for(let yy=6; yy<H; yy+=16){ x.beginPath(); for(let xx=-8; xx<W; xx+=16){ x.moveTo(xx,yy); x.lineTo(xx+8,yy+7); x.lineTo(xx+16,yy); } x.stroke(); }
+  // sleeve stripes and hem
+  x.fillStyle=CARD.red; x.fillRect(22,0,22,H-50); x.fillStyle=CARD.wool; x.fillRect(60,0,22,H-50);
+  x.fillStyle=CARD.red; x.fillRect(0,H-50,W,18); x.fillStyle=CARD.wool; x.fillRect(0,H-22,W,22);
+  // logo, top left
+  const LX=122, LY=30, LH=126, s=LH/101.28, parts=await cardLogoParts();
+  if(parts) x.drawImage(parts[0], LX, LY, 286.07*s, LH);
+  x.save(); x.translate(LX,LY); x.scale(s,s); x.translate(11.62,63.64);
+  x.translate(131.42,-13); x.rotate(-6*Math.PI/180); x.translate(-131.42,13);
+  x.font="64px Yellowtail"; x.lineJoin="round"; x.lineWidth=3.2; x.strokeStyle=CARD.navy; x.fillStyle=CARD.red;
+  x.strokeText("stickpicks",0,0); x.fillText("stickpicks",0,0); x.restore();
+  if(parts) x.drawImage(parts[1], LX, LY, 286.07*s, LH);
+  // right-hand art: a badge patch, or the three scoring medals
+  const art = o.badge ? await svgImage(badgeSvg(o.badge)).catch(()=>null) : null;
+  const textW = (art||o.medals) ? 600 : 960;
+  if(art){ x.save(); x.shadowColor="rgba(0,0,0,.35)"; x.shadowBlur=24; x.shadowOffsetY=8; x.drawImage(art, 790, 120, 330, 330); x.restore(); }
+  if(o.medals){
+    [["+1","#33476A","Right result"],["+1","#9B1C1F","Exact goals"],["2","#C08A2A","Max per game"]].forEach(([v,bg,lbl],i)=>{
+      const cy=150+i*125, cx=830;
+      x.fillStyle=bg; x.beginPath(); x.arc(cx,cy,50,0,7); x.fill();
+      x.setLineDash([7,6]); x.strokeStyle="rgba(239,230,210,.8)"; x.lineWidth=2.5; x.beginPath(); x.arc(cx,cy,41,0,7); x.stroke(); x.setLineDash([]);
+      x.fillStyle=CARD.wool; x.font="700 40px Oswald"; x.textAlign="center"; x.textBaseline="middle"; spaced("0px"); x.fillText(v,cx,cy+2);
+      x.textAlign="left"; x.font="600 28px Oswald"; spaced("3px"); x.fillText(lbl.toUpperCase(), cx+72, cy+2);
+    });
+    x.textBaseline="alphabetic"; spaced("0px");
+  }
+  // kicker, headline, line of italic
+  let y = o.stats?.length ? 228 : 268;   // sit lower when there's no row of numbers underneath
+  x.fillStyle=CARD.gold; x.font="600 28px Oswald"; spaced("5px"); x.fillText(String(o.kicker||"").toUpperCase(),130,y); spaced("0px");
+  let size=96; x.font=`700 ${size}px Oswald`; const head=String(o.title||"").toUpperCase();
+  while(size>48 && x.measureText(head).width>textW){ size-=4; x.font=`700 ${size}px Oswald`; }
+  y+=size+6; x.fillStyle=CARD.wool; x.fillText(head,130,y);
+  if(o.sub){
+    x.font="italic 32px 'Libre Caslon Text'"; x.fillStyle="rgba(239,230,210,.84)";
+    const words=String(o.sub).split(" "), lines=[""]; words.forEach(wd=>{ const t=(lines.at(-1)+" "+wd).trim(); if(x.measureText(t).width>textW && lines.at(-1)) lines.push(wd); else lines[lines.length-1]=t; });
+    lines.slice(0,2).forEach(l=>{ y+=48; x.fillText(l,130,y); });
+  }
+  // stats row: big numbers with italic labels
+  if(o.stats?.length){
+    let sx=130; const sy=H-112;
+    o.stats.forEach(([v,lbl])=>{
+      x.font="700 64px Oswald"; x.fillStyle=CARD.wool; x.fillText(String(v),sx,sy);
+      const vw=x.measureText(String(v)).width;
+      x.font="italic 24px 'Libre Caslon Text'"; x.fillStyle=CARD.gold; x.fillText(lbl,sx,sy+34);
+      sx+=Math.max(vw, x.measureText(lbl).width)+64;
+    });
+  }
+  // address, bottom right
+  x.font="600 26px Oswald"; spaced("4px"); x.fillStyle=CARD.wool; x.textAlign="right"; x.fillText("STICKPICKS.HOCKEY", W-48, H-72); x.textAlign="left";
+  return new Promise((ok,fail)=>c.toBlob(b=>b?ok(b):fail(new Error("no picture")),"image/png"));
 }
 
 /* ───────── Shared helpers ───────── */

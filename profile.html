@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-11">
+<link rel="stylesheet" href="styles.css?v=2026-11-12">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -71,6 +71,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <h1 class="pf-name" id="pfName"></h1>
             <div class="pf-est" id="pfEst"></div>
           </div>
+          <div class="pf-acts" id="pfActs"></div>
         </div>
       </section>
 
@@ -197,8 +198,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-11"></script>
-<script src="teams.js?v=2026-11-11"></script>
+<script src="config.js?v=2026-11-12"></script>
+<script src="teams.js?v=2026-11-12"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -236,6 +237,8 @@ function setName(name){
   $("unValue").textContent = name || "Not set yet";
   $("delInput").placeholder = name || "";
   showAvatar();
+  // Invite friends (your own profile, once you have a username)
+  $("pfActs").replaceChildren(...(name ? [shareButton("Invite friends", inviteSpec(name), "btn pf-invite")] : []));
 }
 // The banner picture, the Me tab and the top-bar button all follow the saved picture.
 function showAvatar(){
@@ -278,6 +281,7 @@ function showBadges(r, own){
     const name=document.createElement("b"); name.textContent=b.name;
     const how=document.createElement("small"); how.textContent=b.how;
     item.append(badgeEl(b.id,60,has), name, how, badgeProgressEl(b.id, r.meter[b.id]));   // progress bar ("Earned" when done)
+    if(has && own && username) item.append(shareButton("Share", badgeSpec(b.id, username), "linkbtn badge-share", true));
     item.title = `${b.name}: ${has?"earned":"not yet"}. ${b.how}`;
     grid.appendChild(item);
   });
