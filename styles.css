@@ -718,7 +718,9 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
   background:linear-gradient(var(--av-bg),var(--av-bg)) padding-box, var(--av-frame,var(--gold)) border-box}
 .av-b-stitch{--av-frame:#1C2B45;box-shadow:0 0 0 1px rgba(244,237,220,.55);outline:max(1px,calc(var(--av-size) * .022)) dashed #F4EDDC;outline-offset:calc(var(--av-size) * -.066)}
 .av-b-hem{--av-frame:radial-gradient(circle closest-side,#C8302B 0 84%,#F4EDDC 84% 92%,#C8302B 92%)}
-.av-b-team{--av-frame:radial-gradient(circle closest-side,var(--bt1) 0 84%,var(--bt2) 84% 92%,var(--bt1) 92%)}
+/* team colours: a wider stripe and a thin cream edge, so dark team colours still show on the navy banners */
+.av-b-team{--av-frame:radial-gradient(circle closest-side,var(--bt1) 0 83%,var(--bt2) 83% 93%,var(--bt1) 93%);
+  box-shadow:0 0 0 max(1px,calc(var(--av-size) * .02)) rgba(244,237,220,.75)}
 .av-b-gold{--av-frame:conic-gradient(from 210deg,#8A6420,#F5D77A,#B8892E,#FFF0B3,#A87A24,#F5D77A,#8A6420);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
 .av-b-champion{--av-frame:radial-gradient(circle closest-side,#D9A33A 0 84%,#C8302B 84% 92%,#E9C46A 92%);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
 @property --av-spin{syntax:"<angle>";inherits:false;initial-value:0deg}
