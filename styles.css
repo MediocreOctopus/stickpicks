@@ -611,6 +611,7 @@ kbd{font:600 .8rem "Barlow",sans-serif;border:1px solid var(--line);border-botto
 .rtable thead th{font:600 .8rem "Barlow",sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:2px solid var(--ink);white-space:nowrap}
 .rtable tr:last-child th,.rtable tr:last-child td{border-bottom:0}
 .rtable tbody th{width:4.5rem}
+.rtable:not(.examples) thead th{white-space:normal} /* the 2-column pick table fits a phone without sideways scrolling */
 .examples td:nth-child(n+3){text-align:center}
 .examples thead th:nth-child(n+3){text-align:center}
 .yes{color:var(--win);font-weight:700}.no{color:var(--loss);font-weight:700}.na{color:var(--muted)}
