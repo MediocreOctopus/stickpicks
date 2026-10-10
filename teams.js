@@ -531,11 +531,41 @@ BADGES.push(
    // an invitation envelope with a wax seal
    art:`<rect x="16.5" y="21" width="31" height="21" rx="1.6" fill="${BI.p}" stroke="${BI.n}" stroke-width="1.8"/><path d="M17.2 22l14.8 11.4L46.8 22" fill="none" stroke="${BI.n}" stroke-width="1.8" stroke-linejoin="round"/>`+
        `<circle cx="32" cy="33.6" r="4.4" fill="${BI.r}"/>`+bStar(32,33.6,2.4,BI.c)},
+  // ── Breakaway (the Intermission game; scores posted while signed in) ──
+  {id:"firstshift", name:"First Shift", ring:"navy", how:"Play a game of Breakaway while signed in.",
+   // a puck flying, with speed lines
+   art:bPuck(36,27.5,8)+`<path d="M14 27h10M16.5 32.5h8M19 38h7" stroke="${BI.r}" stroke-width="2.2" stroke-linecap="round"/>`},
+  {id:"dangler", name:"Dangler", ring:"navy", how:"Score 250 in Breakaway.",
+   // a stick blade pulling the puck back on a curl
+   art:`<path d="M47 15L33 39" stroke="${BI.w}" stroke-width="3.2" stroke-linecap="round"/><path d="M33.4 39.6h-9" stroke="${BI.n}" stroke-width="4" stroke-linecap="round"/>`+
+       `<path d="M23 31q-8-1-7-8q1-6 8-5" fill="none" stroke="${BI.r}" stroke-width="1.7" stroke-dasharray="2 2" stroke-linecap="round"/>`+bPuck(26.5,17.5,4.2)+bText("250",42,47.5,6.4,BI.n)},
+  {id:"dekemaster", name:"Deke Master", ring:"red", how:"Score 500 in Breakaway.",
+   // a zig-zag deke ending at the puck
+   art:`<path d="M15 44l7-8 6 6 7-9 6 6" fill="none" stroke="${BI.r}" stroke-width="2.2" stroke-dasharray="2.6 2" stroke-linecap="round" stroke-linejoin="round"/>`+
+       bPuck(44,33,5)+bText("500",28,25,9,BI.n)},
+  {id:"coasttocoast", name:"Coast to Coast", ring:"red", how:"Score 1,000 in Breakaway.",
+   // the rink from above, with a rush from end to end
+   art:`<rect x="13.5" y="20" width="37" height="24" rx="8" fill="${BI.p}" stroke="${BI.n}" stroke-width="1.8"/><path d="M32 20v24" stroke="${BI.r}" stroke-width="1.4"/><path d="M24 20v24M40 20v24" stroke="#33476A" stroke-width="1.1"/>`+
+       `<circle cx="32" cy="32" r="3.6" fill="none" stroke="${BI.r}" stroke-width="1"/><path d="M17 32h26" stroke="${BI.n}" stroke-width="2" stroke-linecap="round"/><path d="M40 28.6L45 32l-5 3.4" fill="${BI.n}"/>`},
+  {id:"highlightreel", name:"Highlight Reel", ring:"gold", how:"Score 2,000 in Breakaway.",
+   // a strip of film with a star
+   art:`<rect x="14" y="21" width="36" height="22" rx="1.6" fill="${BI.n}"/>`+[16,22,28,34,40,46].map(x=>`<rect x="${x}" y="22.6" width="2.6" height="2.4" rx=".5" fill="${BI.c}"/><rect x="${x}" y="39" width="2.6" height="2.4" rx=".5" fill="${BI.c}"/>`).join("")+
+       `<rect x="18" y="26.6" width="28" height="10.8" fill="#33476A"/>`+bStar(32,32,5.6,"#C08A2A")},
+  {id:"rinkrat", name:"Rink Rat", ring:"navy", how:"Play 50 games of Breakaway.",
+   // the ice resurfacer
+   art:`<path d="M15 39V27q0-2.4 2.4-2.4H31l3-6.6h7.4q2 0 2 2V27h3.2q2 0 2 2v10Z" fill="${BI.r}"/><rect x="36" y="20.4" width="5.6" height="5" rx=".6" fill="#C9DCE6"/>`+
+       `<path d="M15 33.6h34" stroke="${BI.c}" stroke-width="1.6"/><rect x="13" y="39" width="5" height="3.4" rx=".6" fill="${BI.s}"/>`+
+       `<circle cx="22" cy="41.6" r="3.6" fill="${BI.n}"/><circle cx="41" cy="41.6" r="3.6" fill="${BI.n}"/><circle cx="22" cy="41.6" r="1.2" fill="${BI.s}"/><circle cx="41" cy="41.6" r="1.2" fill="${BI.s}"/>`},
+  {id:"breakawaychamp", name:"Breakaway Champ", ring:"gold", how:"Hold the #1 score on the Breakaway leaderboard.",
+   // the arcade high-score board, crowned
+   art:`<path d="M24 22l-1.6-7 5.2 3.6L32 13l4.4 5.6 5.2-3.6-1.6 7Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1.1" stroke-linejoin="round"/>`+
+       `<rect x="15" y="24" width="34" height="19" rx="2.2" fill="${BI.n}"/>`+bText("HI",22.4,36.6,6.4,"#E9C46A")+bText("#1",37.4,38.6,12,"#E8463F")},
 );
 // The order badges are listed on profiles: joining, everyday, scoring, habit, collecting, events, then the big ones.
 const BADGE_SHOW=["inaugural","faceoff","season2627","openingnight","hattrick","naturalhattrick","star3","star2","star1","topshelf","lamp","goalfest","goalieduel",
   "overtime","shootout","roadwarrior","shutout","perfectweek","earlybird","buzzer","ironman","fullslate","halfseason","fullsheet","original6","ocanada","rivalry",
-  "barnstormer","divisionchamp","commissioner","winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter"];
+  "barnstormer","divisionchamp","commissioner","winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter",
+  "firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"];
 BADGES.sort((a,b)=>BADGE_SHOW.indexOf(a.id)-BADGE_SHOW.indexOf(b.id));
 const badgeArt=b=>typeof b.art==="function" ? b.art() : b.art;
 const BADGE_BY_ID=Object.fromEntries(BADGES.map(b=>[b.id,b]));
@@ -662,6 +692,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const topSheet=Math.max(0,...Object.values(sheetPts));
   const half=Math.ceil(fillOf/2);
   const weeksWon=H("playerweek").length;
+  const brkBest=hN("breakaway"), brkRuns=hN("breakawayruns");   // Breakaway (from the database)
   const earned={
     inaugural: !!(who && joined),
     faceoff: picks.length>0,
@@ -705,6 +736,13 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     commissioner: sheets.length>=32,
     pt100: topSheet>=100,
     recruiter: hN("recruiter")>=1,
+    firstshift: brkRuns>=1,
+    dangler: brkBest>=250,
+    dekemaster: brkBest>=500,
+    coasttocoast: brkBest>=1000,
+    highlightreel: brkBest>=2000,
+    rinkrat: brkRuns>=50,
+    breakawaychamp: hN("breakawaychamp")>=1,
   };
   const run=n=>`Best run on a sheet: ${Math.min(sheetBest,n)} of ${n}`;
   const progress={ hattrick:`${hatBest} of 3 kinds on one sheet`, star3:run(3), star2:run(5), star1:run(10),
@@ -754,6 +792,13 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     commissioner:[Math.min(sheets.length,32),32,"team sheets"],
     pt100:[Math.min(topSheet,100),100,"points on your best sheet"],
     recruiter:[0,1,"friend who joined from your invitation"],
+    firstshift:[Math.min(brkRuns,1),1,"Breakaway game played"],
+    dangler:[Math.min(brkBest,250),250,"best Breakaway score"],
+    dekemaster:[Math.min(brkBest,500),500,"best Breakaway score"],
+    coasttocoast:[Math.min(brkBest,1000),1000,"best Breakaway score"],
+    highlightreel:[Math.min(brkBest,2000),2000,"best Breakaway score"],
+    rinkrat:[Math.min(brkRuns,50),50,"Breakaway games played"],
+    breakawaychamp:[0,1,"#1 score on the Breakaway leaderboard"],
   };
   Object.keys(earned).forEach(id=>{ if(earned[id]) meter[id][0]=meter[id][1]; });
   return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, meter, streak:{current:cur, best}};
@@ -764,6 +809,9 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
 const BADGE_ORDER=["inaugural","faceoff","season2627","star3","topshelf","rivalry","overtime","goalieduel","hattrick","shootout","barnstormer","earlybird","ironman","fullslate",
   "lamp","roadwarrior","goalfest","star2","original6","ocanada","heritageclassic","winterclassic","stadiumseries","globalseries","buzzer","shutout","recruiter","halfseason","captain",
   "divisionchamp","naturalhattrick","perfectweek","playerweek","pointstreak","star1","playermonth","dynasty","fullsheet","pt100","commissioner","mvp","openingnight"];
+// Breakaway badges, easiest first, slot in after the pick badges of similar difficulty
+BADGE_ORDER.splice(3,0,"firstshift"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("lamp"),0,"dangler","rinkrat"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("captain"),0,"dekemaster");
+BADGE_ORDER.splice(BADGE_ORDER.indexOf("playermonth"),0,"coasttocoast"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("pt100"),0,"highlightreel","breakawaychamp");
 // The groups on the Badges page, in order.
 const BADGE_GROUPS=[
   {name:"Getting started", ids:["inaugural","faceoff","season2627","openingnight"]},
@@ -773,6 +821,7 @@ const BADGE_GROUPS=[
   {name:"Collector", ids:["original6","ocanada","rivalry","barnstormer","divisionchamp","commissioner"]},
   {name:"Big games", ids:["heritageclassic","winterclassic","stadiumseries","globalseries"]},
   {name:"Leaderboard honours", ids:["playerweek","playermonth","dynasty","captain","pt100","mvp"]},
+  {name:"Breakaway", ids:["firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"]},
   {name:"Social", ids:["recruiter"]},
 ];
 // Rarest first: gold rings, then red, then navy; within a ring, hardest first (BADGE_ORDER, reversed).
@@ -837,6 +886,7 @@ async function myBadges(sb, username){
 // Honours worked out by the database: Captains, MVPs (after the season), Players of the Week and Month,
 // Early Bird and Buzzer Beater counts, and Recruiters. Fetched once per page.
 let honoursReq=null;
+function refreshHonours(){ honoursReq=null; }   // after something changes them (like posting a Breakaway score)
 function seasonHonours(sb){
   return honoursReq ||= sb.rpc("badge_honours",{p_season:SEASON}).then(({data,error})=>error ? null : data||[]).catch(()=>null);
 }
@@ -906,7 +956,10 @@ const BADGE_BRAG={
   goalfest:"nailed the exact goals in a 9+ goal game", goalieduel:"nailed the exact goals in a game with 3 or fewer goals",
   perfectweek:"got every result right for a whole week", ocanada:"started sheets for all 7 Canadian teams",
   divisionchamp:"started sheets for a whole division", commissioner:"started sheets for all 32 teams",
-  pt100:"scored 100 points on one sheet", recruiter:"brought a friend to stickpicks" };
+  pt100:"scored 100 points on one sheet", recruiter:"brought a friend to stickpicks",
+  firstshift:"played my first game of Breakaway", dangler:"scored 250 in Breakaway", dekemaster:"scored 500 in Breakaway",
+  coasttocoast:"scored 1,000 in Breakaway", highlightreel:"scored 2,000 in Breakaway", rinkrat:"played 50 games of Breakaway",
+  breakawaychamp:"took the #1 score on the Breakaway leaderboard" };
 
 function badgeSpec(id, who){
   const b=BADGE_BY_ID[id];

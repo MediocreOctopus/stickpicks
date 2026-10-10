@@ -457,7 +457,78 @@ $$;
 revoke all on function public.record_invite(text) from public, anon;
 grant execute on function public.record_invite(text) to authenticated;
 
--- 15) Honours: badges that depend on everyone's results over time, or on when picks were made,
+-- 15) Breakaway (the Intermission game) high scores: one row per player per season with their best
+--     score, games played, and whether they've ever held the #1 score. Players can only write
+--     through submit_breakaway(), which checks a score is possible for how long the game lasted
+--     (the skater starts at speed 380, gains 9 per second up to 950, and scores speed/38 a second)
+--     and that runs don't arrive faster than they could be played.
+create table if not exists public.breakaway_scores (
+  user_id   uuid not null references auth.users(id) on delete cascade,
+  season    text not null,
+  best      int not null default 0,
+  best_at   timestamptz,
+  runs      int not null default 0,
+  held_top  boolean not null default false,
+  last_at   timestamptz,
+  primary key (user_id, season)
+);
+alter table public.breakaway_scores enable row level security;
+revoke all on public.breakaway_scores from anon, authenticated;
+
+create or replace function public.submit_breakaway(p_score int, p_ms int, p_season text default '20262027')
+returns table (best int, rank int, is_best boolean)
+language plpgsql security definer set search_path = '' as $$
+#variable_conflict use_column
+declare
+  uid uuid := auth.uid();
+  secs numeric := greatest(coalesce(p_ms, 0), 0) / 1000.0;
+  cap numeric;
+  prev_best int;
+  prev_last timestamptz;
+begin
+  if uid is null then raise exception 'Not signed in'; end if;
+  if not exists (select 1 from public.profiles pr where pr.user_id = uid) then raise exception 'Choose a username first'; end if;
+  cap := case when secs <= 63.34 then (380 * secs + 4.5 * secs * secs) / 38
+              else (380 * 63.34 + 4.5 * 63.34 * 63.34) / 38 + 25 * (secs - 63.34) end + 10;
+  if p_score is null or p_score < 0 or p_score > cap or p_ms > 3600000 then
+    raise exception 'That score does not add up';
+  end if;
+  select b.best, b.last_at into prev_best, prev_last from public.breakaway_scores b where b.user_id = uid and b.season = p_season;
+  if prev_last is not null and now() - prev_last < make_interval(secs => secs * 0.8) then
+    raise exception 'Runs are arriving too fast';
+  end if;
+  insert into public.breakaway_scores as b (user_id, season, best, best_at, runs, last_at)
+  values (uid, p_season, p_score, now(), 1, now())
+  on conflict (user_id, season) do update set
+    runs = b.runs + 1, last_at = now(),
+    best = greatest(b.best, excluded.best),
+    best_at = case when excluded.best > b.best then now() else b.best_at end;
+  update public.breakaway_scores b set held_top = true
+   where b.user_id = uid and b.season = p_season and b.best > 0
+     and b.best >= (select max(x.best) from public.breakaway_scores x where x.season = p_season);
+  return query
+    select b.best,
+      (1 + (select count(*) from public.breakaway_scores x join public.profiles pr on pr.user_id = x.user_id
+            where x.season = p_season and x.best > b.best))::int,
+      (p_score > coalesce(prev_best, 0))
+    from public.breakaway_scores b where b.user_id = uid and b.season = p_season;
+end $$;
+revoke all on function public.submit_breakaway(int, int, text) from public, anon;
+grant execute on function public.submit_breakaway(int, int, text) to authenticated;
+
+-- The Breakaway leaderboard: best score per player (ties share a rank).
+create or replace function public.breakaway_board(p_season text default '20262027', p_limit int default 10)
+returns table (username text, best int, runs int, rank int)
+language sql stable security definer set search_path = '' as $$
+  select p.username, b.best, b.runs, (rank() over (order by b.best desc))::int
+  from public.breakaway_scores b join public.profiles p on p.user_id = b.user_id
+  where b.season = p_season and b.best > 0
+  order by b.best desc, b.best_at asc
+  limit greatest(1, least(coalesce(p_limit, 10), 100));
+$$;
+revoke all on function public.breakaway_board(text, int) from public;
+grant execute on function public.breakaway_board(text, int) to anon, authenticated;
+-- 16) Honours: badges that depend on everyone's results over time, or on when picks were made,
 --     worked out here. One row per player and honour; n is a count where one is useful.
 --     captain:     a sheet that was #1 (with points) on its team's leaderboard at the end of any
 --                  game day. Once earned it stays, even if the sheet drops later.
@@ -468,6 +539,7 @@ grant execute on function public.record_invite(text) to authenticated;
 --     earlybird:   n = picks on games that have started that were last changed 24+ hours before puck drop.
 --     buzzer:      n = right results last changed in the 5 minutes before puck drop.
 --     recruiter:   n = players who joined from your invitation link.
+--     breakaway:   n = best Breakaway score; breakawayruns: n = games played; breakawaychamp: has held the #1 score.
 --     Returns usernames, dates and counts only, never anyone's picks.
 drop function if exists public.badge_honours(text);
 create function public.badge_honours(p_season text default '20262027')
@@ -559,7 +631,8 @@ as $$
     select i.invited_by as user_id, count(*)::int as n
     from public.invites i join public.profiles p on p.user_id = i.user_id
     group by i.invited_by
-  )
+  ),
+  brk as (select b.user_id, b.best, b.runs, b.held_top from public.breakaway_scores b where b.season = p_season)
   select p.username, 'captain', c.team, c.earned_on, null::int from captains c join public.profiles p on p.user_id = c.user_id
   union all
   select p.username, 'mvp', null, m.earned_on, null from mvps m join public.profiles p on p.user_id = m.user_id
@@ -570,7 +643,13 @@ as $$
   union all
   select p.username, 'buzzer', null, null, b.n from buzzer b join public.profiles p on p.user_id = b.user_id
   union all
-  select p.username, 'recruiter', null, null, r.n from recruits r join public.profiles p on p.user_id = r.user_id;
+  select p.username, 'recruiter', null, null, r.n from recruits r join public.profiles p on p.user_id = r.user_id
+  union all
+  select p.username, 'breakaway', null, null, k.best from brk k join public.profiles p on p.user_id = k.user_id
+  union all
+  select p.username, 'breakawayruns', null, null, k.runs from brk k join public.profiles p on p.user_id = k.user_id
+  union all
+  select p.username, 'breakawaychamp', null, null, 1 from brk k join public.profiles p on p.user_id = k.user_id where k.held_top;
 $$;
 revoke all on function public.badge_honours(text) from public;
 grant execute on function public.badge_honours(text) to anon, authenticated;

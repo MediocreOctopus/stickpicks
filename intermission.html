@@ -7,16 +7,17 @@
 <meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
-<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta name="description" content="Breakaway: the stickpicks hockey runner. Jump the pucks, duck the slap shots, and post your best score to the Breakaway leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
-<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
-<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:title" content="Intermission: Breakaway · stickpicks">
+<meta property="og:description" content="Jump the pucks, duck the slap shots, and climb the Breakaway leaderboard.">
 <meta property="og:image" content="https://stickpicks.hockey/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
@@ -26,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-22">
+<link rel="stylesheet" href="styles.css?v=2026-11-26">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -42,8 +43,16 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </div>
   </nav>
 
-  <section class="section intermission">
-    <div class="section-head"><h1>Intermission: <em>Breakaway</em></h1><span>Your best: <b id="runHi">0</b></span></div>
+  <!-- Sweater banner, like the other pages -->
+  <header class="teams-banner bk-banner">
+    <small class="tb-kicker">Between periods</small>
+    <h1>Intermission</h1>
+    <p>Play <b>Breakaway</b> while you wait for puck drop. Your skater wears the colours of the last sheet you opened.</p>
+  </header>
+
+  <!-- The game, in a navy-banded card like the Badges page groups -->
+  <section class="bk-card" aria-label="Breakaway">
+    <h2 class="bk-head"><span>Breakaway</span><small>Your best: <b id="runHi">0</b></small></h2>
     <div class="rinkwrap">
       <canvas id="rink" tabindex="0" aria-label="Breakaway, a hockey running game. Press Space or the Up arrow to jump and the Down arrow to duck."></canvas>
     </div>
@@ -53,14 +62,107 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </div>
   </section>
 
-  <footer>Fan-made, not affiliated with the NHL. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+  <div class="bk-grid">
+    <!-- Breakaway leaderboard: best score per player this season -->
+    <section class="pf-card bk-leaders" aria-labelledby="bkLeadTitle">
+      <h2 id="bkLeadTitle">Breakaway leaders</h2>
+      <ol class="bk-list" id="bkList"><li class="hint">Loading…</li></ol>
+      <p class="bk-you hidden" id="bkYou"></p>
+    </section>
+
+    <!-- Your Breakaway badges -->
+    <section class="pf-card bk-badges" aria-labelledby="bkBadgeTitle">
+      <h2 id="bkBadgeTitle">Breakaway badges <span class="badge-count" id="bkCount"></span></h2>
+      <div class="reach-list" id="bkBadges"></div>
+      <p class="hint bk-signin hidden" id="bkSignin">Sign in to post your scores to the leaderboard and earn Breakaway badges. <a href="index.html#signin">Sign in</a></p>
+      <a class="btn ghost bk-all" href="badges.html#g-breakaway">See all badges</a>
+    </section>
+  </div>
+
+  <footer>Fan-made, not affiliated with the NHL. Scores post while you’re signed in. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-11-22"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-11-26"></script>
+<script src="teams.js?v=2026-11-26"></script>
 <script>mountTeamMenu(document.getElementById("teamMenu"));</script>
-<script src="game.js?v=2026-11-22"></script>
+<script src="game.js?v=2026-11-26"></script>
+<script>
+// Posts each finished run (signed in), shows the Breakaway leaderboard and your Breakaway badges.
+const sb=makeClient(), $=id=>document.getElementById(id);
+const BRK=BADGE_GROUPS.find(g=>g.name==="Breakaway").ids;
+let me=null, uid=null;
+
+async function init(){
+  if(!sb){ $("bkList").innerHTML='<li class="hint">Database not connected.</li>'; return; }
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    uid=session.user.id;
+    const {data}=await sb.from("profiles").select("*").eq("user_id",uid).maybeSingle();
+    me=data; if(me?.username) rememberMe(me.username, avatarFromProfile(me));
+  }
+  loadBoard(); loadBadges();
+}
+
+// Top 10 by best score, with pictures; your spot underneath if you're further down
+async function loadBoard(){
+  const {data,error}=await sb.rpc("breakaway_board",{p_season:SEASON,p_limit:100});
+  const list=$("bkList"); list.innerHTML="";
+  if(error){ list.innerHTML='<li class="hint">Couldn’t load the leaderboard right now.</li>'; return; }
+  const rows=data||[];
+  if(!rows.length) list.innerHTML='<li class="hint">No scores yet. Set the first one!</li>';
+  const top=rows.slice(0,10), faces=new Map();
+  if(top.length){ const {data:pf}=await sb.from("profiles").select("*").in("username",top.map(r=>r.username)); (pf||[]).forEach(p=>faces.set(p.username.toLowerCase(),avatarFromProfile(p))); }
+  top.forEach(r=>{
+    const li=document.createElement("li"), mine=!!me?.username && r.username.toLowerCase()===me.username.toLowerCase();
+    if(mine) li.className="me";
+    const rk=document.createElement("span"); rk.className="rk"+(r.rank<=3?" r"+r.rank:""); rk.textContent=r.rank;
+    const a=document.createElement("a"); a.className="bk-who"; a.href = mine ? "profile.html" : `profile.html?user=${encodeURIComponent(r.username)}`;
+    const nm=document.createElement("span"); nm.textContent=r.username;
+    a.append(avatarEl(faces.get(r.username.toLowerCase()), r.username, 26), nm);
+    const sc=document.createElement("b"); sc.textContent=Number(r.best).toLocaleString();
+    li.append(rk,a,sc); list.append(li);
+  });
+  const you=$("bkYou"), mine=me?.username ? rows.find(r=>r.username.toLowerCase()===me.username.toLowerCase()) : null;
+  if(mine) window.breakaway?.setBest(mine.best);
+  if(mine && mine.rank>10){ you.textContent=`You: #${mine.rank} of ${rows.length} · best ${Number(mine.best).toLocaleString()}`; you.classList.remove("hidden"); }
+  else you.classList.add("hidden");
+}
+
+// Progress on the Breakaway badges (and a pop-up for any just earned)
+async function loadBadges(){
+  const box=$("bkBadges");
+  if(!me?.username){
+    $("bkSignin").classList.remove("hidden"); $("bkCount").textContent="";
+    box.replaceChildren(...BRK.map(id=>{ const row=badgeProgressEl(id,[0,1,""],true); row.querySelector("small").textContent=BADGE_BY_ID[id].how; return row; }));
+    return;
+  }
+  $("bkSignin").classList.add("hidden");
+  try{
+    refreshHonours();
+    const r=await myBadges(sb, me.username);
+    $("bkCount").textContent=`${BRK.filter(id=>r.earned.includes(id)).length} of ${BRK.length}`;
+    box.replaceChildren(...BRK.map(id=>badgeProgressEl(id, r.meter[id], true)));
+    announceBadges(uid, r.earned, me.username);
+  }catch(e){ box.innerHTML='<p class="hint">Couldn’t load badges right now.</p>'; }
+}
+
+// When a run ends: post it (signed in), then refresh the board and badges
+addEventListener("breakaway:end", async e=>{
+  if(!sb) return;
+  if(!me?.username){ window.breakaway?.setNote(uid ? "Choose a username to post scores" : "Sign in to post your score"); return; }
+  window.breakaway?.setNote("Posting your score…");
+  const {data,error}=await sb.rpc("submit_breakaway",{p_score:e.detail.score, p_ms:e.detail.ms, p_season:SEASON});
+  if(error){ window.breakaway?.setNote("Couldn’t post this score"); return; }
+  const row=(data||[])[0];
+  if(row) window.breakaway?.setNote(row.is_best ? `New best · #${row.rank} on the Breakaway board` : `Your best ${Number(row.best).toLocaleString()} · #${row.rank} on the board`);
+  loadBoard(); loadBadges();
+});
+
+init();
+</script>
 <!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
-<script>window.goatcounter={path:function(){var t=new URLSearchParams(location.search).get("team");return location.pathname+(t?"?team="+t:"")}};</script>
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
 <script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>

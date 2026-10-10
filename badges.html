@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-22">
+<link rel="stylesheet" href="styles.css?v=2026-11-26">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -69,8 +69,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-22"></script>
-<script src="teams.js?v=2026-11-22"></script>
+<script src="config.js?v=2026-11-26"></script>
+<script src="teams.js?v=2026-11-26"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -118,6 +118,7 @@ async function start(){
   document.title = `${own ? "Your badges" : who+"’s badges"} · stickpicks 2026–27`;
   render();
   const open=q.get("badge"); if(open && BADGE_BY_ID[open]) openBadge(open);
+  else if(location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({block:"start"});
 }
 
 // Groups of patches, each with a navy header band and its own count
@@ -128,7 +129,7 @@ function render(){
     const ids=g.ids.filter(id=>BADGE_BY_ID[id]), got=ids.filter(id=>result.earned.includes(id));
     const show=ids.filter(id=> filter==="all" || (filter==="earned") === result.earned.includes(id));
     if(!show.length) return;
-    const sec=document.createElement("section"); sec.className="bgroup";
+    const sec=document.createElement("section"); sec.className="bgroup"; sec.id="g-"+g.name.toLowerCase().replace(/[^a-z0-9]+/g,"-");   // badges.html#g-breakaway
     const head=document.createElement("h2"); head.className="bgroup-head";
     const nm=document.createElement("span"); nm.textContent=g.name;
     const ct=document.createElement("small"); ct.textContent=`${got.length} of ${ids.length}`;

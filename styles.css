@@ -1022,3 +1022,32 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .trophy span{font:600 .68rem/1.2 var(--display);letter-spacing:.06em;text-transform:uppercase}
 .trophy .badge{width:min(64px,100%);height:auto;aspect-ratio:1}
 .pf-allbadges{display:flex;margin-top:16px}
+
+/* ───── Intermission: sweater banner, the game in a navy-banded card, leaders and badges side by side ───── */
+.bk-banner{margin-top:4px}
+.bk-banner p b{color:var(--wool);font-style:normal}
+.bk-card{margin-top:18px;background:var(--panel);border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.bk-head{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0;padding:9px 14px 15px;background:var(--navy);color:var(--wool);
+  font:600 1rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+[data-scheme="dark"] .bk-head{background:#14203A}
+.bk-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+.bk-head small{font:italic .9rem var(--serif);letter-spacing:0;text-transform:none;color:var(--gold)}
+.bk-head small b{font:600 1.05rem var(--display);color:var(--wool);font-style:normal}
+.bk-card .rinkwrap{border:0;border-radius:0;background:var(--navy)}
+.bk-card .runbar{padding:10px 14px 12px;margin-top:0}
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;margin-top:14px;align-items:start}
+.bk-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.bk-list li{display:grid;grid-template-columns:2rem minmax(0,1fr) auto;align-items:center;gap:8px;padding:6px 8px;border-radius:6px}
+.bk-list li.hint{display:block;padding:4px 0}
+.bk-list li.me{background:color-mix(in srgb, var(--gold) 22%, transparent)}
+.bk-list .rk{display:grid;place-items:center;width:1.7rem;height:1.7rem;border-radius:50%;font:600 .85rem var(--display);color:var(--ink)}
+.bk-list .rk.r1{background:#C08A2A;color:#fff} .bk-list .rk.r2{background:#9AA6B2;color:#fff} .bk-list .rk.r3{background:#9B5B2E;color:#fff}
+.bk-who{display:flex;align-items:center;gap:8px;min-width:0;color:var(--ink);text-decoration:none;font:600 .95rem "Barlow",sans-serif}
+.bk-who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-who:hover span{text-decoration:underline}
+.bk-list b{font:700 1.1rem var(--display);font-variant-numeric:tabular-nums}
+.bk-you{margin:10px 0 0;font:italic .9rem var(--serif);color:var(--muted)}
+.bk-badges .reach-list{gap:10px}
+.bk-signin{margin:12px 0 0}
+.bk-signin a{color:var(--ink);font-weight:600}
+.bk-all{display:flex;margin-top:14px}
