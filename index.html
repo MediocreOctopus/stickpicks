@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-15">
+<link rel="stylesheet" href="styles.css?v=2026-11-16">
 </head>
 <body>
 
@@ -208,8 +208,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-15"></script>
-<script src="teams.js?v=2026-11-15"></script>
+<script src="config.js?v=2026-11-16"></script>
+<script src="teams.js?v=2026-11-16"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -614,11 +614,12 @@ async function loadMyStats(){
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const rows=sheets||[];
   list.innerHTML="";   // cleared again: two refreshes can overlap
-  // never picked: a Pick Now button instead of Current Picks, and Inaugural Season as the badge in reach
+  // never picked: a Pick Now button instead of Current Picks, and Rookie and 2026–27 Season as the badges in reach
   const none=!rows.length;
   $("curLabel").classList.toggle("hidden",none); list.classList.toggle("hidden",none); $("pickNow").classList.toggle("hidden",!none);
   if(none){
-    showReach({meter:{faceoff:[0,1,"pick made"]}}, ["faceoff"]);
+    showReach({meter:{faceoff:[0,1,"pick made"], season2627:[0,1,"pick made this season"]}}, ["faceoff","season2627"]);
+    if(profile?.username) announceBadges(currentUser.id, ["inaugural"], profile.username);   // earned by making a profile
     loadRecap([]); loadUpNext([lastTeam()]); return;
   }
   rows.forEach(r=>{

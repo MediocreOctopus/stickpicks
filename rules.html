@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-15">
+<link rel="stylesheet" href="styles.css?v=2026-11-16">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -144,7 +144,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <details><summary>What are the W–L–OTL record and “standings pts” on my sheet?</summary><p>That’s your predicted season record for the team, using NHL standings points (2 for a win, 1 for an overtime loss). It’s just for fun and doesn’t affect your stickpicks score.</p></details>
       <details><summary>Can other players see my picks?</summary><p>Yes, once each game starts. Anyone can open your sheet from the leaderboard, but your picks for upcoming games stay hidden until puck drop, so nobody can copy them.</p></details>
       <details><summary>Can I change my username?</summary><p>Yes, from Settings on your <a href="profile.html">profile</a> (the Me tab, or your name in the top bar). Your points stay with you.</p></details>
-      <details><summary>What are badges and streaks?</summary><p>Your profile shows your <b>Hot streak</b> (results right in a row, across all your sheets) and 15 badges you can earn, like <b>Hat Trick</b> (a W, an L and an OTL called right on one sheet), the <b>3rd, 2nd and 1st Star</b> (3, 5 and 10 results right in a row on one sheet), and <b>Captain</b> (#1 on a team leaderboard). Each badge has a progress bar, and the home page shows the ones you’re closest to. They’re just for fun and don’t change your score.</p></details>
+      <details><summary>What are badges and streaks?</summary><p>Your profile shows your <b>Hot streak</b> (results right in a row, across all your sheets) and 18 badges you can earn, like <b>Rookie</b> (your first pick), <b>Inaugural Season</b> (for joining, with the year you joined), <b>MVP</b> (#1 on the season’s All-Teams leaderboard), <b>Hat Trick</b> (a W, an L and an OTL called right on one sheet), the <b>3rd, 2nd and 1st Star</b> (3, 5 and 10 results right in a row on one sheet), and <b>Captain</b> (#1 on a team leaderboard). Each badge has a progress bar, and the home page shows the ones you’re closest to. They’re just for fun and don’t change your score.</p></details>
       <details><summary>Can I get a reminder before puck drop?</summary><p>Yes. Turn on <b>Puck-drop reminders</b> in Settings on your <a href="profile.html#reminders">profile</a>. About an hour before a game on one of your sheets, if its result or goals aren’t picked yet, you’ll get a notification. Turn it on for each device you use. On iPhone and iPad, add stickpicks to your Home Screen first (Share → Add to Home Screen), then turn it on in the app.</p></details>
       <details><summary>How do I share my results or invite friends?</summary><p>Look for the <b>Share</b> buttons: <b>Share my results</b> in “Since your last visit” on the home page, <b>Share my spot</b> on the leaderboard, and <b>Share</b> on a new badge or any badge you’ve earned on your profile. Each one makes a stickpicks picture card with a link. <b>Invite friends</b> (on the home page, your profile and the leaderboard) sends a link that tells them you invited them.</p></details>
     </section>
@@ -158,7 +158,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-11-15"></script>
+<script src="teams.js?v=2026-11-16"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section

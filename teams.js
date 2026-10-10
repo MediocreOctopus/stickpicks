@@ -367,14 +367,29 @@ function starArt(fill, ink, n){
   return `<path d="M32 14.5L36.6 26.6L49.6 27.2L39.5 35.4L43 48L32 40.8L21 48L24.5 35.4L14.4 27.2L27.4 26.6Z" fill="${fill}" stroke="${BI.n}" stroke-width="1.2" stroke-linejoin="round"/>`+
     `<text x="32" y="37.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="11.5" fill="${ink}">${n}</text>`;
 }
+// The year shown on the Inaugural Season banner: the year the player whose badges are showing joined
+// (set by computeBadges; this year until it's known).
+let BADGE_JOIN_YEAR=null;
 const BADGES=[
-  // (id stays "faceoff" so devices that already announced it don't announce it again)
-  {id:"faceoff", name:"Inaugural Season", ring:"navy", how:"Make your first pick of the 2026–27 season.",
-   // a felt rafter banner, like a championship banner hanging from the rafters
-   art:`<path d="M17 15h30" stroke="${BI.n}" stroke-width="2.6" stroke-linecap="round"/><circle cx="16.5" cy="15" r="2" fill="${BI.n}"/><circle cx="47.5" cy="15" r="2" fill="${BI.n}"/>`+
+  {id:"inaugural", name:"Inaugural Season", ring:"navy", how:"Create your stickpicks profile.",
+   // a felt rafter banner, like a championship banner hanging from the rafters, with the year you joined
+   art:()=>`<path d="M17 15h30" stroke="${BI.n}" stroke-width="2.6" stroke-linecap="round"/><circle cx="16.5" cy="15" r="2" fill="${BI.n}"/><circle cx="47.5" cy="15" r="2" fill="${BI.n}"/>`+
        `<path d="M20.5 16.5H43.5V45L32 39L20.5 45Z" fill="${BI.r}"/><path d="M22.5 18.5H41.5" stroke="${BI.c}" stroke-width="1" opacity=".7"/>`+
        `<path d="M32 21.3L33 23.9L35.8 24L33.6 25.8L34.4 28.5L32 27L29.6 28.5L30.4 25.8L28.2 24L31 23.9Z" fill="${BI.c}"/>`+
-       `<text x="32" y="35.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="7.4" fill="${BI.c}">26–27</text>`},
+       `<text x="32" y="35.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="7.4" fill="${BI.c}">${BADGE_JOIN_YEAR||new Date().getFullYear()}</text>`},
+  // (id stays "faceoff" so devices that already announced it don't announce it again)
+  {id:"faceoff", name:"Rookie", ring:"navy", how:"Make your first pick.",
+   // a rookie card: a tilted trading card with a player in the photo window and a red ROOKIE strip
+   art:`<g transform="rotate(-8 32 31)"><rect x="20" y="13" width="24" height="34" rx="2.5" fill="${BI.p}" stroke="${BI.n}" stroke-width="2.2"/>`+
+       `<rect x="23.5" y="16.5" width="17" height="18.5" fill="${BI.n}"/><circle cx="32" cy="23.6" r="3.7" fill="${BI.w}"/><path d="M25.6 35q1.2-7.4 6.4-7.4t6.4 7.4Z" fill="${BI.w}"/>`+
+       `<rect x="21.6" y="37" width="20.8" height="7.4" fill="${BI.r}"/>`+
+       `<text x="32" y="42.8" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="6" letter-spacing=".4" fill="${BI.c}">ROOKIE</text></g>`},
+  {id:"season2627", name:"2026–27 Season", ring:"red", how:"Make a pick in the 2026–27 season.",
+   // a season ticket stub, torn along the perforation
+   art:`<g transform="rotate(-12 32 32)"><path d="M13 23.5h38v4.6a3.6 3.6 0 0 0 0 7.2v4.6H13v-4.6a3.6 3.6 0 0 0 0-7.2Z" fill="${BI.r}" stroke="${BI.n}" stroke-width="1.4"/>`+
+       `<path d="M41 25v14" stroke="${BI.c}" stroke-width="1.1" stroke-dasharray="1.5 1.5"/><path d="M16.5 26.6h21" stroke="${BI.c}" stroke-width=".8" opacity=".6"/><path d="M16.5 37.4h21" stroke="${BI.c}" stroke-width=".8" opacity=".6"/>`+
+       `<text x="27" y="34.6" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="8.4" fill="${BI.c}">26–27</text>`+
+       `<path d="M46 28.6L46.9 30.8L49.2 30.9L47.4 32.4L48 34.6L46 33.4L44 34.6L44.6 32.4L42.8 30.9L45.1 30.8Z" fill="${BI.c}"/></g>`},
   {id:"hattrick", name:"Hat Trick", ring:"red", how:"Get a W, an L and an OTL right on one sheet.",
    art:`<path d="M20 38Q19 22 26 21Q29 24 32 22Q35 24 38 21Q45 22 44 38Z" fill="${BI.n}"/><rect x="20" y="32" width="24" height="4.5" fill="${BI.r}"/><ellipse cx="32" cy="39.5" rx="17" ry="4.2" fill="${BI.n}"/>`},
   // The three stars of the game: results right in a row on one sheet
@@ -401,7 +416,15 @@ const BADGES=[
    art:`<path d="M20 13L37 42" stroke="${BI.w}" stroke-width="3.6" stroke-linecap="round"/><path d="M36 42h11" stroke="${BI.n}" stroke-width="4.6" stroke-linecap="round"/><path d="M39 36q2.5-3 .5-6.5M44 36q2.5-3 .5-6.5M49 37q2-2.6.4-5.4" stroke="${BI.r}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M22.6 17.5l2.6-1.5M24.2 20.2l2.6-1.5" stroke="${BI.n}" stroke-width="1.4"/>`},
   {id:"captain", name:"Captain", ring:"gold", how:"Sit at #1 on a team leaderboard.",
    art:`<text x="32" y="44" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="31" fill="${BI.r}" stroke="${BI.n}" stroke-width="1.6" paint-order="stroke">C</text>`},
+  {id:"mvp", name:"MVP", ring:"gold", how:"Sit at #1 on the season’s All-Teams leaderboard.",
+   // a gold trophy cup with a star, on a navy base lettered MVP
+   art:`<path d="M23 21h-4.2q0 7.4 6 8.4M41 21h4.2q0 7.4-6 8.4" fill="none" stroke="${BI.n}" stroke-width="2.2" stroke-linecap="round"/>`+
+       `<path d="M22 15.5h20v8q0 10.5-10 10.5t-10-10.5Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1.5"/><path d="M25 18.5v5q0 4 2.6 6.4" stroke="#F0D58C" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".8"/>`+
+       `<path d="M32 18.6L33.3 21.9L36.8 22.1L34.1 24.3L35 27.7L32 25.8L29 27.7L29.9 24.3L27.2 22.1L30.7 21.9Z" fill="${BI.c}"/>`+
+       `<rect x="29.6" y="33.6" width="4.8" height="4.6" fill="${BI.n}"/><rect x="21.5" y="38" width="21" height="9" rx="1.2" fill="${BI.n}"/>`+
+       `<text x="32" y="45.1" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="6.8" letter-spacing=".5" fill="#E9C46A">MVP</text>`},
 ];
+const badgeArt=b=>typeof b.art==="function" ? b.art() : b.art;
 const BADGE_BY_ID=Object.fromEntries(BADGES.map(b=>[b.id,b]));
 // A round felt patch: ring with stitching, cream felt, pictogram.
 function badgeEl(id, px=56, earned=true){
@@ -409,16 +432,18 @@ function badgeEl(id, px=56, earned=true){
   el.className="badge"+(earned?"":" locked"); el.style.setProperty("--bd-size",px+"px");
   el.innerHTML=`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
     `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/>`+
-    `<circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${b.art}</svg>`;
+    `<circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${badgeArt(b)}</svg>`;
   return el;
 }
 
 // Works out badges and streaks from a player's picks.
 // picks: [{team, game_id, pick, goals, hidden}] (hidden = an upcoming pick another player can't see yet)
 // games: [{game_id, game_date, start_utc, home, away, home_score, away_score, period_type}] for those teams
-// board: the All teams leaderboard (for Captain); who: the player's username
+// board: the All teams season leaderboard (for Captain and MVP); who: the player's username;
+// joined: when their profile was made (Inaugural Season, and the year on its banner)
 const ORIGINAL_SIX=["BOS","CHI","DET","MTL","NYR","TOR"];
-function computeBadges(picks, games, board, who){
+function computeBadges(picks, games, board, who, joined){
+  BADGE_JOIN_YEAR = joined ? new Date(joined).getFullYear() : null;
   const G=new Map(games.map(g=>[Number(g.game_id),g]));
   const sheets=[...new Set(picks.map(p=>p.team))];
   const scored=[];
@@ -471,8 +496,17 @@ function computeBadges(picks, games, board, who){
     board.filter(r=>r.username.toLowerCase()===who.toLowerCase()).forEach(r=>{
       const rk=1+ranks[r.team].filter(p=>p>Number(r.points)).length; if(bestRank===null || rk<bestRank) bestRank=rk; });
   }
+  // MVP: your best sheet's rank on the All-Teams season board (ties share a rank)
+  let overall=null;
+  if(who && board?.length){
+    const mine=board.filter(r=>r.username.toLowerCase()===who.toLowerCase()).map(r=>Number(r.points));
+    if(mine.length){ const best=Math.max(...mine); overall={rank:1+board.filter(r=>Number(r.points)>best).length, pts:best}; }
+  }
+  const thisSeason=picks.some(p=>G.has(Number(p.game_id)));   // a pick on a 2026–27 game
   const earned={
+    inaugural: !!(who && joined),
     faceoff: picks.length>0,
+    season2627: thisSeason,
     hattrick: hatBest>=3,
     star3: sheetBest>=3,
     star2: sheetBest>=5,
@@ -487,6 +521,7 @@ function computeBadges(picks, games, board, who){
     barnstormer: divs.size===4,
     pointstreak: ptBest>=10,
     captain,
+    mvp: overall?.rank===1 && overall.pts>0,
   };
   const run=n=>`Best run on a sheet: ${Math.min(sheetBest,n)} of ${n}`;
   const progress={ hattrick:`${hatBest} of 3 kinds on one sheet`, star3:run(3), star2:run(5), star1:run(10),
@@ -494,7 +529,9 @@ function computeBadges(picks, games, board, who){
     original6:`${o6} of 6 sheets`, barnstormer:`${divs.size} of 4 divisions` };
   // [have, need, what's being counted] for each badge's progress bar
   const meter={
+    inaugural:[who && joined ? 1 : 0,1,"profile created"],
     faceoff:[Math.min(picks.length,1),1,"pick made"],
+    season2627:[thisSeason?1:0,1,"pick made this season"],
     hattrick:[hatBest,3,"kinds (W, L, OTL) right on one sheet"],
     star3:[Math.min(sheetBest,3),3,"right in a row on one sheet"],
     star2:[Math.min(sheetBest,5),5,"right in a row on one sheet"],
@@ -509,13 +546,14 @@ function computeBadges(picks, games, board, who){
     barnstormer:[divs.size,4,"divisions"],
     pointstreak:[Math.min(ptBest,10),10,"games in a row with a point"],
     captain:[bestRank===1?1:0,1, bestRank ? `#1 spot (best so far: #${bestRank})` : "#1 spot"],
+    mvp:[earned.mvp?1:0,1, overall ? `#1 overall (best so far: #${overall.rank})` : "#1 overall"],
   };
   Object.keys(earned).forEach(id=>{ if(earned[id]) meter[id][0]=meter[id][1]; });
   return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, meter, streak:{current:cur, best}};
 }
 
 // Roughly easiest to hardest, for "Badges in reach" on the home page.
-const BADGE_ORDER=["faceoff","star3","topshelf","overtime","hattrick","shootout","barnstormer","lamp","star2","original6","shutout","captain","pointstreak","star1","fullsheet"];
+const BADGE_ORDER=["inaugural","faceoff","season2627","star3","topshelf","overtime","hattrick","shootout","barnstormer","lamp","star2","original6","shutout","captain","pointstreak","star1","mvp","fullsheet"];
 // The n unearned badges you're closest to (highest share done; easier first on ties), listed easiest to hardest.
 function badgesInReach(r, n=3){
   const rank=id=>BADGE_ORDER.indexOf(id), share=id=>{ const [h,need]=r.meter[id]; return need ? h/need : 0; };
@@ -560,8 +598,15 @@ async function gamesForTeams(sb, teams){
 async function myBadges(sb, username){
   const picks=await fetchAllRows(()=>sb.from("team_picks").select("team,game_id,pick,goals").order("game_id"));
   const teams=[...new Set(picks.map(p=>p.team))];
-  const [games, board] = await Promise.all([gamesForTeams(sb,teams), username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : []]);
-  return computeBadges(picks, games, board, username);
+  const [games, board, joined] = await Promise.all([gamesForTeams(sb,teams),
+    username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : [], profileJoined(sb, username)]);
+  return computeBadges(picks, games, board, username, joined);
+}
+// When a player's profile was made (for Inaugural Season), or null.
+async function profileJoined(sb, username){
+  if(!username) return null;
+  const {data}=await sb.from("profiles").select("created_at").ilike("username", username.replace(/[\\%_]/g,"\\$&")).maybeSingle();
+  return data?.created_at||null;
 }
 // Another player's badges, from what anyone can see: their revealed picks (upcoming ones count as made).
 async function playerBadges(sb, username, board){
@@ -569,7 +614,8 @@ async function playerBadges(sb, username, board){
   const sets=await Promise.all(teams.map(t=>sb.rpc("sheet_picks",{p_username:username,p_team:t,p_season:SEASON})
     .then(({data})=>(data||[]).map(r=>({team:t, game_id:r.game_id, pick:r.pick, goals:r.goals, hidden:!r.revealed})))));
   const picks=sets.flat();
-  return computeBadges(picks, await gamesForTeams(sb,teams), board, username);
+  const [games, joined]=await Promise.all([gamesForTeams(sb,teams), profileJoined(sb, username)]);
+  return computeBadges(picks, games, board, username, joined);
 }
 
 // "New badge" pop-up: compares with the badges this device has already shown you.
@@ -607,7 +653,7 @@ const SITE_URL="https://stickpicks.hockey/";
 function inviteUrl(name){ return SITE_URL+(name && USERNAME_RULE.test(name) ? `?invite=${encodeURIComponent(name)}` : ""); }
 // What each badge means, as a brag ("I just earned the Hat Trick badge on stickpicks: …")
 const BADGE_BRAG={
-  faceoff:"made my first pick of the 2026–27 season", hattrick:"called a W, an L and an OTL right on one sheet",
+  inaugural:"joined stickpicks", faceoff:"made my first pick", season2627:"made my picks for the 2026–27 season", mvp:"took the #1 spot on the All-Teams leaderboard", hattrick:"called a W, an L and an OTL right on one sheet",
   star3:"got 3 results right in a row on one sheet", star2:"got 5 results right in a row on one sheet", star1:"got 10 results right in a row on one sheet",
   topshelf:"nailed the result and the exact goals in the same game", lamp:"nailed the exact combined goals 5 times",
   shutout:"got every result right on a night with 3+ games", overtime:"called an overtime loss right", shootout:"called a shootout game right",
@@ -731,7 +777,7 @@ function cardLogoParts(){
 function badgeSvg(id){
   const b=BADGE_BY_ID[id];
   return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
-    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${b.art}</svg>`;
+    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${badgeArt(b)}</svg>`;
 }
 async function drawCard(o){
   await Promise.all(["700 90px Oswald","600 28px Oswald","italic 30px 'Libre Caslon Text'","64px Yellowtail"].map(f=>document.fonts?.load(f).catch(()=>{})));

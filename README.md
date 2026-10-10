@@ -119,7 +119,7 @@ To appear on the leaderboard, a player needs a username (3–20 letters, numbers
 - **Updates:** the page refreshes itself every minute and whenever you come back to its tab. Scores change when the 15-minute job records final results.
 - **Locking:** both predictions lock at **puck drop**. The database enforces this, so nobody can change a pick after a game starts, even by editing the page. "Clear all picks" only clears games that haven't started yet.
 
-When you're signed in, the home page account box lists your **Current Picks** (each sheet you've started, with its points) and **Badges in reach**: progress bars for the three badges you're closest to earning, easiest first. If you haven't made a pick yet, it shows a **Pick Now** button (to the Pick Team page) and the Inaugural Season badge instead. Your total points, best rank, and settings (including sign out) are on your profile page.
+When you're signed in, the home page account box lists your **Current Picks** (each sheet you've started, with its points) and **Badges in reach**: progress bars for the three badges you're closest to earning, easiest first. If you haven't made a pick yet, it shows a **Pick Now** button (to the Pick Team page) and the Rookie and 2026–27 Season badges instead. Your total points, best rank, and settings (including sign out) are on your profile page.
 
 ## Sharing and invitations
 
@@ -142,11 +142,13 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 15 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 18 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
 
 | Badge | How to earn it |
 |---|---|
-| Inaugural Season | Make your first pick of the 2026–27 season |
+| Inaugural Season | Create your stickpicks profile (the banner shows the year you joined) |
+| Rookie | Make your first pick |
+| 2026–27 Season | Make a pick in the 2026–27 season |
 | Hat Trick | A W, an L and an OTL all called right on one sheet |
 | 3rd Star | 3 results right in a row on one sheet |
 | 2nd Star | 5 results right in a row on one sheet |
@@ -161,6 +163,7 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Barnstormer | Sheets in all four divisions |
 | Point Streak | At least a point in 10 straight finished games |
 | Captain | #1 on a team leaderboard |
+| MVP | #1 on the season's All-Teams leaderboard (ties share it) |
 
 Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
 ## Visitor stats
