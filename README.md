@@ -203,14 +203,19 @@ Badges are worked out in the browser from picks and final scores (`BADGES` and `
 
 ## Chiclets
 
-Chiclets are free, earned-only points. When you're signed in, a counter (a tilted tooth and the count) sits in the top-right corner of the home, Pick Teams, Leaderboard and profile pages (`mountChicletNav()` in `teams.js`; the home page fills its own). It's a button to `chiclets.html`: your balance, a fold-out "How it works", and your full statement (every Chiclet gained or lost, newest first, by month). Another player's profile shows their total in the banner, as a count only. Nothing is stored: `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time:
+Chiclets are free, earned-only points. When you're signed in, a counter (a tilted tooth and the count) sits in the top-right corner of the home, Pick Teams, Leaderboard and profile pages (`mountChicletNav()` in `teams.js`; the home page fills its own). It's a button to `chiclets.html`: your balance, a fold-out "How it works", and your full statement (every Chiclet gained or lost, newest first, by month). Another player's profile shows their total in the banner, as a count only. `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time, plus the badge rewards already paid (section 18):
 
 | Change | When |
 |---|---|
 | +1 | Right result (W, L or OTL) |
 | +2 | Exact combined goals |
 | +5 | Perfect night: 3+ picked results on one day, all right |
+| +5 / +10 / +25 | Each badge, once: navy / red / gold (Rivalry Night +5; Bad habits and Season Dynasty nothing) |
 | −1 | A game skipped on a started sheet after its first pick, at most −5 per week (Monday to Sunday) |
+
+Each game pays once per player: if it's picked on two sheets (both teams), the result pays only if every result pick on it was right, and the goals only if every goals pick was right, so hedging earns nothing.
+
+Badge rewards can't come from the browser (a player could fake badges there), so the database checks every badge itself: `badges_earned()` in `schema.sql` (section 18) follows the same rules as `computeBadges()` in `teams.js`. **If you change a badge's rules in `teams.js`, change them in `badges_earned()` too.** Paid rewards are kept in `chiclet_awards` (one row per player and badge, so each pays once). The site claims them when it loads your badges (`claim_badge_chiclets()`), and the GitHub Action pays everyone after each score update (`award_all_badge_chiclets()`).
 
 The balance never goes below 0. Chiclets can't be bought with real money and have no cash value (see the Terms). A later update will let players spend them on cosmetic extras (profile borders, retro sweaters), with spends recorded in their own table and taken off the balance.
 

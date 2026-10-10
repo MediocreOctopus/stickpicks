@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-09">
+<link rel="stylesheet" href="styles.css?v=2026-12-10">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -69,8 +69,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-09"></script>
-<script src="teams.js?v=2026-12-09"></script>
+<script src="config.js?v=2026-12-10"></script>
+<script src="teams.js?v=2026-12-10"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -160,6 +160,8 @@ function openBadge(id){
   const st=document.createElement("small"); st.className="bdlg-state"+(has?" is-earned":""); st.textContent=has?"Earned":"Not yet";
   const how=document.createElement("p"); how.textContent=b.how;
   body.append(badgeEl(id,132,has), nm, st, how);
+  const worth=badgeReward(id);   // its Chiclets reward
+  if(worth){ const w=document.createElement("p"); w.className="bdlg-worth"; w.append(chicletIcon(16), ` ${has ? "Earned you" : "Worth"} +${worth} Chiclets`); body.append(w); }
   if(result.meter[id] && (own || VIEW)) body.append(badgeProgressEl(id, result.meter[id]));
   if(own && has && who) body.append(shareButton("Share this badge", badgeSpec(id, who), "btn"));
   const d=$("bDlg"); if(!d.open) d.showModal();

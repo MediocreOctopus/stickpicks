@@ -1043,7 +1043,22 @@ async function myBadges(sb, username){
   const teams=[...new Set(picks.map(p=>p.team))];
   const [games, board, joined, honours] = await Promise.all([gamesForTeams(sb,teams),
     username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : [], profileJoined(sb, username), seasonHonours(sb)]);
+  if(username) claimBadgeChiclets(sb);   // pay any badge rewards not paid yet (the database checks each badge itself)
   return computeBadges(picks, games, board, username, joined, honours, await seasonFirstDay(sb));
+}
+// Badge rewards in Chiclets (the database pays them: badge_reward() in schema.sql, section 18)
+function badgeReward(id){
+  if(id.startsWith("riv_")) return 5;
+  if(["minor","doubleminor","major","misconduct","ejection","seasondynasty"].includes(id)) return 0;
+  return {navy:5, red:10, gold:25}[BADGE_BY_ID[id]?.ring]||0;
+}
+// Asks the database to pay any badge rewards due; tells the page's Chiclets counters to refresh if it paid any.
+let claimReq=null;
+function claimBadgeChiclets(sb){
+  return claimReq ||= sb.rpc("claim_badge_chiclets").then(({data,error})=>{
+    if(!error && data?.length) document.dispatchEvent(new CustomEvent("chiclets:changed", {detail:data}));
+    return error ? [] : data||[];
+  }).catch(()=>[]);
 }
 // Honours worked out by the database: Captains, MVPs (after the season), Players of the Week and Month,
 // Early Bird and Buzzer Beater counts, and Recruiters. Fetched once per page.
@@ -1080,7 +1095,8 @@ function announceBadges(userId, earned, who){
   const t=document.createElement("div"); t.className="badge-toast"; t.setAttribute("role","status");
   const b=BADGE_BY_ID[fresh[0]];
   const text=document.createElement("div"); text.className="badge-toast-text";
-  const k=document.createElement("small"); k.textContent = fresh.length===1 ? "New badge" : `${fresh.length} new badges`;
+  const worth=fresh.reduce((s,id)=>s+badgeReward(id),0);
+  const k=document.createElement("small"); k.textContent = (fresh.length===1 ? "New badge" : `${fresh.length} new badges`) + (worth ? ` · +${worth} Chiclets` : "");
   const n=document.createElement("b"); n.textContent = fresh.length===1 ? b.name : fresh.map(id=>BADGE_BY_ID[id].name).join(" · ");
   const a=document.createElement("a"); a.href="badges.html"; a.textContent="See your badges";
   const row=document.createElement("div"); row.className="badge-toast-acts";
@@ -1333,9 +1349,11 @@ function chicletChip(n, href, cls=""){
 }
 // The top-bar counter (top-right corner, beside the account button) for whoever is signed in, on any page with
 // <span class="navchiclets hidden" id="navChiclets">. Stays hidden when signed out or without a username.
+let chicletNavListening=false;
 async function mountChicletNav(sb){
   const box=document.getElementById("navChiclets");
   if(!box || !sb) return;
+  if(!chicletNavListening){ chicletNavListening=true; document.addEventListener("chiclets:changed",()=>mountChicletNav(sb)); }   // after badge rewards
   try{
     const {data:{session}}=await sb.auth.getSession();
     if(!session) return box.classList.add("hidden");

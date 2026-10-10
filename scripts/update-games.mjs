@@ -108,6 +108,15 @@ async function main() {
   } catch (err) {
     console.warn(`News not updated this run: ${err.message}`);
   }
+
+  // Chiclets: pay badge rewards for badges earned with the new scores (the database checks each badge)
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/award_all_badge_chiclets`, { method: "POST", headers: dbHeaders(), body: "{}" });
+    if (!res.ok) throw new Error(`Supabase returned ${res.status}: ${await res.text()}`);
+    console.log(`Badge rewards paid: ${await res.text()}`);
+  } catch (err) {
+    console.warn(`Badge rewards not paid this run: ${err.message}`);
+  }
 }
 
 /* ───── News ticker ───── */

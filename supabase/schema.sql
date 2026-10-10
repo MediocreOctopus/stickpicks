@@ -667,13 +667,18 @@ revoke all on function public.badge_honours(text) from public;
 grant execute on function public.badge_honours(text) to anon, authenticated;
 
 -- 17) Chiclets: the stickpicks currency. Free to earn, never sold, no cash value, can't be transferred.
---     Nothing is stored: every Chiclet is worked out from picks and final scores, in game order, so the
---     balance is always right and can't be faked. (Phase 2's shop will subtract spending kept in its own table.)
+--     Worked out from picks and final scores, in game order, so the balance is always right and can't be
+--     faked. Badge rewards (section 18) are the only stored part, and only the database writes them.
 --       +1  right result                 +2  exact combined goals (so a perfect game is +3)
---       +5  perfect night: every result right on a night with 3 or more of your games
+--           Each game pays once per player: picked on two sheets (both teams' sheets), the result pays only
+--           if every result pick on it was right, and the goals only if every goals pick was right. So
+--           hedging (each team to win on its own sheet) earns nothing, and grinders can't double up.
+--       +5  perfect night: every game's result right on a night with 3 or more games picked
+--       +5 / +10 / +25  a navy / red / gold badge, once (rivalry badges +5; Bad habits nothing)
 --       -1  each game missed on a sheet you've started (a game that started with no pick, after your
 --           first pick on that sheet), at most -5 a week (Monday to Sunday). The balance never goes below 0.
 --     chiclets_ledger() returns every change in order with the running balance; chiclets_balance() just the total.
+--     (kind = 'pick' | 'night' | 'badge' | 'miss'; for 'badge', note is the badge id.)
 create or replace function public.chiclets_ledger(p_username text)
 returns table (at timestamptz, delta int, balance int, kind text, team text, home text, away text, note text)
 language plpgsql stable security definer set search_path = '' as $$
@@ -689,7 +694,7 @@ begin
   for r in
     with my as (select tp.team, tp.game_id, tp.pick, tp.goals from public.team_picks tp where tp.user_id = uid),
     fin as (
-      select m.team, g.game_date, g.start_utc, g.home, g.away, (m.pick is not null) as picked,
+      select m.team, m.game_id, g.game_date, g.start_utc, g.home, g.away, (m.pick is not null) as picked, (m.goals is not null) as guessed,
         (m.pick is not null and m.pick =
           (case when (case when g.home = m.team then g.home_score else g.away_score end)
                    > (case when g.home = m.team then g.away_score else g.home_score end) then 'W'
@@ -698,16 +703,29 @@ begin
       from my m join public.games g on g.game_id = m.game_id
       where g.period_type is not null and g.home_score is not null and g.away_score is not null
     ),
+    per_game as (        -- one row per game: right only if every pick of that kind on it was right
+      select f.game_id, min(f.game_date) as game_date, min(f.start_utc) as start_utc, min(f.home) as home, min(f.away) as away,
+        count(*) as sheets, min(f.team) as team,
+        bool_or(f.picked) as picked,
+        coalesce(bool_and(f.rh) filter (where f.picked), false) as rh,
+        coalesce(bool_and(f.gh) filter (where f.guessed), false) as gh
+      from fin f group by f.game_id
+    ),
     earn as (
       select f.start_utc as at, (case when f.rh then 1 else 0 end) + (case when f.gh then 2 else 0 end) as delta,
-        'pick'::text as kind, f.team, f.home, f.away,
-        (case when f.rh and f.gh then 'Right result and exact goals' when f.rh then 'Right result' else 'Exact goals' end) as note
-      from fin f where f.rh or f.gh
+        'pick'::text as kind, (case when f.sheets > 1 then null else f.team end) as team, f.home, f.away,
+        (case when f.rh and f.gh then 'Right result and exact goals' when f.rh then 'Right result' else 'Exact goals' end)
+          || (case when f.sheets > 1 then ' (picked on ' || f.sheets || ' sheets, counted once)' else '' end) as note
+      from per_game f where f.rh or f.gh
     ),
     nights as (
       select max(f.start_utc) + interval '1 second', 5, 'night'::text, null::text, null::text, null::text,
         'Perfect night: every result right (' || count(*) || ' games)'
-      from fin f where f.picked group by f.game_date having count(*) >= 3 and bool_and(f.rh)
+      from per_game f where f.picked group by f.game_date having count(*) >= 3 and bool_and(f.rh)
+    ),
+    badges as (
+      select a.awarded_at, a.amount, 'badge'::text, null::text, null::text, null::text, a.badge
+      from public.chiclet_awards a where a.user_id = uid and a.amount > 0
     ),
     sheets as (select m.team, min(g.start_utc) as first_at from my m join public.games g on g.game_id = m.game_id group by m.team),
     missed as (
@@ -718,7 +736,7 @@ begin
     ),
     capped as (select x.*, row_number() over (partition by date_trunc('week', x.game_date) order by x.start_utc) as k from missed x),
     loss as (select c.start_utc, -1, 'miss'::text, c.team, c.home, c.away, 'Missed pick on a started sheet' from capped c where c.k <= 5)
-    select * from earn union all select * from nights union all select * from loss
+    select * from earn union all select * from nights union all select * from badges union all select * from loss
     order by 1, 2 desc
   loop
     nb := greatest(0, bal + r.delta);
@@ -739,3 +757,227 @@ returns int language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.chiclets_balance(text) from public;
 grant execute on function public.chiclets_balance(text) to anon, authenticated;
+
+-- 18) Badge rewards in Chiclets. The site works badges out in the browser, which a player could fake, so the
+--     database checks every badge itself here (badges_earned: the same rules as computeBadges in teams.js)
+--     before paying. Each badge pays once, recorded in chiclet_awards, and stays paid.
+--     navy +5, red +10, gold +25, rivalry badges +5; Bad habits and Season Dynasty pay nothing.
+--     Awards are made by claim_badge_chiclets() (the signed-in player, when the site loads their badges) and
+--     award_all_badge_chiclets() (everyone; the GitHub Action runs it after each score update).
+create table if not exists public.chiclet_awards (
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  badge       text not null,
+  amount      int not null check (amount between 0 and 100),
+  awarded_at  timestamptz not null default now(),
+  primary key (user_id, badge)
+);
+alter table public.chiclet_awards enable row level security;
+-- No policies: nobody reads or writes this table directly; only the functions below and the ledger do.
+revoke all on public.chiclet_awards from anon, authenticated;
+
+create or replace function public.badge_reward(p_badge text)
+returns int language sql immutable set search_path = '' as $$
+  select case
+    when p_badge like 'riv\_%' then 5
+    when p_badge in ('star1','shutout','fullsheet','pointstreak','captain','mvp','playermonth','dynasty','monthlydynasty',
+                     'naturalhattrick','perfectweek','commissioner','pt100','highlightreel','breakawaychamp') then 25
+    when p_badge in ('season2627','hattrick','star2','topshelf','lamp','playerweek','buzzer','openingnight','heritageclassic',
+                     'numberonefan','roadwarrior','goalfest','goalieduel','ocanada','divisionchamp','pt50','ppg','talentscout',
+                     'dekemaster','coasttocoast') then 10
+    when p_badge in ('inaugural','faceoff','star3','overtime','shootout','original6','barnstormer','ironman','earlybird',
+                     'fullslate','halfseason','winterclassic','stadiumseries','globalseries','mixedfeelings','pt20','recruiter',
+                     'firstshift','dangler','rinkrat') then 5
+    else 0 end;
+$$;
+grant execute on function public.badge_reward(text) to anon, authenticated;
+
+-- The badges a player has earned this season, worked out from the database alone (rewardable badges only).
+create or replace function public.badges_earned(p_uid uuid, p_season text default '20262027')
+returns setof text
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  uname text; fav text; lst text;
+begin
+  select p.username, p.fav_team, p.least_team into uname, fav, lst from public.profiles p where p.user_id = p_uid;
+  if uname is null then return; end if;
+  return query
+  with
+  tm(team, div) as (values
+    ('BOS','Atlantic'),('BUF','Atlantic'),('DET','Atlantic'),('FLA','Atlantic'),('MTL','Atlantic'),('OTT','Atlantic'),('TBL','Atlantic'),('TOR','Atlantic'),
+    ('CAR','Metropolitan'),('CBJ','Metropolitan'),('NJD','Metropolitan'),('NYI','Metropolitan'),('NYR','Metropolitan'),('PHI','Metropolitan'),('PIT','Metropolitan'),('WSH','Metropolitan'),
+    ('CHI','Central'),('COL','Central'),('DAL','Central'),('MIN','Central'),('NSH','Central'),('STL','Central'),('UTA','Central'),('WPG','Central'),
+    ('ANA','Pacific'),('CGY','Pacific'),('EDM','Pacific'),('LAK','Pacific'),('SJS','Pacific'),('SEA','Pacific'),('VAN','Pacific'),('VGK','Pacific')),
+  riv(id, a, b) as (values
+    ('riv_alberta','EDM','CGY'),('riv_ontario','TOR','OTT'),('riv_penn','PHI','PIT'),('riv_florida','FLA','TBL'),
+    ('riv_newyork','NYR','NYI'),('riv_hudson','NYR','NJD'),('riv_habsleafs','MTL','TOR'),('riv_bruinshabs','BOS','MTL'),
+    ('riv_hawkswings','CHI','DET'),('riv_avswings','COL','DET'),('riv_freeway','LAK','ANA'),('riv_capspens','WSH','PIT'),
+    ('riv_bluehawks','STL','CHI'),('riv_cascadia','SEA','VAN'),('riv_cryptids','SEA','NJD'),('riv_whalersnords','CAR','COL')),
+  sg as (select g.* from public.games g where g.season = p_season),
+  mp as (                -- this player's picks on this season's games
+    select tp.team, tp.game_id, tp.pick, tp.goals, g.game_date, g.start_utc, g.home, g.away, g.home_score, g.away_score,
+      g.period_type, g.venue, g.neutral_site, (g.period_type is not null or g.start_utc <= now()) as started
+    from public.team_picks tp join sg g on g.game_id = tp.game_id where tp.user_id = p_uid
+  ),
+  sheets as (select distinct m.team from mp m),
+  sc as (                -- picks on finished games: rh / gh are null when that part wasn't picked
+    select m.*, m.home_score + m.away_score as tot,
+      (case when m.pick is null then null else m.pick =
+        (case when (case when m.home = m.team then m.home_score else m.away_score end)
+                 > (case when m.home = m.team then m.away_score else m.home_score end) then 'W'
+              when m.period_type = 'REG' then 'L' else 'OTL' end) end) as rh,
+      (case when m.goals is null then null else m.goals = m.home_score + m.away_score end) as gh
+    from mp m where m.period_type is not null and m.home_score is not null and m.away_score is not null
+  ),
+  res as (select * from sc where sc.rh is not null),
+  pts as (select s.*, (case when s.rh then 1 else 0 end) + (case when s.gh then 1 else 0 end) as p
+          from sc s where s.rh is not null or s.gh is not null),
+  -- longest run of right results on one sheet (stars)
+  srun as (select r.team, r.rh, sum(case when r.rh then 0 else 1 end) over (partition by r.team order by r.start_utc, r.game_id) as grp from res r),
+  star as (select coalesce(max(x.n), 0) as n from (select s.team, s.grp, count(*) filter (where s.rh) as n from srun s group by s.team, s.grp) x),
+  -- longest run of games with a point, across sheets in game order (Point Streak)
+  prun as (select q.p, sum(case when q.p > 0 then 0 else 1 end) over (order by q.start_utc, q.team) as grp from pts q),
+  pstreak as (select coalesce(max(x.n), 0) as n from (select r.grp, count(*) filter (where r.p > 0) as n from prun r group by r.grp) x),
+  -- longest run of 2-point games on one sheet (Natural Hat Trick)
+  nrun as (select q.team, q.p, sum(case when q.p = 2 then 0 else 1 end) over (partition by q.team order by q.start_utc, q.game_id) as grp from pts q),
+  nat as (select coalesce(max(x.n), 0) as n from (select r.team, r.grp, count(*) filter (where r.p = 2) as n from nrun r group by r.team, r.grp) x),
+  sheetpts as (select coalesce(max(x.t), 0) as n from (select q.team, sum(q.p) as t from pts q group by q.team) x),
+  -- every game of each sheet's team, and whether it has both a result and goals picked
+  fullp as (
+    select s.team, g.game_id, g.game_date, (g.period_type is not null or g.start_utc <= now()) as started,
+      exists (select 1 from mp m where m.team = s.team and m.game_id = g.game_id and m.pick is not null and m.goals is not null) as ok
+    from sheets s join sg g on g.home = s.team or g.away = s.team
+  ),
+  fill as (select f.team, count(*) as n, count(*) filter (where f.ok) as k from fullp f group by f.team),
+  -- weeks (Monday to Sunday) with picks on games that have started, and the longest run of them (Iron Man)
+  wk as (select distinct date_trunc('week', m.game_date)::date as w from mp m where m.started),
+  wkg as (select k.w, k.w - (7 * row_number() over (order by k.w))::int as grp from wk k),
+  iron as (select coalesce(max(x.c), 0) as n from (select g.grp, count(*) as c from wkg g group by g.grp) x),
+  -- neutral-site games: outdoor (Winter Classic, Stadium Series, Heritage Classic) or overseas (Global Series)
+  big as (
+    select (case
+      when not coalesce(m.neutral_site, false) then null
+      when coalesce(m.venue, '') ~* '(stadium|field|park|bowl)' and coalesce(m.venue, '') !~* 'dome' then
+        (case when (extract(month from m.game_date) = 12 and extract(day from m.game_date) >= 30)
+                or (extract(month from m.game_date) = 1 and extract(day from m.game_date) <= 3) then 'winterclassic'
+              when extract(month from m.game_date) between 1 and 3 then 'stadiumseries'
+              when m.home in ('CGY','EDM','MTL','OTT','TOR','VAN','WPG') then 'heritageclassic'
+              else 'outdoor' end)
+      else 'globalseries' end) as k
+    from mp m where m.started
+  ),
+  hon as (select h.badge, h.n from public.badge_honours(p_season) h where lower(h.username) = lower(uname)),
+  hn as (select h.badge, coalesce(max(h.n), 0) as n, count(*) as c from hon h group by h.badge),
+  graded as (select count(*) as n, coalesce(sum(q.p), 0) as pts from pts q),
+  season_done as (       -- every game of this player's sheets' teams is final (or postponed)
+    select coalesce(bool_and(g.period_type is not null or g.schedule_state = 'PPD'), false) as done
+    from sg g where exists (select 1 from sheets s where s.team = g.home or s.team = g.away)
+  )
+  select v.b::text from (values
+    ('inaugural',       true),
+    ('faceoff',         exists (select 1 from mp)),
+    ('season2627',      exists (select 1 from mp)),
+    ('hattrick',        exists (select 1 from res r where r.rh group by r.team having count(distinct r.pick) = 3)),
+    ('star3',           (select n from star) >= 3),
+    ('star2',           (select n from star) >= 5),
+    ('star1',           (select n from star) >= 10),
+    ('topshelf',        exists (select 1 from sc s where s.rh and s.gh)),
+    ('lamp',            (select count(*) from sc s where s.gh) >= 5),
+    ('shutout',         exists (select 1 from res r group by r.game_date having count(*) >= 3 and bool_and(r.rh))),
+    ('overtime',        exists (select 1 from res r where r.pick = 'OTL' and r.rh)),
+    ('shootout',        exists (select 1 from res r where r.period_type = 'SO' and r.rh)),
+    ('fullsheet',       exists (select 1 from fill f where f.n > 0 and f.k = f.n)),
+    ('original6',       (select count(*) from sheets s where s.team in ('BOS','CHI','DET','MTL','NYR','TOR')) = 6),
+    ('barnstormer',     (select count(distinct t.div) from sheets s join tm t on t.team = s.team) = 4),
+    ('pointstreak',     (select n from pstreak) >= 10),
+    ('captain',         exists (select 1 from hn where hn.badge = 'captain')),
+    ('mvp',             exists (select 1 from hn where hn.badge = 'mvp')),
+    ('playerweek',      exists (select 1 from hn where hn.badge = 'playerweek')),
+    ('playermonth',     exists (select 1 from hn where hn.badge = 'playermonth')),
+    ('dynasty',         coalesce((select c from hn where hn.badge = 'playerweek'), 0) >= 3),
+    ('monthlydynasty',  coalesce((select c from hn where hn.badge = 'playermonth'), 0) >= 3),
+    ('ironman',         (select n from iron) >= 4),
+    ('earlybird',       coalesce((select n from hn where hn.badge = 'earlybird'), 0) >= 10),
+    ('buzzer',          coalesce((select n from hn where hn.badge = 'buzzer'), 0) >= 1),
+    ('fullslate',       exists (select 1 from fullp f group by date_trunc('week', f.game_date)
+                                having count(*) >= 3 and bool_and(f.started) and bool_and(f.ok))),
+    ('halfseason',      exists (select 1 from fill f where f.n > 0 and f.k >= ceil(f.n / 2.0))),
+    ('openingnight',    exists (select 1 from mp m where m.started and m.game_date = (select min(g.game_date) from sg g))),
+    ('winterclassic',   exists (select 1 from big where big.k = 'winterclassic')),
+    ('heritageclassic', exists (select 1 from big where big.k = 'heritageclassic')),
+    ('stadiumseries',   exists (select 1 from big where big.k = 'stadiumseries')),
+    ('globalseries',    exists (select 1 from big where big.k = 'globalseries')),
+    ('numberonefan',    fav is not null and exists (select 1 from sheets s where s.team = fav)),
+    ('mixedfeelings',   lst is not null and exists (select 1 from sheets s where s.team = lst)),
+    ('naturalhattrick', (select n from nat) >= 3),
+    ('roadwarrior',     (select count(*) from res r where r.pick = 'W' and r.rh and r.away = r.team) >= 5),
+    ('goalfest',        exists (select 1 from sc s where s.gh and s.tot >= 9)),
+    ('goalieduel',      exists (select 1 from sc s where s.gh and s.tot <= 3)),
+    ('perfectweek',     exists (select 1 from res r group by date_trunc('week', r.game_date) having count(*) >= 5 and bool_and(r.rh))),
+    ('ocanada',         (select count(*) from sheets s where s.team in ('CGY','EDM','MTL','OTT','TOR','VAN','WPG')) = 7),
+    ('divisionchamp',   exists (select 1 from sheets s join tm t on t.team = s.team group by t.div having count(*) = 8)),
+    ('commissioner',    (select count(*) from sheets) >= 32),
+    ('pt20',            (select n from sheetpts) >= 20),
+    ('pt50',            (select n from sheetpts) >= 50),
+    ('pt100',           (select n from sheetpts) >= 100),
+    ('ppg',             (select done from season_done) and (select n from graded) > 0
+                        and (select pts from graded)::numeric / (select n from graded) >= 1),
+    ('recruiter',       coalesce((select n from hn where hn.badge = 'recruiter'), 0) >= 1),
+    ('talentscout',     coalesce((select n from hn where hn.badge = 'recruiter'), 0) >= 3),
+    ('firstshift',      coalesce((select n from hn where hn.badge = 'breakawayruns'), 0) >= 1),
+    ('rinkrat',         coalesce((select n from hn where hn.badge = 'breakawayruns'), 0) >= 100),
+    ('dangler',         coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 250),
+    ('dekemaster',      coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 500),
+    ('coasttocoast',    coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 1000),
+    ('highlightreel',   coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 2000),
+    ('breakawaychamp',  exists (select 1 from hn where hn.badge = 'breakawaychamp'))
+  ) as v(b, ok) where v.ok
+  union all
+  select r.id::text from riv r where exists (select 1 from sheets s where s.team = r.a) and exists (select 1 from sheets s where s.team = r.b);
+end $$;
+revoke all on function public.badges_earned(uuid, text) from public, anon, authenticated;
+
+-- Pay any badge rewards a player hasn't had yet; returns the new ones.
+create or replace function public.award_badge_chiclets(p_uid uuid)
+returns table (badge text, amount int)
+language plpgsql volatile security definer set search_path = '' as $$
+#variable_conflict use_column
+begin
+  if p_uid is null then return; end if;
+  return query
+  insert into public.chiclet_awards as a (user_id, badge, amount)
+  select p_uid, e.b, public.badge_reward(e.b)
+  from public.badges_earned(p_uid) as e(b)
+  where public.badge_reward(e.b) > 0
+  on conflict (user_id, badge) do nothing
+  returning a.badge, a.amount;
+end $$;
+revoke all on function public.award_badge_chiclets(uuid) from public, anon, authenticated;
+
+-- The signed-in player: called by the site when it loads their badges.
+create or replace function public.claim_badge_chiclets()
+returns table (badge text, amount int)
+language sql volatile security definer set search_path = '' as $$
+  select * from public.award_badge_chiclets(auth.uid());
+$$;
+revoke all on function public.claim_badge_chiclets() from public, anon;
+grant execute on function public.claim_badge_chiclets() to authenticated;
+
+-- Everyone with a profile: run by the GitHub Action (secret key) after each score update.
+create or replace function public.award_all_badge_chiclets()
+returns int
+language plpgsql volatile security definer set search_path = '' as $$
+declare
+  u record;
+  total int := 0;
+  c int;
+begin
+  for u in select p.user_id from public.profiles p loop
+    select count(*) into c from public.award_badge_chiclets(u.user_id);
+    total := total + c;
+  end loop;
+  return total;
+end $$;
+revoke all on function public.award_all_badge_chiclets() from public, anon, authenticated;
+grant execute on function public.award_all_badge_chiclets() to service_role;
+
+notify pgrst, 'reload schema';

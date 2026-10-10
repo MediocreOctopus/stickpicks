@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-09">
+<link rel="stylesheet" href="styles.css?v=2026-12-10">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -54,14 +54,15 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <main>
     <!-- How you earn and lose them: closed until tapped -->
     <details class="bgroup ch-how">
-      <summary class="bgroup-head"><span>How it works</span><small>+1 · +2 · +5 · −1</small></summary>
+      <summary class="bgroup-head"><span>How it works</span><small>Picks · badges</small></summary>
       <div class="ch-rules">
         <div class="ch-rule"><b class="up">+1</b><span>Each right result (W, L or OTL)</span></div>
         <div class="ch-rule"><b class="up">+2</b><span>Each exact combined-goals pick</span></div>
         <div class="ch-rule"><b class="up">+5</b><span>A perfect night: 3+ games on one day, every result right</span></div>
+        <div class="ch-rule"><b class="up">+5 to +25</b><span>Each badge you earn: navy +5, red +10, gold +25</span></div>
         <div class="ch-rule"><b class="down">−1</b><span>Each skipped game on a sheet you’ve started (at most −5 a week)</span></div>
       </div>
-      <p class="ch-more">Never below 0. Free to earn, no cash value, and soon you can spend them on profile extras. <a href="rules.html#chiclets">Full rules</a></p>
+      <p class="ch-more">A game picked on two sheets pays once, only if both picks are right. Never below 0. Free to earn, no cash value. <a href="rules.html#chiclets">Full rules</a></p>
     </details>
 
     <!-- The statement: every change, newest first, grouped by month -->
@@ -76,8 +77,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-09"></script>
-<script src="teams.js?v=2026-12-09"></script>
+<script src="config.js?v=2026-12-10"></script>
+<script src="teams.js?v=2026-12-10"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -102,6 +103,7 @@ async function start(){
   const {data:me}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
   if(me?.username) rememberMe(me.username, avatarFromProfile(me));
   if(!me?.username){ setBalance(0); return note("", 'Choose a username in <a href="profile.html#settings">Settings</a> to start earning Chiclets.'); }
+  await claimBadgeChiclets(sb);   // any badge rewards due show up in the statement right away
   const {data,error}=await sb.rpc("chiclets_ledger",{p_username:me.username});
   if(error){ $("chBal").textContent=""; return note("Couldn’t load your Chiclets right now. Please try again in a moment."); }
   rows=(data||[]).slice().reverse();   // newest first
@@ -122,8 +124,11 @@ function render(){
     if(m!==month){ month=m; const h=document.createElement("h3"); h.className="st-month"; h.textContent=m; list=document.createElement("ul"); list.className="st-list"; out.push(h,list); }
     const li=document.createElement("li"); li.className="st-row";
     const dt=document.createElement("span"); dt.className="st-date"; dt.textContent=d.toLocaleDateString([], {month:"short",day:"numeric"});
-    const what=document.createElement("span"); what.className="st-what"; what.textContent=r.note;
-    const bits=[]; if(r.home && r.away) bits.push(`${r.away} at ${r.home}`); if(r.team) bits.push(`${TEAMS[r.team]?.name||r.team} sheet`);
+    const what=document.createElement("span"); what.className="st-what";
+    const bits=[];
+    if(r.kind==="badge"){ what.textContent=`${BADGE_BY_ID[r.note]?.name||"Badge"} badge`; bits.push("Badge reward"); }
+    else what.textContent=r.note;
+    if(r.home && r.away) bits.push(`${r.away} at ${r.home}`); if(r.team) bits.push(`${TEAMS[r.team]?.name||r.team} sheet`);
     if(bits.length){ const sm=document.createElement("small"); sm.textContent=bits.join(" · "); what.append(sm); }
     const dl=document.createElement("b"); dl.className="st-delta "+(r.delta>0?"up":"down"); dl.textContent=(r.delta>0?"+":"−")+Math.abs(r.delta);
     const bal=document.createElement("span"); bal.className="st-bal"; bal.textContent=Number(r.balance).toLocaleString();

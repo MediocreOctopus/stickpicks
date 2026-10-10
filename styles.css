@@ -1052,6 +1052,7 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .bdlg-state.is-earned{color:var(--win)}
 .bdlg-body p{margin:4px 0 6px;font:italic .95rem/1.5 var(--serif)}
 .bdlg-body .bprog{width:100%;text-align:left}
+.bdlg-body .bdlg-worth{display:inline-flex;align-items:center;gap:4px;margin:2px 0 6px;font:600 .8rem var(--display);letter-spacing:.1em;text-transform:uppercase}
 .bdlg-body .sharebtn{margin-top:10px}
 /* Profile: trophy case (5 rarest), Next up, and a link to the Badges page */
 .pf-sub{font:600 .75rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}

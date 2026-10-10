@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-09">
+<link rel="stylesheet" href="styles.css?v=2026-12-10">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -142,9 +142,11 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li><b>+1</b> for each right result (W, L or OTL).</li>
         <li><b>+2</b> for each exact combined-goals pick.</li>
         <li><b>+5</b> for a perfect night: at least 3 games on one day, with every result right.</li>
+        <li><b>+5, +10 or +25</b> for each badge you earn: navy badges +5, red +10, gold +25 (Rivalry Night badges +5). Each badge pays once. Bad habits badges pay nothing.</li>
+        <li><b>One payout per game:</b> if you pick the same game on two sheets (both teams), it pays once, and only for what both picks got right.</li>
         <li><b>−1</b> for each game you skip on a sheet you’ve started, from your first pick onward, but never more than −5 in one week (Monday to Sunday). Your balance never drops below 0.</li>
       </ul>
-      <p>You need a username to earn Chiclets. Your count is in the top-right corner of the home, Pick Teams, Leaderboard and profile pages; tap it to open your <a href="chiclets.html">Chiclets statement</a>, a list of every Chiclet gained or lost. Other players can see your total. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
+      <p>You need a username to earn Chiclets. Your count is in the top-right corner of the home, Pick Teams, Leaderboard, Intermission and profile pages; tap it to open your <a href="chiclets.html">Chiclets statement</a>, a list of every Chiclet gained or lost. Other players can see your total. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
     </details>
 
     <section id="faq">
@@ -170,7 +172,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-12-09"></script>
+<script src="teams.js?v=2026-12-10"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section
