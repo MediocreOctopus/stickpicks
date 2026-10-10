@@ -68,15 +68,15 @@
   }
 
   /* ───── Periods: the game gets harder as it goes ───── */
-  // 1st (0–299), 2nd (300–699), 3rd (700–1,199), then overtime. Each period brings more obstacles, tighter and
+  // 1st (0–499), 2nd (500–999), 3rd (1,000–1,499), then overtime. Each period brings more obstacles, tighter and
   // steadier gaps, faster shots, and more you can only duck: slap shots, "point shots" (a barrage of pucks too
   // high to jump), and combos (jump something, then a shot arrives just after you land).
   // The speed and scoring don't change, so posted scores stay comparable (and pass the server's check).
   const PERIODS=[
     {at:0,    name:"1ST", call:"",           mix:{pucks:.34,cones:.3,net:.2,slap:.16,barrage:0,  combo:0  }, minGap:.8,  spread:.9,  breather:.15, shot:1.18},
-    {at:300,  name:"2ND", call:"2ND PERIOD", mix:{pucks:.2,cones:.2,net:.16,slap:.22,barrage:.1,combo:.12}, minGap:.74, spread:.62, breather:.1,  shot:1.24},
-    {at:700,  name:"3RD", call:"3RD PERIOD", mix:{pucks:.16,cones:.14,net:.12,slap:.24,barrage:.16,combo:.18}, minGap:.72, spread:.48, breather:.07, shot:1.3},
-    {at:1200, name:"OT",  call:"OVERTIME",   mix:{pucks:.14,cones:.14,net:.14,slap:.2,barrage:.18,combo:.2 }, minGap:.7,  spread:.38, breather:.05, shot:1.36},
+    {at:500,  name:"2ND", call:"2ND PERIOD", mix:{pucks:.2,cones:.2,net:.16,slap:.22,barrage:.1,combo:.12}, minGap:.74, spread:.62, breather:.1,  shot:1.24},
+    {at:1000, name:"3RD", call:"3RD PERIOD", mix:{pucks:.16,cones:.14,net:.12,slap:.24,barrage:.16,combo:.18}, minGap:.72, spread:.48, breather:.07, shot:1.3},
+    {at:1500, name:"OT",  call:"OVERTIME",   mix:{pucks:.14,cones:.14,net:.14,slap:.2,barrage:.18,combo:.2 }, minGap:.7,  spread:.38, breather:.05, shot:1.36},
   ];
   let per=0, callout={text:"",until:0}, lastGround=-9, lastShot=-9;   // when the last ground obstacle / shot reaches the skater (game time)
   const periodFor=s=>PERIODS.reduce((k,p,i)=>s>=p.at?i:k,0);
