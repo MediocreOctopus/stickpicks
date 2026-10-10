@@ -370,6 +370,8 @@ function starArt(fill, ink, n){
 // The year shown on the Inaugural Season banner: the year the player whose badges are showing joined
 // (set by computeBadges; this year until it's known).
 let BADGE_JOIN_YEAR=null;
+// The favourite team whose sweater the #1 Fan patch wears (set by computeBadges; brand red until it's known).
+let BADGE_FAV_TEAM=null;
 const BADGES=[
   {id:"inaugural", name:"Inaugural Season", ring:"navy", how:"Create your stickpicks profile.",
    // a felt rafter banner, like a championship banner hanging from the rafters, with the year you joined
@@ -505,10 +507,29 @@ BADGES.push(
    art:`<circle cx="32" cy="31" r="13.5" fill="${BI.p}" stroke="${BI.n}" stroke-width="2.2"/><ellipse cx="32" cy="31" rx="6" ry="13.5" fill="none" stroke="${BI.n}" stroke-width="1.5"/>`+
        `<path d="M18.5 31h27M20.4 24.2h23.2M20.4 37.8h23.2" stroke="${BI.n}" stroke-width="1.3"/><path d="M32 17.5v27" stroke="${BI.n}" stroke-width="1.5"/>`+
        `<circle cx="25.6" cy="26.4" r="2.2" fill="${BI.r}"/><circle cx="38.6" cy="27.4" r="2.2" fill="${BI.r}"/><path d="M25.6 26.4Q32 20.5 38.6 27.4" fill="none" stroke="${BI.r}" stroke-width="1.3" stroke-dasharray="1.6 1.4"/>`},
-  {id:"rivalry", name:"Rivalry Night", ring:"red", how:"Start sheets for both sides of a rivalry, like the Battle of Alberta (EDM and CGY) or the Battle of Ontario (TOR and OTT).",
-   // VS on a split patch
-   art:`<path d="M32 17a14 14 0 0 0 0 28Z" fill="${BI.n}"/><path d="M32 17a14 14 0 0 1 0 28Z" fill="${BI.r}"/><path d="M35.5 15.5L29.5 31h5L28.5 47" fill="none" stroke="${BI.c}" stroke-width="2.2" stroke-linejoin="round"/>`+
-       bText("V",24.6,35.5,11,BI.c)+bText("S",39.6,35.5,11,BI.c)},
+  // ── Collector: your own teams (set in profile Settings) ──
+  {id:"numberonefan", name:"#1 Fan", ring:"red", how:"Start a sheet for your favorite team (set it in Settings on your profile).",
+   // the profile-picture sweater (the same drawing as JERSEY_DEFS) in the player's favourite team's colours, number 1
+   // (brand red with cream stripes until they pick a favourite)
+   art:()=>{ const t=TEAMS[BADGE_FAV_TEAM];
+     const j1=t ? t.board : BI.r, j2=t ? (t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)) : BI.c;
+     return `<g transform="translate(8.5 9.2) scale(.47)">`+
+       `<clipPath id="spFanSlR"><polygon points="69,12 93,31 82,47 74,41"/></clipPath><clipPath id="spFanSlL"><polygon points="31,12 7,31 18,47 26,41"/></clipPath>`+
+       `<path d="M31 12 L44 7 Q50 15 56 7 L69 12 L93 31 L82 47 L74 41 L74 93 L26 93 L26 41 L18 47 L7 31 Z" fill="${j1}"/>`+
+       `<g clip-path="url(#spFanSlR)" fill="${j2}"><polygon points="95.06,22.71 75,51.89 72.53,50.19 92.59,21.01"/><polygon points="90.94,19.88 70.88,49.06 68.41,47.36 88.47,18.18"/></g>`+
+       `<g clip-path="url(#spFanSlL)" fill="${j2}"><polygon points="4.94,22.71 25,51.89 27.47,50.19 7.41,21.01"/><polygon points="9.06,19.88 29.12,49.06 31.59,47.36 11.53,18.18"/></g>`+
+       `<rect x="26" y="82" width="48" height="3" fill="${j2}"/><rect x="26" y="87" width="48" height="3" fill="${j2}"/>`+
+       `<path d="M44 7 Q50 15 56 7" fill="none" stroke="${j2}" stroke-width="3"/>`+
+       `<text x="50" y="70" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="600" font-size="30" letter-spacing="-.6" fill="${inkOn(j1)}">1</text></g>`; }},
+  {id:"mixedfeelings", name:"Mixed Feelings", ring:"navy", how:"Start a sheet for your least favorite team (set it in Settings on your profile).",
+   // a felt heart patch torn in two: a red half and a navy half, each still edged with cream stitching,
+   // and loose threads hanging across the tear
+   art:(()=>{ const L="M32 47C18 37 12 27 15.6 21C19 15.4 27 15.6 32 21.6L29.4 27L34.4 31.6L29.8 36.6L33.2 41.6Z",
+                    R="M32 21.6C37 15.6 45 15.4 48.4 21C52 27 46 37 32 47L33.2 41.6L29.8 36.6L34.4 31.6L29.4 27Z";
+     const half=(d,fill,cx,move)=>`<g transform="${move}"><path d="${d}" fill="${fill}"/>`+
+       `<path d="${d}" transform="translate(${cx} 31) scale(.8) translate(${-cx} -31)" fill="none" stroke="${BI.c}" stroke-width="1" stroke-dasharray="1.8 1.4" stroke-linejoin="round"/></g>`;
+     return half(L,BI.r,23,"rotate(-4 24 47) translate(-1.8 0)")+half(R,BI.n,41,"rotate(4 40 47) translate(1.8 0)")+
+       `<path d="M29.6 27.4q2.2 1.8 4.4-.2M30.4 36q2.2 1.6 4.2-.4M28.4 32.2q1.6 2.6.4 4.6" fill="none" stroke="${BI.c}" stroke-width=".8" stroke-linecap="round"/>`; })()},
   // ── Skill ──
   {id:"naturalhattrick", name:"Natural Hat Trick", ring:"gold", how:"Get the result and the exact goals right in 3 games in a row on one sheet.",
    art:bPuck(32,19.5)+bPuck(25.6,30)+bPuck(38.4,30)+`<path d="M18 42.5h28" stroke="${BI.r}" stroke-width="2.4" stroke-linecap="round"/>`+bText("3",32,47.6,5.8,BI.n)},
@@ -565,6 +586,16 @@ BADGES.push(
    // an invitation envelope with a wax seal
    art:`<rect x="16.5" y="21" width="31" height="21" rx="1.6" fill="${BI.p}" stroke="${BI.n}" stroke-width="1.8"/><path d="M17.2 22l14.8 11.4L46.8 22" fill="none" stroke="${BI.n}" stroke-width="1.8" stroke-linejoin="round"/>`+
        `<circle cx="32" cy="33.6" r="4.4" fill="${BI.r}"/>`+bStar(32,33.6,2.4,BI.c)},
+  {id:"talentscout", name:"Talent Scout", ring:"red", how:"Invite 3 friends who join stickpicks (use Invite friends).",
+   // a scout's binoculars: two barrels widening to the big front lenses, small eyepieces on top, the centre hinge
+   // with a red focus wheel, rubber grip bands, and glinting glass
+   art:(()=>{ const barrel=`<rect x="18.6" y="13.8" width="7.6" height="5" rx="1.2" fill="#33476A"/>`+
+       `<path d="M18.4 18.6h8l2.6 23.2q0 2.8-2.8 2.8h-8.4q-2.8 0-2.8-2.8Z" fill="${BI.n}"/>`+
+       `<path d="M17.6 30.4h10.2" stroke="#33476A" stroke-width="2.6"/>`+
+       `<ellipse cx="22.2" cy="43.2" rx="6.2" ry="2.4" fill="#9FC6DC" stroke="${BI.s}" stroke-width="1.2"/><path d="M18.6 42.6q1.6-1.2 3.6-1.2" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>`;
+     return barrel+`<g transform="translate(64 0) scale(-1 1)">${barrel}</g>`+
+       `<rect x="27.4" y="22.4" width="9.2" height="5.4" rx="1.2" fill="${BI.n}"/><rect x="29.4" y="20" width="5.2" height="13" rx="2.6" fill="#33476A"/>`+
+       `<rect x="28.8" y="16.4" width="6.4" height="3.8" rx="1" fill="${BI.r}"/><path d="M30.4 16.6v3.4M32 16.6v3.4M33.6 16.6v3.4" stroke="#7E1518" stroke-width=".7"/>`; })()},
   // ── Breakaway (the Intermission game; scores posted while signed in) ──
   {id:"firstshift", name:"First Shift", ring:"navy", how:"Play a game of Breakaway while signed in.",
    // a puck flying, with speed lines
@@ -602,10 +633,42 @@ BADGES.push(
    art:`<path d="M24 22l-1.6-7 5.2 3.6L32 13l4.4 5.6 5.2-3.6-1.6 7Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1.1" stroke-linejoin="round"/>`+
        `<rect x="15" y="24" width="34" height="19" rx="2.2" fill="${BI.n}"/>`+bText("HI",22.4,36.6,6.4,"#E9C46A")+bText("#1",37.4,38.6,12,"#E8463F")},
 );
+// Rivalry Night: one badge per rivalry, for starting sheets for both teams. Each patch is split down the middle in
+// the two teams' colours, with their codes and a lightning bolt between them.
+const RIVALRIES=[
+  {id:"riv_alberta",    name:"Battle of Alberta",      a:"EDM", b:"CGY"},
+  {id:"riv_ontario",    name:"Battle of Ontario",      a:"TOR", b:"OTT"},
+  {id:"riv_penn",       name:"Battle of Pennsylvania", a:"PHI", b:"PIT"},
+  {id:"riv_florida",    name:"Battle of Florida",      a:"FLA", b:"TBL"},
+  {id:"riv_newyork",    name:"Battle of New York",     a:"NYR", b:"NYI"},
+  {id:"riv_hudson",     name:"Hudson River Rivalry",   a:"NYR", b:"NJD"},
+  {id:"riv_habsleafs",  name:"Habs vs. Leafs",         a:"MTL", b:"TOR"},
+  {id:"riv_bruinshabs", name:"Bruins vs. Habs",        a:"BOS", b:"MTL"},
+  {id:"riv_hawkswings", name:"Hawks vs. Wings",        a:"CHI", b:"DET"},
+  {id:"riv_avswings",   name:"Avs vs. Wings",          a:"COL", b:"DET"},
+  {id:"riv_freeway",    name:"Freeway Faceoff",        a:"LAK", b:"ANA"},
+  {id:"riv_capspens",   name:"Caps vs. Pens",          a:"WSH", b:"PIT"},
+  {id:"riv_bluehawks",  name:"Blues vs. Hawks",        a:"STL", b:"CHI"},
+  {id:"riv_cascadia",   name:"Cascadia Clash",         a:"SEA", b:"VAN"},
+  {id:"riv_cryptids",   name:"Battle of the Cryptids", a:"SEA", b:"NJD"},   // the Kraken and the Jersey Devil
+  {id:"riv_whalersnords", name:"Whalers vs. Nordiques", a:"CAR", b:"COL"},  // the old Hartford and Quebec clubs, now Carolina and Colorado
+];
+// The patch splits on a slant: each team's colour on its side of a stitched cream seam, team codes in the
+// corners, and a navy "VS" medallion where the two sides meet.
+function rivalryArt(a,b){
+  const A=TEAMS[a].board, B=TEAMS[b].board, ink=c=>firstReadable(c,["#FFFFFF","#111111"],3);
+  // the split fills the whole felt centre of the patch, right up to the stitched ring
+  const r=25.4, t=20*Math.PI/180, x1=(32+r*Math.sin(t)).toFixed(2), y1=(32-r*Math.cos(t)).toFixed(2), x2=(32-r*Math.sin(t)).toFixed(2), y2=(32+r*Math.cos(t)).toFixed(2);
+  return `<path d="M${x1} ${y1}A${r} ${r} 0 0 0 ${x2} ${y2}Z" fill="${A}"/><path d="M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}Z" fill="${B}"/>`+
+    `<path d="M${x1} ${y1}L${x2} ${y2}" stroke="${BI.n}" stroke-width="2.8"/><path d="M${x1} ${y1}L${x2} ${y2}" stroke="${BI.c}" stroke-width="1.2" stroke-dasharray="2.4 1.8"/>`+
+    bText(a,19.2,27.6,8.8,ink(A),'letter-spacing=".2"')+bText(b,44.8,43.6,8.8,ink(B),'letter-spacing=".2"')+
+    `<circle cx="32" cy="32" r="6.8" fill="${BI.n}" stroke="${BI.c}" stroke-width="1.1"/>`+bText("VS",32,34.7,7,BI.c,'letter-spacing=".3"');
+}
+RIVALRIES.forEach(r=>BADGES.push({id:r.id, name:r.name, ring:"red", how:`Start sheets for the ${TEAMS[r.a].name} and the ${TEAMS[r.b].name}.`, art:rivalryArt(r.a,r.b)}));
 // The order badges are listed on profiles: joining, everyday, scoring, habit, collecting, events, then the big ones.
 const BADGE_SHOW=["inaugural","faceoff","season2627","openingnight","hattrick","naturalhattrick","star3","star2","star1","topshelf","lamp","goalfest","goalieduel",
-  "overtime","shootout","roadwarrior","shutout","perfectweek","earlybird","buzzer","ironman","fullslate","halfseason","fullsheet","original6","ocanada","rivalry",
-  "barnstormer","divisionchamp","commissioner","winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter",
+  "overtime","shootout","roadwarrior","shutout","perfectweek","earlybird","buzzer","ironman","fullslate","halfseason","fullsheet","original6","ocanada","numberonefan","mixedfeelings",
+  "barnstormer","divisionchamp","commissioner",...RIVALRIES.map(r=>r.id),"winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter","talentscout",
   "firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp",
   "pt20","pt50","monthlydynasty","seasondynasty","ppg","minor","doubleminor","major","misconduct","ejection"];
 BADGES.sort((a,b)=>BADGE_SHOW.indexOf(a.id)-BADGE_SHOW.indexOf(b.id));
@@ -628,7 +691,11 @@ function badgeEl(id, px=56, earned=true){
 // joined: when their profile was made (Inaugural Season, and the year on its banner)
 const ORIGINAL_SIX=["BOS","CHI","DET","MTL","NYR","TOR"];
 function computeBadges(picks, games, board, who, joined, honours, firstDay){
+  // joined is the profile's created_at, or {created_at, fav, least} with the favourite and least favourite teams
+  const prof = joined && typeof joined==="object" ? joined : {created_at:joined};
+  joined = prof.created_at||null;
   BADGE_JOIN_YEAR = joined ? new Date(joined).getFullYear() : null;
+  BADGE_FAV_TEAM = prof.fav||null;
   const G=new Map(games.map(g=>[Number(g.game_id),g]));
   const sheets=[...new Set(picks.map(p=>p.team))];
   const scored=[];
@@ -727,8 +794,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const wkRes={}; results.forEach(x=>{ const w=weekOf(x.g.game_date); (wkRes[w]=wkRes[w]||[]).push(x.sc.outcomeHit); });
   const perfBest=Object.values(wkRes).reduce((m,a)=>a.every(Boolean)?Math.max(m,a.length):m,0);
   const CANADA=["CGY","EDM","MTL","OTT","TOR","VAN","WPG"], can=CANADA.filter(t=>sheets.includes(t)).length;
-  const RIVALS=[["EDM","CGY"],["TOR","OTT"],["PHI","PIT"],["FLA","TBL"],["MTL","TOR"],["BOS","MTL"],["NYR","NYI"],["NYR","NJD"],["CHI","DET"],["COL","DET"],["LAK","ANA"],["VAN","SEA"],["WSH","PIT"],["CHI","STL"],["DAL","STL"]];
-  const rival=RIVALS.reduce((m,pair)=>Math.max(m,pair.filter(t=>sheets.includes(t)).length),0);
+  const rivalSides=r=>[r.a,r.b].filter(t=>sheets.includes(t)).length;   // Rivalry Night: sheets started for each side
   const divBest=DIVISIONS.reduce((m,d)=>Math.max(m,sheets.filter(t=>TEAMS[t]?.div===d).length),0);
   const sheetPts={}; scored.forEach(x=>sheetPts[x.p.team]=(sheetPts[x.p.team]||0)+x.sc.points);
   const topSheet=Math.max(0,...Object.values(sheetPts));
@@ -784,7 +850,10 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     heritageclassic: onKind("heritageclassic"),
     stadiumseries: onKind("stadiumseries"),
     globalseries: onKind("globalseries"),
-    rivalry: rival===2,
+    numberonefan: !!prof.fav && sheets.includes(prof.fav),
+    mixedfeelings: !!prof.least && sheets.includes(prof.least),
+    talentscout: hN("recruiter")>=3,
+    ...Object.fromEntries(RIVALRIES.map(r=>[r.id, rivalSides(r)===2])),
     naturalhattrick: nat>=3,
     roadwarrior: road>=5,
     goalfest: fest,
@@ -850,7 +919,10 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     heritageclassic:[0,1,"pick on the Heritage Classic"],
     stadiumseries:[0,1,"pick on a Stadium Series game"],
     globalseries:[0,1,"pick on a Global Series game"],
-    rivalry:[rival,2,"sides of one rivalry"],
+    numberonefan:[prof.fav && sheets.includes(prof.fav)?1:0,1, prof.fav ? `${TEAMS[prof.fav]?.name||prof.fav} sheet started` : "favorite team chosen and its sheet started"],
+    mixedfeelings:[prof.least && sheets.includes(prof.least)?1:0,1, prof.least ? `${TEAMS[prof.least]?.name||prof.least} sheet started` : "least favorite team chosen and its sheet started"],
+    talentscout:[Math.min(hN("recruiter"),3),3,"friends who joined from your invitations"],
+    ...Object.fromEntries(RIVALRIES.map(r=>[r.id,[rivalSides(r),2,`sheets started (${r.a} and ${r.b})`]])),
     naturalhattrick:[Math.min(nat,3),3,"2-point games in a row on one sheet"],
     roadwarrior:[Math.min(road,5),5,"road wins called right"],
     goalfest:[0,1,"exact goals in a 9+ goal game"],
@@ -886,8 +958,8 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
 
 // Roughly easiest to hardest, for "Badges in reach" on the home page.
 // (Badges you can't chase any more, or only win at the end, like Opening Night and MVP, sit last.)
-const BADGE_ORDER=["inaugural","faceoff","season2627","star3","topshelf","rivalry","overtime","goalieduel","hattrick","shootout","barnstormer","earlybird","ironman","fullslate",
-  "lamp","roadwarrior","goalfest","star2","original6","ocanada","heritageclassic","winterclassic","stadiumseries","globalseries","buzzer","shutout","recruiter","halfseason","captain",
+const BADGE_ORDER=["inaugural","faceoff","season2627","numberonefan","star3","topshelf",...RIVALRIES.map(r=>r.id),"mixedfeelings","overtime","goalieduel","hattrick","shootout","barnstormer","earlybird","ironman","fullslate",
+  "lamp","roadwarrior","goalfest","star2","original6","ocanada","heritageclassic","winterclassic","stadiumseries","globalseries","buzzer","shutout","recruiter","halfseason","talentscout","captain",
   "divisionchamp","naturalhattrick","perfectweek","playerweek","pointstreak","star1","playermonth","dynasty","fullsheet","pt100","commissioner","mvp","openingnight"];
 // Breakaway badges, easiest first, slot in after the pick badges of similar difficulty
 BADGE_ORDER.splice(3,0,"firstshift"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("lamp"),0,"dangler","rinkrat"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("captain"),0,"dekemaster");
@@ -905,11 +977,12 @@ const BADGE_GROUPS=[
   {name:"Streaks", ids:["star3","star2","star1","pointstreak","shutout","perfectweek"]},
   {name:"Habits", ids:["earlybird","buzzer","ironman","fullslate","halfseason","fullsheet"]},
   {name:"Bad habits", ids:["minor","doubleminor","major","misconduct","ejection"]},
-  {name:"Collector", ids:["original6","ocanada","rivalry","barnstormer","divisionchamp","commissioner"]},
+  {name:"Collector", ids:["numberonefan","mixedfeelings","original6","ocanada","barnstormer","divisionchamp","commissioner"]},
+  {name:"Rivalry Night", ids:RIVALRIES.map(r=>r.id)},
   {name:"Big games", ids:["heritageclassic","winterclassic","stadiumseries","globalseries"]},
   {name:"Leaderboard honours", ids:["playerweek","playermonth","dynasty","monthlydynasty","seasondynasty","captain","pt20","pt50","pt100","mvp"]},
   {name:"Breakaway", ids:["firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"]},
-  {name:"Social", ids:["recruiter"]},
+  {name:"Social", ids:["recruiter","talentscout"]},
 ];
 // Rarest first: gold rings, then red, then navy; within a ring, hardest first (BADGE_ORDER, reversed).
 function rarestBadges(ids, n){
@@ -979,11 +1052,12 @@ function refreshHonours(){ honoursReq=null; }   // after something changes them 
 function seasonHonours(sb){
   return honoursReq ||= sb.rpc("badge_honours",{p_season:SEASON}).then(({data,error})=>error ? null : data||[]).catch(()=>null);
 }
-// When a player's profile was made (for Inaugural Season), or null.
+// When a player's profile was made (for Inaugural Season) and their favourite and least favourite teams
+// (for #1 Fan and Mixed Feelings), or null.
 async function profileJoined(sb, username){
   if(!username) return null;
-  const {data}=await sb.from("profiles").select("created_at").ilike("username", username.replace(/[\\%_]/g,"\\$&")).maybeSingle();
-  return data?.created_at||null;
+  const {data}=await sb.from("profiles").select("created_at,fav_team,least_team").ilike("username", username.replace(/[\\%_]/g,"\\$&")).maybeSingle();
+  return data ? {created_at:data.created_at, fav:data.fav_team||null, least:data.least_team||null} : null;
 }
 // Another player's badges, from what anyone can see: their revealed picks (upcoming ones count as made).
 async function playerBadges(sb, username, board){
@@ -1040,12 +1114,12 @@ const BADGE_BRAG={
   dynasty:"was Player of the Week 3 times", ironman:"made picks 4 weeks in a row", earlybird:"made 10 picks a day or more before puck drop",
   buzzer:"called a result right with a pick made in the last 5 minutes before puck drop", fullslate:"picked every game on all my sheets for a whole week",
   halfseason:"picked half a team’s season on one sheet", openingnight:"made a pick on Opening Night", winterclassic:"made a pick on the Winter Classic", heritageclassic:"made a pick on the Heritage Classic",
-  stadiumseries:"made a pick on a Stadium Series game", globalseries:"made a pick on a Global Series game", rivalry:"picked both sides of a rivalry",
+  stadiumseries:"made a pick on a Stadium Series game", globalseries:"made a pick on a Global Series game", numberonefan:"started a sheet for my favorite team", mixedfeelings:"started a sheet for my least favorite team",
   naturalhattrick:"nailed the result and the exact goals 3 games in a row", roadwarrior:"called 5 road wins right",
   goalfest:"nailed the exact goals in a 9+ goal game", goalieduel:"nailed the exact goals in a game with 3 or fewer goals",
   perfectweek:"got every result right for a whole week", ocanada:"started sheets for all 7 Canadian teams",
   divisionchamp:"started sheets for a whole division", commissioner:"started sheets for all 32 teams",
-  pt100:"scored 100 points on one sheet", recruiter:"brought a friend to stickpicks",
+  pt100:"scored 100 points on one sheet", recruiter:"brought a friend to stickpicks", talentscout:"brought 3 friends to stickpicks",
   firstshift:"played my first game of Breakaway", dangler:"scored 250 in Breakaway", dekemaster:"scored 500 in Breakaway",
   coasttocoast:"scored 1,000 in Breakaway", highlightreel:"scored 2,000 in Breakaway", rinkrat:"played 100 games of Breakaway",
   breakawaychamp:"took the #1 score on the Breakaway leaderboard",
@@ -1054,6 +1128,7 @@ const BADGE_BRAG={
   ppg:"finished the season with a point a game", minor:"took a 2-minute minor for missing 5 games",
   doubleminor:"took a double minor for missing 10 games", major:"took a 5-minute major for missing 20 games",
   misconduct:"took a 10-minute misconduct for missing 50 games", ejection:"got ejected for missing every game on a sheet" };
+RIVALRIES.forEach(r=>{ BADGE_BRAG[r.id]=`picked both sides of the ${r.name.startsWith("Battle")||r.name.endsWith("Rivalry")||r.name.endsWith("Faceoff")||r.name.endsWith("Clash") ? r.name : r.name+" rivalry"}`; });
 
 function badgeSpec(id, who){
   const b=BADGE_BY_ID[id];

@@ -143,7 +143,7 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 59 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges. The profile shows a trophy case of your **5 rarest** badges (gold rings first, then red, then navy; hardest first within a ring), the 3 you're closest to under **Next up**, and **See all badges**, which opens `badges.html`. That page lists all of them in 10 groups (Getting started, Calling games, Streaks, Habits, Bad habits, Collector, Big games, Leaderboard honours, Breakaway, Social), each with its own count, plus All / Earned / Not yet filters. Tap a patch for a card with how to earn it, a progress bar, and Share for badges you've earned. `badges.html?user=Name` shows another player's, and `&badge=id` opens one badge's card. The groups are `BADGE_GROUPS` in `teams.js`.
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 77 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges. The profile shows a trophy case of your **5 rarest** badges (gold rings first, then red, then navy; hardest first within a ring), the 3 you're closest to under **Next up**, and **See all badges**, which opens `badges.html`. That page lists all of them in 11 groups (Getting started, Calling games, Streaks, Habits, Bad habits, Collector, Rivalry Night, Big games, Leaderboard honours, Breakaway, Social), each with its own count, plus All / Earned / Not yet filters. Tap a patch for a card with how to earn it, a progress bar, and Share for badges you've earned. `badges.html?user=Name` shows another player's, and `&badge=id` opens one badge's card. The groups are `BADGE_GROUPS` in `teams.js`.
 
 | Badge | How to earn it |
 |---|---|
@@ -177,7 +177,9 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Half Season | Half of a team's games picked on one sheet |
 | Opening Night | A pick on the season's first night of games |
 | Winter Classic / Heritage Classic / Stadium Series / Global Series | A pick on that game (found from neutral-site games: outdoor stadiums around New Year's, the fall outdoor game in Canada, other outdoor games Jan–Mar, and games overseas) |
-| Rivalry Night | Sheets for both sides of a rivalry (Battle of Alberta, Battle of Ontario, Battle of Pennsylvania, and more) |
+| Rivalry Night (a group of 16) | One badge per rivalry, for starting sheets for both teams: Battle of Alberta, Battle of Ontario, Battle of Pennsylvania, Battle of Florida, Battle of New York, Hudson River Rivalry, Habs vs. Leafs, Bruins vs. Habs, Hawks vs. Wings, Avs vs. Wings, Freeway Faceoff, Caps vs. Pens, Blues vs. Hawks, Cascadia Clash, Battle of the Cryptids (SEA vs. NJD), Whalers vs. Nordiques (CAR vs. COL) (`RIVALRIES` in `teams.js`; add a line there to add one) |
+| #1 Fan / Mixed Feelings | Start a sheet for your favorite / least favorite team (set in profile Settings) |
+| Talent Scout | 3 friends you invited create accounts |
 | Natural Hat Trick | 2-point games (result and exact goals) 3 in a row on one sheet |
 | Road Warrior | 5 road wins called right |
 | Goal Fest | Exact goals in a game with 9+ goals |
