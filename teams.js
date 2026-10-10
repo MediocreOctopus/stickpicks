@@ -1320,6 +1320,17 @@ function chicletIcon(px=16){
   return s;
 }
 const chicletsText=n=>`${Number(n||0).toLocaleString()} Chiclet${Number(n)===1?"":"s"}`;
+// The Chiclets counter (home top bar, profile banner): a pill with the tooth and the balance. With href it's a
+// button to the Chiclets page (balance and statement); without, just the count (another player's profile).
+function chicletChip(n, href, cls=""){
+  const el=document.createElement(href?"a":"span"); el.className=("chiclet-chip "+cls).trim();
+  if(href) el.href=href;
+  const b=document.createElement("b"); b.textContent=Number(n||0).toLocaleString();
+  el.append(chicletIcon(18), b);
+  el.title=chicletsText(n);
+  el.setAttribute("aria-label", href ? `${chicletsText(n)}. See your Chiclets statement.` : chicletsText(n));
+  return el;
+}
 async function chicletBalance(sb, username){
   if(!sb || !username) return null;
   const {data,error}=await sb.rpc("chiclets_balance",{p_username:username});

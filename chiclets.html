@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" class="home chicletspage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chiclets · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Your stickpicks Chiclets: free points earned by picking NHL games well. Your balance and every Chiclet gained or lost.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="Chiclets · stickpicks">
+<meta property="og:description" content="Free points earned by picking NHL games well.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=2026-12-07">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+    </div>
+  </nav>
+
+  <!-- Sweater banner: the balance -->
+  <header class="teams-banner badges-banner ch-banner">
+    <small class="tb-kicker" id="chKicker">2026–27 season</small>
+    <h1>Chiclets</h1>
+    <p class="ch-bal" id="chBal">Loading…</p>
+    <a class="bb-back" href="profile.html">Back to your profile</a>
+  </header>
+
+  <main>
+    <!-- How you earn and lose them -->
+    <section class="bgroup" aria-labelledby="howTitle">
+      <h2 class="bgroup-head" id="howTitle"><span>How it works</span><small>Free to earn</small></h2>
+      <div class="ch-rules">
+        <div class="ch-rule"><b class="up">+1</b><span>Each right result (W, L or OTL)</span></div>
+        <div class="ch-rule"><b class="up">+2</b><span>Each exact combined-goals pick</span></div>
+        <div class="ch-rule"><b class="up">+5</b><span>A perfect night: 3+ games on one day, every result right</span></div>
+        <div class="ch-rule"><b class="down">−1</b><span>Each skipped game on a sheet you’ve started (at most −5 a week)</span></div>
+      </div>
+      <p class="ch-more">Your balance never drops below 0. Chiclets can’t be bought with real money and have no cash value. Soon you’ll be able to spend them on fun extras like profile borders and retro sweaters. <a href="rules.html#chiclets">Full rules</a></p>
+    </section>
+
+    <!-- The statement: every change, newest first, grouped by month -->
+    <section class="bgroup" aria-labelledby="stTitle">
+      <h2 class="bgroup-head" id="stTitle"><span>Statement</span><small id="stCount"></small></h2>
+      <div id="stBody"><p class="hint st-empty">Loading…</p></div>
+    </section>
+  </main>
+
+  <footer>Chiclets are free, have no cash value, and never change your leaderboard score. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-12-07"></script>
+<script src="teams.js?v=2026-12-07"></script>
+<script>
+const sb = makeClient();
+const $ = id => document.getElementById(id);
+mountTeamMenu($("teamMenu"));
+const PAGE=60;   // statement rows shown at first; "Show older" adds more
+let rows=[], shown=PAGE;
+
+function note(text, html){ const p=document.createElement("p"); p.className="hint st-empty"; html ? p.innerHTML=html : p.textContent=text; $("stBody").replaceChildren(p); }
+function setBalance(n){
+  const b=document.createElement("b"); b.textContent=Number(n||0).toLocaleString();
+  const t=document.createElement("span"); t.textContent=Number(n)===1 ? "Chiclet" : "Chiclets";
+  $("chBal").replaceChildren(chicletIcon(40), b, t);
+}
+
+async function start(){
+  if(!sb){ $("chBal").textContent=""; return note("Database not connected yet: add your Supabase URL and key to config.js (see README)."); }
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){
+    $("chBal").textContent="Free points for picking well.";
+    document.querySelector(".bb-back").classList.add("hidden");
+    return note("", '<a href="index.html#signin">Sign in</a> to see your Chiclets and your statement.');
+  }
+  const {data:me}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
+  if(me?.username) rememberMe(me.username, avatarFromProfile(me));
+  if(!me?.username){ setBalance(0); return note("", 'Choose a username in <a href="profile.html#settings">Settings</a> to start earning Chiclets.'); }
+  const {data,error}=await sb.rpc("chiclets_ledger",{p_username:me.username});
+  if(error){ $("chBal").textContent=""; return note("Couldn’t load your Chiclets right now. Please try again in a moment."); }
+  rows=(data||[]).slice().reverse();   // newest first
+  setBalance(rows.length ? rows[0].balance : 0);
+  render();
+}
+
+function render(){
+  const body=$("stBody");
+  $("stCount").textContent = rows.length ? `${rows.length} entr${rows.length===1?"y":"ies"}` : "";
+  if(!rows.length) return note("Nothing yet. Your first Chiclets arrive when a game you picked goes final.");
+  const earned=rows.filter(r=>r.delta>0).reduce((s,r)=>s+r.delta,0), lost=rows.filter(r=>r.delta<0).reduce((s,r)=>s-r.delta,0);
+  const sum=document.createElement("div"); sum.className="st-sum";
+  sum.innerHTML=`<span>Earned <b class="up">+${earned.toLocaleString()}</b></span><span>Lost <b class="${lost?"down":""}">${lost?"−":""}${lost.toLocaleString()}</b></span><span>Balance <b>${Number(rows[0].balance).toLocaleString()}</b></span>`;
+  const out=[sum];
+  const head=document.createElement("div"); head.className="st-row st-head"; head.setAttribute("aria-hidden","true");
+  head.innerHTML="<span>Date</span><span>What</span><span>Change</span><span>Total</span>";
+  out.push(head);
+  let month=null, list=null;
+  rows.slice(0,shown).forEach(r=>{
+    const d=new Date(r.at), m=d.toLocaleDateString([], {month:"long",year:"numeric"});
+    if(m!==month){ month=m; const h=document.createElement("h3"); h.className="st-month"; h.textContent=m; list=document.createElement("ul"); list.className="st-list"; out.push(h,list); }
+    const li=document.createElement("li"); li.className="st-row";
+    const dt=document.createElement("span"); dt.className="st-date"; dt.textContent=d.toLocaleDateString([], {month:"short",day:"numeric"});
+    const what=document.createElement("span"); what.className="st-what"; what.textContent=r.note;
+    const bits=[]; if(r.home && r.away) bits.push(`${r.away} at ${r.home}`); if(r.team) bits.push(`${TEAMS[r.team]?.name||r.team} sheet`);
+    if(bits.length){ const sm=document.createElement("small"); sm.textContent=bits.join(" · "); what.append(sm); }
+    const dl=document.createElement("b"); dl.className="st-delta "+(r.delta>0?"up":"down"); dl.textContent=(r.delta>0?"+":"−")+Math.abs(r.delta);
+    const bal=document.createElement("span"); bal.className="st-bal"; bal.textContent=Number(r.balance).toLocaleString();
+    li.setAttribute("aria-label", `${dt.textContent}: ${what.textContent}, ${r.delta>0?"plus":"minus"} ${Math.abs(r.delta)}, total ${r.balance}`);
+    li.append(dt, what, dl, bal); list.append(li);
+  });
+  if(rows.length>shown){
+    const more=document.createElement("button"); more.type="button"; more.className="btn ghost st-moreb"; more.textContent="Show older";
+    more.addEventListener("click",()=>{ shown+=PAGE; render(); });
+    out.push(more);
+  }
+  body.replaceChildren(...out);
+}
+start();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

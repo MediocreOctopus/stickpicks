@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-06">
+<link rel="stylesheet" href="styles.css?v=2026-12-07">
 </head>
 <body>
 
@@ -47,6 +47,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <a href="rules.html" class="navrules">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
       <a href="#account" class="navaccount" id="navAccount" data-me>Sign in</a>
+      <span class="navchiclets hidden" id="navChiclets"></span>
     </div>
   </nav>
 
@@ -84,7 +85,6 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <div class="acct-banner" aria-hidden="true">
         <span class="acct-face" id="acctFace"></span>
         <div class="acct-head"><small class="acct-kicker" id="acctKicker">stickpicks</small><span class="acct-title" id="acctTitle">Loading…</span></div>
-        <span class="acct-chiclets hidden" id="acctChiclets"></span>
       </div>
       <div id="pLoading"><p class="hint">Loading…</p></div>
 
@@ -209,8 +209,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-06"></script>
-<script src="teams.js?v=2026-12-06"></script>
+<script src="config.js?v=2026-12-07"></script>
+<script src="teams.js?v=2026-12-07"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -443,18 +443,16 @@ function setBanner(){
   const face=$("acctFace");
   face.replaceChildren(...(panelNow==="pSignedIn" && currentUser ? [avatarEl(avatarFromProfile(profile), name||"", 58)] : []));
   face.classList.toggle("hidden", !face.children.length);
-  if(!(panelNow==="pSignedIn" && name)) $("acctChiclets").classList.add("hidden");
+  if(!(panelNow==="pSignedIn" && name)) $("navChiclets").classList.add("hidden");
 }
-// Chiclets balance chip in the banner (signed in with a username)
+// Chiclets counter in the top-right corner (signed in with a username): a button to the Chiclets page
 function showChicletChip(){
-  const chip=$("acctChiclets"), who=profile?.username, uid=currentUser?.id;
-  if(!who) return chip.classList.add("hidden");
+  const box=$("navChiclets"), who=profile?.username, uid=currentUser?.id;
+  if(!who) return box.classList.add("hidden");
   chicletBalance(sb, who).then(n=>{
     if(n==null || currentUser?.id!==uid || panelNow!=="pSignedIn") return;
-    const b=document.createElement("b"); b.textContent=Number(n||0).toLocaleString();
-    chip.replaceChildren(chicletIcon(18), b);
-    chip.title=chicletsText(n);
-    chip.classList.remove("hidden");
+    box.replaceChildren(chicletChip(n, "chiclets.html"));
+    box.classList.remove("hidden");
   }).catch(()=>{});
 }
 function show(id){

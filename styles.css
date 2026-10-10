@@ -747,8 +747,11 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .pf-name{font:clamp(2.2rem,6vw,3rem)/1.1 "Yellowtail",cursive;color:var(--wool);word-break:break-word}
 .pf-est{font:600 .8rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:#B8C0CF;margin-top:6px}
 .pf-banner::after{content:"";display:block;height:14px;background:linear-gradient(to bottom,#E8463F 0 5px,transparent 5px 9px,var(--wool) 9px 14px)}
-.pf-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start;margin-top:18px}
-@media (max-width:760px){ .pf-grid{grid-template-columns:1fr} }
+/* One column; Settings (closed until opened from the banner) sits first, just under the banner */
+.pf-grid{display:flex;flex-direction:column;gap:18px;margin-top:18px}
+.pf-grid > *{min-width:0}
+.pf-settings-col{order:-1}
+.pf-settings-col[hidden]{display:none}
 .pf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media (max-width:900px){ .pf-stats{grid-template-columns:repeat(2,1fr)} }
 .pf-stat{background:var(--panel);border:2px solid var(--ink);border-radius:8px;padding:10px 12px}
@@ -949,7 +952,6 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .pf-acts{margin-left:auto}
 .pf-acts:empty{display:none}
 .pf-invite{background:var(--wool);border-color:var(--wool);color:var(--navy)}
-.pf-public .pf-acts{display:none}
 .you .you-share{margin-top:14px}
 .you .you-invite{display:flex;margin:10px auto 0;color:var(--board-ink)}
 .sharesheet{width:min(520px,calc(100% - 32px));padding:0;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);box-shadow:0 18px 44px rgba(0,0,0,.35)}
@@ -1089,7 +1091,7 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
   .pf-banner-in{grid-template-columns:auto minmax(0,1fr);gap:0 14px;padding:16px 14px 14px 38px}
   .pf-avatar .avatar{--av-size:64px !important}
   .pf-banner .pf-name{font-size:clamp(1.8rem,8vw,2.3rem)}
-  .pf-acts{grid-column:1 / -1;margin-top:12px}
+  .pf-acts{grid-column:1 / -1;margin-top:12px;justify-content:flex-start;max-width:none}
   .pf-acts .btn{width:100%}
   .pf-teams{gap:6px}
   .pf-team{flex:1 1 100%}
@@ -1101,21 +1103,59 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .askdlg .form-actions{justify-content:center;gap:10px}
 .askdlg .btn{min-width:96px}
 
-/* ───── Chiclets (free, earned-only points: the icon, the home banner chip, the profile card) ───── */
-.chiclet-ico{display:inline-flex;flex:none;width:var(--ch,16px);height:calc(var(--ch,16px) * 1.1);vertical-align:-.2em}
-.chiclet-ico svg{width:100%;height:100%;display:block}
-.acct-chiclets{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 9px;border-radius:999px;
-  background:rgba(239,230,210,.08);border:1px solid rgba(239,230,210,.25);color:var(--wool);white-space:nowrap}
-.acct-chiclets b{font:700 1rem var(--display);font-variant-numeric:tabular-nums;letter-spacing:.03em}
-.acct-chiclets.hidden{display:none}
-.ch-total{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.ch-total b{font:700 2.2rem/1 var(--display);font-variant-numeric:tabular-nums}
-.ch-total small{flex:1 1 200px;font:italic .9rem var(--serif);color:var(--muted)}
-.ch-list{list-style:none;margin:12px 0 0;padding:0;border-top:1px solid var(--line)}
-.ch-list.hidden{display:none}
-.ch-list li{display:flex;align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
-.ch-list li > b{flex:none;min-width:2.4em;text-align:right;font:700 1.05rem var(--display);font-variant-numeric:tabular-nums}
-.ch-list .up{color:var(--win)} .ch-list .down{color:var(--loss)}
-.ch-what{display:grid;min-width:0}
-.ch-what small{color:var(--muted);font-size:.8rem}
-.ch-how{display:inline-block;margin-top:12px;color:var(--ink);font-weight:600}
+/* ───── Chiclets (free, earned-only points: the tilted tooth, the counter chips, the Chiclets page) ───── */
+.chiclet-ico{display:inline-grid;place-items:center;flex:none;width:calc(var(--ch,16px) * 1.2);height:calc(var(--ch,16px) * 1.2);vertical-align:-.25em}
+.chiclet-ico svg{width:var(--ch,16px);height:calc(var(--ch,16px) * 1.1);display:block;transform:rotate(45deg)}
+/* The counter: a pill with the tooth and the count; a button (link) to the Chiclets page */
+.chiclet-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 12px 2px 6px;border-radius:999px;white-space:nowrap;text-decoration:none;
+  border:2px solid var(--ink);color:var(--ink);background:var(--panel)}
+.chiclet-chip b{font:700 1rem var(--display);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+a.chiclet-chip{transition:background .12s,color .12s,transform .12s}
+a.chiclet-chip:hover{background:var(--btn);border-color:var(--btn);color:var(--btn-ink);text-decoration:none}
+a.chiclet-chip:hover .chiclet-ico svg{transform:rotate(25deg)}
+.navchiclets{display:inline-flex}
+.navchiclets.hidden{display:none}
+/* Banner pills on the profile (Chiclets, Settings): felt on the navy banner */
+.pf-acts{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;max-width:250px}
+.pf-acts .pf-invitebox{flex:1 1 100%;display:flex}
+.pf-acts .pf-invitebox .btn{width:100%;justify-content:center}
+.pf-acts > span:empty{display:none}
+.pf-pill,.pf-acts .chiclet-chip{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:4px 14px 4px 8px;border-radius:999px;
+  background:rgba(239,230,210,.08);border:1px solid rgba(239,230,210,.3);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;text-decoration:none}
+.pf-pill svg{flex:none}
+.pf-pill.hidden{display:none}
+.pf-pill:hover,a.pf-pill:hover,.pf-pill[aria-expanded="true"]{background:var(--wool);border-color:var(--wool);color:var(--navy)}
+span.pf-pill{cursor:default}
+.pf-acts .chiclet-chip b{font-size:1.05rem;letter-spacing:.04em}
+/* Settings card: a header with Done; rows flow into two columns when there's room */
+.pf-settings{outline:none}
+.pf-sethead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;border-bottom:4px double var(--ink)}
+.pf-sethead h2{margin:0;padding-bottom:6px;border-bottom:0}
+.pf-setclose{margin-bottom:8px;padding:4px 14px;font-size:.8rem}
+.pf-rows{columns:2 340px;column-gap:36px}
+.pf-rows .pf-row{break-inside:avoid}
+.pf-rows .pf-row:first-child{padding-top:0}
+/* Chiclets page */
+.ch-banner .ch-bal{display:flex;align-items:center;gap:10px;margin:8px 0 0;font:italic 1rem var(--serif)}
+.ch-banner .ch-bal b{font:700 2.6rem/1 var(--display);font-style:normal;font-variant-numeric:tabular-nums}
+.ch-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;padding:14px}
+.ch-rule{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:baseline;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.ch-rule b{font:700 1.3rem var(--display);font-variant-numeric:tabular-nums}
+.ch-rule span{font-size:.92rem}
+.ch-more{margin:0;padding:0 14px 14px;font:italic .9rem var(--serif);color:var(--muted)}
+.ch-more a{color:var(--ink)}
+.st-delta.up,.st-sum .up,.ch-rule .up{color:var(--win)} .st-delta.down,.st-sum .down,.ch-rule .down{color:var(--loss)}
+.st-sum{display:flex;flex-wrap:wrap;gap:6px 22px;padding:12px 14px;border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.st-sum b{font-size:1rem;letter-spacing:.04em}
+.st-month{margin:0;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.st-list{list-style:none;margin:0;padding:0}
+.st-row{display:grid;grid-template-columns:3.6em minmax(0,1fr) auto 3em;gap:10px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--line)}
+.st-date{font:600 .78rem var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.st-what{display:grid;min-width:0}
+.st-what small{color:var(--muted);font-size:.82rem}
+.st-delta{font:700 1.1rem var(--display);font-variant-numeric:tabular-nums;text-align:right}
+.st-bal{font:600 .9rem var(--display);font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.st-head{padding-top:7px;padding-bottom:7px;font:600 .68rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.st-head span:nth-child(n+3){text-align:right}
+.st-empty{margin:0;padding:14px}
+.st-moreb{display:flex;margin:12px auto}

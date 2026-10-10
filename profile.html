@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-06">
+<link rel="stylesheet" href="styles.css?v=2026-12-07">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -73,7 +73,12 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <h1 class="pf-name" id="pfName"></h1>
             <div class="pf-est" id="pfEst"></div>
           </div>
-          <div class="pf-acts" id="pfActs"></div>
+          <!-- Chiclets counter (a button to the Chiclets page on your own profile), Settings, Invite friends -->
+          <div class="pf-acts" id="pfActs">
+            <span id="pfChiclets"></span>
+            <button class="pf-pill pf-setbtn hidden" type="button" id="setBtn" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="3.14 3.14"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>Settings</button>
+            <span class="pf-invitebox" id="pfInvite"></span>
+          </div>
           <div class="pf-teams hidden" id="pfTeams"></div>
         </div>
       </section>
@@ -86,13 +91,6 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <div class="pf-stat"><span class="pf-label">Points / game</span><b id="stPpg">—</b><small>max 2.00</small></div>
             <div class="pf-stat"><span class="pf-label">Hot streak</span><b id="stStreak">—</b><small id="stStreakBest">results right in a row</small></div>
           </div>
-          <!-- Chiclets: the balance (everyone), and the recent history (your own profile) -->
-          <section class="pf-card pf-chiclets" id="chiclets" style="margin-top:14px">
-            <h2>Chiclets</h2>
-            <div class="ch-total"><span id="chIcon"></span><b id="chBalance">—</b><small id="chNote">Loading…</small></div>
-            <ul class="ch-list hidden" id="chList"></ul>
-            <a class="ch-how" href="rules.html#chiclets">How do I earn Chiclets?</a>
-          </section>
           <section class="pf-card" style="margin-top:14px">
             <h2 id="pfSheetsTitle">Your sheets</h2>
             <ul class="mysheets" id="pfSheets"></ul>
@@ -103,9 +101,11 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
           </section>
         </div>
 
-        <div class="pf-settings-col">
-          <section class="pf-card" aria-label="Settings">
-            <h2>Settings</h2>
+        <!-- Settings: closed until you tap Settings in the banner; opens just under the banner -->
+        <div class="pf-settings-col" hidden>
+          <section class="pf-card pf-settings" id="settings" aria-labelledby="setTitle" tabindex="-1">
+            <div class="pf-sethead"><h2 id="setTitle">Settings</h2><button class="btn ghost pf-setclose" type="button" id="setClose">Done</button></div>
+            <div class="pf-rows">
 
             <div class="pf-row">
               <div class="pf-label">Profile picture</div>
@@ -210,6 +210,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
               </form>
               <p class="formmsg" id="delMsg" role="status"></p>
             </div>
+            </div>
           </section>
         </div>
       </div>
@@ -229,8 +230,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-06"></script>
-<script src="teams.js?v=2026-12-06"></script>
+<script src="config.js?v=2026-12-07"></script>
+<script src="teams.js?v=2026-12-07"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -269,8 +270,17 @@ function setName(name){
   $("delInput").placeholder = name || "";
   showAvatar();
   // Invite friends (your own profile, once you have a username)
-  $("pfActs").replaceChildren(...(name ? [shareButton("Invite friends", inviteSpec(name), "btn pf-invite")] : []));
+  $("pfInvite").replaceChildren(...(name ? [shareButton("Invite friends", inviteSpec(name), "btn pf-invite")] : []));
 }
+// Settings stay closed until you ask for them (the Settings button in the banner, or a link to #settings / #reminders)
+function openSettings(open=true, target){
+  const col=document.querySelector(".pf-settings-col");
+  col.hidden=!open; $("setBtn").setAttribute("aria-expanded", String(open));
+  if(open){ const el=target ? $(target) : $("settings"); el.scrollIntoView({block: target ? "center" : "start"}); if(!target) $("settings").focus({preventScroll:true}); }
+  else $("setBtn").focus();
+}
+$("setBtn").addEventListener("click",()=>openSettings($("setBtn").getAttribute("aria-expanded")!=="true"));
+$("setClose").addEventListener("click",()=>{ openSettings(false); $("pfIn").scrollIntoView({block:"start"}); });
 // The banner picture, the Me tab and the top-bar button all follow the saved picture.
 function showAvatar(){
   $("pfAvatar").replaceChildren(avatarEl(avatar, username||"?", 88));
@@ -288,32 +298,21 @@ async function load(session){
   setName(prof?.username||null);
   setTeams(prof?.fav_team||"", prof?.least_team||"");
   startPicker();
-  if(!prof) openUsername();
+  $("setBtn").classList.remove("hidden");
+  if(!prof){ openSettings(true); openUsername(); }
+  else if(location.hash==="#settings") openSettings(true);
+  else if(location.hash==="#reminders") openSettings(true, "reminders");
   syncLook(sb).then(markLook);
   showReminders();
   loadStats();
 }
 
-// Chiclets: the balance for anyone; your own profile also lists the most recent changes
+// Chiclets counter in the banner: a button to the Chiclets page on your own profile, just the count on someone else's
 async function showChiclets(who, own){
-  $("chIcon").replaceChildren(chicletIcon(30));
-  if(!who){ $("chBalance").textContent="0"; $("chNote").textContent="Choose a username to start earning Chiclets."; return; }
-  const ledger=await chicletLedger(sb, who), bal=ledger.length ? ledger[ledger.length-1].balance : 0;
-  $("chBalance").textContent=Number(bal).toLocaleString();
-  $("chNote").textContent = own ? "Earned from your picks. Free to earn, and they’ll buy cool stuff soon." : `${who}’s Chiclets, earned from picks.`;
-  const list=$("chList"); list.innerHTML="";
-  if(!own || !ledger.length){ list.classList.add("hidden"); return; }
-  const when=iso=>new Date(iso).toLocaleDateString([], {month:"short",day:"numeric"});
-  ledger.slice(-6).reverse().forEach(r=>{
-    const li=document.createElement("li");
-    const d=document.createElement("b"); d.className=r.delta>0?"up":"down"; d.textContent=(r.delta>0?"+":"−")+Math.abs(r.delta);
-    const t=document.createElement("span"); t.className="ch-what";
-    const game = r.home && r.away ? ` · ${r.away} at ${r.home}` : "";
-    t.textContent = r.note + game;
-    const sm=document.createElement("small"); sm.textContent = `${when(r.at)}${r.team ? " · "+(TEAMS[r.team]?.name||r.team)+" sheet" : ""}`;
-    t.append(sm); li.append(d,t); list.append(li);
-  });
-  list.classList.remove("hidden");
+  const box=$("pfChiclets");
+  if(!who) return box.replaceChildren();
+  const n=await chicletBalance(sb, who);
+  if(n!=null) box.replaceChildren(chicletChip(n, own ? "chiclets.html" : null, "pf-pill"));
 }
 
 async function loadStats(){
@@ -595,7 +594,6 @@ $("remToggle").addEventListener("click", async ()=>{
   await showReminders();
   if(err && !["blocked","ios-install","unsupported"].includes(err)) msg("remMsg", /function|does not exist/.test(err) ? "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : "Couldn’t turn on reminders: "+err, "err");
 });
-if(location.hash==="#reminders") addEventListener("load",()=>$("reminders").scrollIntoView({block:"center"}));
 
 $("signOut").addEventListener("click", async ()=>{ await disableReminders(sb).catch(()=>{}); await sb.auth.signOut(); forgetMe(); location.href="index.html"; });
 $("delStart").addEventListener("click",()=>{ $("delForm").classList.remove("hidden"); $("delStart").classList.add("hidden"); $("delInput").value=""; $("delInput").focus(); });

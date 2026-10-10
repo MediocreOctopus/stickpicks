@@ -11,6 +11,7 @@ rules.html                                  the rules and scoring explained, wit
 privacy.html                                the Privacy Policy and Terms of Use
 badges.html                                 every badge, in groups (yours, or ?user=Name for another player's)
 compare.html                                your sheet and another player's, side by side
+chiclets.html                               your Chiclets balance and statement
 intermission.html                           the Intermission page with the Breakaway game
 game.js                                     Breakaway, the hockey mini-game
 leaderboard.html                            the leaderboard
@@ -108,7 +109,7 @@ For each game on a sheet, a player makes two predictions: the outcome (W, L, or 
 
 On each sheet, every row uses − and + buttons (or typing) to set the goal total. Once a game is final, the row shows the result, the score, the goal total, and how many points the pick earned. The sheet's header shows your score with results and goals counted separately.
 
-To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from Settings on their profile page. Leaderboards show usernames, never email addresses.
+To appear on the leaderboard, a player needs a username (3–20 letters, numbers, or underscores, and unique). New players choose one when they create an account, and anyone can change theirs later from Settings on their profile page (Settings stays closed until the player taps **Settings** in the profile banner; links to `profile.html#settings` or `#reminders` open it). Leaderboards show usernames, never email addresses.
 
 - **Every sheet is ranked on its own.** A player who fills out the Kraken and Maple Leafs sheets has two separate entries, one for each team. Points are never added together across sheets.
 - **Team leaderboards:** choose a team to see everyone's sheets for that team.
@@ -202,7 +203,7 @@ Badges are worked out in the browser from picks and final scores (`BADGES` and `
 
 ## Chiclets
 
-Chiclets are free, earned-only points shown on the home page's account banner and on profiles (with your recent history on your own profile). Nothing is stored: `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time:
+Chiclets are free, earned-only points. A counter (a tilted tooth and the count) sits in the top-right corner of the home page and in the profile banner; on your own profile or the home page it's a button to `chiclets.html`, your balance and full statement (every Chiclet gained or lost, newest first, by month). On another player's profile it just shows their total. Nothing is stored: `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time:
 
 | Change | When |
 |---|---|

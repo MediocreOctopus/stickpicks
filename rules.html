@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-06">
+<link rel="stylesheet" href="styles.css?v=2026-12-07">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -144,7 +144,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li><b>+5</b> for a perfect night: at least 3 games on one day, with every result right.</li>
         <li><b>−1</b> for each game you skip on a sheet you’ve started, from your first pick onward, but never more than −5 in one week (Monday to Sunday). Your balance never drops below 0.</li>
       </ul>
-      <p>You need a username to earn Chiclets. Your balance is on the home page and your <a href="profile.html#chiclets">profile</a>, and other players can see your total. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
+      <p>You need a username to earn Chiclets. Your count is in the top corner of the home page and on your profile; tap it to open your <a href="chiclets.html">Chiclets statement</a>, a list of every Chiclet gained or lost. Other players can see your total. Chiclets are free: they can’t be bought with real money, and they have no cash value.</p>
     </details>
 
     <section id="faq">
@@ -155,7 +155,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <details><summary>When do points show up?</summary><p>Scores are checked every 15 minutes, so points usually appear within about half an hour of a game ending. The leaderboard refreshes on its own.</p></details>
       <details><summary>What are the W–L–OTL record and “standings pts” on my sheet?</summary><p>That’s your predicted season record for the team, using NHL standings points (2 for a win, 1 for an overtime loss). It’s just for fun and doesn’t affect your stickpicks score.</p></details>
       <details><summary>Can other players see my picks?</summary><p>Yes, once each game starts. Anyone can open your sheet from the leaderboard, but your picks for upcoming games stay hidden until puck drop, so nobody can copy them.</p></details>
-      <details><summary>Can I change my username?</summary><p>Yes, from Settings on your <a href="profile.html">profile</a> (the Me tab, or your name in the top bar). Your points stay with you.</p></details>
+      <details><summary>Can I change my username?</summary><p>Yes, from <a href="profile.html#settings">Settings</a> on your profile (open your profile from the Me tab or your name in the top bar, then tap <b>Settings</b>). Your points stay with you.</p></details>
       <details><summary>What are badges and streaks?</summary><p>Your profile shows your <b>Hot streak</b> (results right in a row, across all your sheets) and 77 badges you can earn, like <b>Player of the Week</b> and <b>Player of the Month</b> (#1 on a finished weekly or monthly board), <b>Iron Man</b> (picks 4 weeks in a row), <b>O, Canada</b> (all 7 Canadian teams), <b>Winter Classic</b> and <b>Heritage Classic</b> (a pick on those outdoor games), <b>Recruiter</b> (a friend you invited joins), Breakaway badges for your scores in the Intermission game, <b>Rookie</b> (your first pick), <b>Inaugural Season</b> (for joining, with the year you joined), <b>MVP</b> (#1 on the All-Teams leaderboard when the regular season ends), <b>Hat Trick</b> (a W, an L and an OTL called right on one sheet), the <b>3rd, 2nd and 1st Star</b> (3, 5 and 10 results right in a row on one sheet), and <b>Captain</b> (#1 on a team leaderboard at any point; it’s yours to keep). Each badge has a progress bar, and the home page shows the ones you’re closest to. They’re just for fun and don’t change your score.</p></details>
       <details><summary>Can I get a reminder before puck drop?</summary><p>Yes. Turn on <b>Puck-drop reminders</b> in Settings on your <a href="profile.html#reminders">profile</a>. About an hour before a game on one of your sheets, if its result or goals aren’t picked yet, you’ll get a notification. Turn it on for each device you use. On iPhone and iPad, add stickpicks to your Home Screen first (Share → Add to Home Screen), then turn it on in the app.</p></details>
       <details><summary>How do I share my results or invite friends?</summary><p>Look for the <b>Share</b> buttons: <b>Share my results</b> in “Since your last visit” on the home page, <b>Share my spot</b> on the leaderboard, and <b>Share</b> on a new badge or any badge you’ve earned on your profile. Each one makes a stickpicks picture card with a link. <b>Invite friends</b> (on the home page, your profile and the leaderboard) sends a link that tells them you invited them.</p></details>
@@ -170,7 +170,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-12-06"></script>
+<script src="teams.js?v=2026-12-07"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));
 // Links like rules.html#scoring open that section
