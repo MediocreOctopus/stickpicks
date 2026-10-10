@@ -686,7 +686,22 @@ function openShareSheet(spec, file){
   link("WhatsApp", `https://wa.me/?text=${enc(`${spec.text} ${spec.url}`)}`);
   link("X", `https://x.com/intent/post?text=${enc(spec.text)}&url=${enc(spec.url)}`);
   link("Facebook", `https://www.facebook.com/sharer/sharer.php?u=${enc(spec.url)}`);
-  if(file){ const a=document.createElement("a"); a.className="btn ghost"; a.textContent="Save picture"; a.href=URL.createObjectURL(file); a.download="stickpicks.png"; acts.append(a); }
+  if(file){
+    const pic=URL.createObjectURL(file);
+    // Instagram and TikTok have no "share this link" address, so: save the picture, copy the caption,
+    // and open the site so it's ready to post (the app's own share sheet does this on phones).
+    [["Instagram","https://www.instagram.com/"],["TikTok","https://www.tiktok.com/upload"]].forEach(([name,site])=>{
+      const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent=name;
+      b.addEventListener("click", async ()=>{
+        window.open(site,"_blank","noopener");   // first, while the tap still counts (pop-up blockers)
+        const a=document.createElement("a"); a.href=pic; a.download="stickpicks.png"; document.body.append(a); a.click(); a.remove();
+        let copied=false; try{ await navigator.clipboard.writeText(`${spec.text} ${spec.url}`); copied=true; }catch(e){}
+        status.textContent=`Picture saved${copied?" and caption copied":""}. Post it in ${name}${copied?" and paste the caption":""}.`;
+      });
+      acts.append(b);
+    });
+    const a=document.createElement("a"); a.className="btn ghost"; a.textContent="Save picture"; a.href=pic; a.download="stickpicks.png"; acts.append(a);
+  }
   body.append(acts, status); d.append(head, body);
   d.addEventListener("close",()=>d.remove());
   d.addEventListener("click",e=>{ if(e.target===d) d.close(); });   // click outside the box
