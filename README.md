@@ -188,7 +188,7 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Recruiter | A friend you invited creates an account |
 | First Shift | Play a game of Breakaway while signed in |
 | Dangler / Deke Master / Coast to Coast / Highlight Reel | Score 250 / 500 / 1,000 / 2,000 in Breakaway |
-| Rink Rat | Play 50 games of Breakaway (a game counts once it lasts more than 3 seconds and you jump or duck; shorter runs aren't posted) |
+| Rink Rat | Play 50 games of Breakaway |
 | Breakaway Champ | Hold the #1 score on the Breakaway leaderboard (it stays) |
 
 Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. The exceptions depend on everyone's results over time, or on when picks were made, so the database works them out (`badge_honours()` in `schema.sql`, section 16): Captain (it replays the season one game day at a time to find every sheet that has held a #1 spot), MVP (only once every regular-season game is final), Player of the Week and Month (finished weeks and months only), Early Bird and Buzzer Beater (from when each pick was last changed), Recruiter (from the private `invites` table, section 14, filled in when someone who arrived from an invitation link makes their profile), and the Breakaway badges (from `breakaway_scores`, section 15). Badges about games (Iron Man, Full Slate, Opening Night, the big-game badges) count only games that have started, so filling a sheet in advance doesn't earn them early. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.

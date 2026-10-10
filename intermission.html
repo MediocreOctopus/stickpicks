@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-30">
+<link rel="stylesheet" href="styles.css?v=2026-12-01">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -85,10 +85,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </div>
 <div class="hem" aria-hidden="true"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-30"></script>
-<script src="teams.js?v=2026-11-30"></script>
+<script src="config.js?v=2026-12-01"></script>
+<script src="teams.js?v=2026-12-01"></script>
 <script>mountTeamMenu(document.getElementById("teamMenu"));</script>
-<script src="game.js?v=2026-11-30"></script>
+<script src="game.js?v=2026-12-01"></script>
 <script>
 // Posts each finished run (signed in), shows the Breakaway leaderboard and your Breakaway badges.
 const sb=makeClient(), $=id=>document.getElementById(id);
@@ -154,7 +154,7 @@ addEventListener("breakaway:end", async e=>{
   if(!sb) return;
   if(!me?.username){ window.breakaway?.setNote(uid ? "Choose a username to post scores" : "Sign in to post your score"); return; }
   // a game counts once it lasts over 3 seconds and you've jumped or ducked (shorter runs aren't posted)
-  if(!e.detail.counted){ window.breakaway?.setNote("Too quick to count: play 3+ seconds and jump or duck"); return; }
+  if(!e.detail.counted){ window.breakaway?.setNote("That one didn’t count. Give it a real shift!"); return; }
   window.breakaway?.setNote("Posting your score…");
   const {data,error}=await sb.rpc("submit_breakaway",{p_score:e.detail.score, p_ms:e.detail.ms, p_season:SEASON});
   if(error){ window.breakaway?.setNote("Couldn’t post this score"); return; }
