@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-10">
+<link rel="stylesheet" href="styles.css?v=2026-12-11">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -76,6 +76,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li><b>Who invited you,</b> if you joined from a friend&rsquo;s invitation link (see Sharing and invitations below).</li>
         <li><b>Your favorite and least favorite teams,</b> if you choose them in Settings. They&rsquo;re shown on your profile.</li>
         <li><b>Breakaway scores,</b> if you play the Intermission game while signed in: your best score this season and how many games you&rsquo;ve played. Your best score and username appear on the Breakaway leaderboard.</li>
+        <li><b>Chiclets,</b> the free points you earn: which badge rewards you&rsquo;ve been paid, what you&rsquo;ve bought in the shop, and the border you&rsquo;re wearing. Your Chiclets total and the border you wear are shown to other players; your statement and purchases are only shown to you.</li>
         <li><b>Puck-drop reminders,</b> if you turn them on: an address your browser gives us for sending notifications to that device, and a note of which games we’ve already reminded you about, so you only get one reminder per game.</li>
       </ul>
       <p>We use this to run the game: to sign you in, save your picks, score them, show the leaderboards, profiles and badges, and send the emails and reminders you asked for. Emails are only for your account: confirming it, resetting your password, and confirming a new email address. We don’t send newsletters or marketing.</p>
@@ -134,7 +135,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <li>stickpicks is a free, fan-made prediction game. It is <b>not affiliated with, endorsed by, or sponsored by</b> the National Hockey League, any NHL team, the NHL Players’ Association, or ESPN.</li>
         <li>Team names are used only to say which team a sheet is for. All team names and trademarks belong to their owners. stickpicks uses no team logos, and its team colors are approximations.</li>
         <li>There is <b>no entry fee and no prizes</b>. Points, ranks and badges are just for fun and have no cash value. stickpicks is not a betting service, and nothing on it is betting advice.</li>
-        <li><b>Chiclets</b> are free points earned only by playing. They can’t be bought with real money, and they can’t be sold, transferred, or exchanged for cash or anything outside stickpicks. They have no cash value. Anything you get with Chiclets is a cosmetic extra on stickpicks only. We may adjust balances to fix errors or misuse, and we may change how Chiclets work.</li>
+        <li><b>Chiclets</b> are free points earned only by playing. They can’t be bought with real money, and they can’t be sold, transferred, or exchanged for cash or anything outside stickpicks. They have no cash value. Anything you get with Chiclets is a cosmetic extra on stickpicks only, and shop purchases are final (no refunds in Chiclets or anything else). We may adjust balances to fix errors or misuse, and we may change how Chiclets work.</li>
       </ul>
 
       <h3>Your account</h3>
@@ -180,7 +181,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="rules.html">Rules</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-12-10"></script>
+<script src="teams.js?v=2026-12-11"></script>
 <script>mountTeamMenu(document.getElementById("teamMenu"));</script>
 <!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
 <script>window.goatcounter={path:function(){var t=new URLSearchParams(location.search).get("team");return location.pathname+(t?"?team="+t:"")}};</script>

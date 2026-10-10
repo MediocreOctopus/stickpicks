@@ -678,18 +678,19 @@ grant execute on function public.badge_honours(text) to anon, authenticated;
 --       -1  each game missed on a sheet you've started (a game that started with no pick, after your
 --           first pick on that sheet), at most -5 a week (Monday to Sunday). The balance never goes below 0.
 --     chiclets_ledger() returns every change in order with the running balance; chiclets_balance() just the total.
---     (kind = 'pick' | 'night' | 'badge' | 'miss'; for 'badge', note is the badge id.)
-create or replace function public.chiclets_ledger(p_username text)
+--       -price  a shop purchase (section 19)
+--     (kind = 'pick' | 'night' | 'badge' | 'spend' | 'miss'; for 'badge' note is the badge id, for 'spend' the item id.)
+--     The statement is private: chiclets_ledger() only answers for the signed-in player's own username.
+--     Totals are public: chiclets_balance() works for anyone. Both use chiclets_ledger_uid(), which nobody calls directly.
+create or replace function public.chiclets_ledger_uid(uid uuid)
 returns table (at timestamptz, delta int, balance int, kind text, team text, home text, away text, note text)
 language plpgsql stable security definer set search_path = '' as $$
 #variable_conflict use_column
 declare
-  uid uuid;
   r record;
   bal int := 0;
   nb int;
 begin
-  select p.user_id into uid from public.profiles p where lower(p.username) = lower(p_username);
   if uid is null then return; end if;
   for r in
     with my as (select tp.team, tp.game_id, tp.pick, tp.goals from public.team_picks tp where tp.user_id = uid),
@@ -727,6 +728,10 @@ begin
       select a.awarded_at, a.amount, 'badge'::text, null::text, null::text, null::text, a.badge
       from public.chiclet_awards a where a.user_id = uid and a.amount > 0
     ),
+    spends as (          -- shop purchases (section 19); note is the item id
+      select s.bought_at, -s.price, 'spend'::text, null::text, null::text, null::text, s.item_id
+      from public.chiclet_spends s where s.user_id = uid
+    ),
     sheets as (select m.team, min(g.start_utc) as first_at from my m join public.games g on g.game_id = m.game_id group by m.team),
     missed as (
       select g.start_utc, g.game_date, s.team, g.home, g.away
@@ -736,7 +741,7 @@ begin
     ),
     capped as (select x.*, row_number() over (partition by date_trunc('week', x.game_date) order by x.start_utc) as k from missed x),
     loss as (select c.start_utc, -1, 'miss'::text, c.team, c.home, c.away, 'Missed pick on a started sheet' from capped c where c.k <= 5)
-    select * from earn union all select * from nights union all select * from badges union all select * from loss
+    select * from earn union all select * from nights union all select * from badges union all select * from spends union all select * from loss
     order by 1, 2 desc
   loop
     nb := greatest(0, bal + r.delta);
@@ -747,12 +752,22 @@ begin
     end if;
   end loop;
 end $$;
-revoke all on function public.chiclets_ledger(text) from public;
-grant execute on function public.chiclets_ledger(text) to anon, authenticated;
+revoke all on function public.chiclets_ledger_uid(uuid) from public, anon, authenticated;
+
+create or replace function public.chiclets_ledger(p_username text)
+returns table (at timestamptz, delta int, balance int, kind text, team text, home text, away text, note text)
+language sql stable security definer set search_path = '' as $$
+  select l.* from public.profiles p cross join lateral public.chiclets_ledger_uid(p.user_id) l
+  where lower(p.username) = lower(p_username) and p.user_id = auth.uid();
+$$;
+revoke all on function public.chiclets_ledger(text) from public, anon;
+grant execute on function public.chiclets_ledger(text) to authenticated;
 
 create or replace function public.chiclets_balance(p_username text)
 returns int language sql stable security definer set search_path = '' as $$
-  select coalesce((select l.balance from public.chiclets_ledger(p_username) with ordinality as l(at, delta, balance, kind, team, home, away, note, n)
+  select coalesce((select l.balance from public.profiles p
+                     cross join lateral public.chiclets_ledger_uid(p.user_id) with ordinality as l(at, delta, balance, kind, team, home, away, note, n)
+                   where lower(p.username) = lower(p_username)
                    order by l.n desc limit 1), 0);
 $$;
 revoke all on function public.chiclets_balance(text) from public;
@@ -979,5 +994,127 @@ begin
 end $$;
 revoke all on function public.award_all_badge_chiclets() from public, anon, authenticated;
 grant execute on function public.award_all_badge_chiclets() to service_role;
+
+-- 19) The Chiclets shop: cosmetic items only, bought with Chiclets (never real money).
+--     shop_items: what's for sale and the price (prices live here, so the browser can't change them).
+--       Tiers: starter 150, classic 400, premium 800, legendary 1500. available_from / available_to make an
+--       item limited-time (dates inclusive); active = false takes it out of the shop (owners keep it).
+--     chiclet_spends: what each player bought (one row per item; shown in their ledger as a spend).
+--     buy_item(): checks the item is on sale, not owned yet, and affordable, then records the purchase.
+--     equip_item(): wears an owned item (or takes it off). The worn border lives on profiles.border so every
+--       page that shows a profile picture can draw it; a trigger stops anyone setting it any other way.
+create table if not exists public.shop_items (
+  id              text primary key,
+  slot            text not null check (slot in ('border','sweater','skater')),
+  name            text not null,
+  blurb           text not null default '',
+  tier            text not null check (tier in ('starter','classic','premium','legendary')),
+  price           int not null check (price > 0),
+  sort            int not null default 0,
+  available_from  date,
+  available_to    date,
+  active          boolean not null default true
+);
+alter table public.shop_items enable row level security;
+drop policy if exists "Anyone can see the shop" on public.shop_items;
+create policy "Anyone can see the shop" on public.shop_items for select using (true);
+grant select on public.shop_items to anon, authenticated;
+
+insert into public.shop_items (id, slot, name, blurb, tier, price, sort) values
+  ('border_stitch',     'border', 'Stitched',     'A navy ring with cream stitching, like a sweater patch.',          'starter',   150, 10),
+  ('border_hem',        'border', 'Hem Stripes',  'Red, cream and red, like the hem of a home sweater.',              'starter',   150, 20),
+  ('border_team',       'border', 'Team Colors',  'Your favorite team''s colors (set your favorite team in Settings).', 'starter', 150, 30),
+  ('border_gold',       'border', 'Gold',         'A polished gold ring.',                                             'premium',   800, 40),
+  ('border_champion',   'border', 'Championship', 'Gold and red, like a championship banner.',                         'premium',   800, 50),
+  ('border_halloffame', 'border', 'Hall of Fame', 'Shimmering gold that never stops moving. For the true grinders.',  'legendary', 1500, 60)
+on conflict (id) do update set slot = excluded.slot, name = excluded.name, blurb = excluded.blurb, tier = excluded.tier,
+  price = excluded.price, sort = excluded.sort, available_from = excluded.available_from,
+  available_to = excluded.available_to, active = excluded.active;
+
+create table if not exists public.chiclet_spends (
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  item_id    text not null references public.shop_items(id),
+  price      int not null check (price > 0),
+  bought_at  timestamptz not null default now(),
+  primary key (user_id, item_id)
+);
+alter table public.chiclet_spends enable row level security;
+-- No policies: only buy_item() writes it; my_items() and the ledger read it.
+revoke all on public.chiclet_spends from anon, authenticated;
+
+-- The worn border (public, like the profile picture). Only equip_item() can change it.
+alter table public.profiles add column if not exists border text;
+create or replace function public.profiles_guard_cosmetics()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if coalesce(current_setting('stickpicks.equip', true), '') <> 'on' then
+    if tg_op = 'INSERT' then new.border := null;
+    elsif new.border is distinct from old.border then new.border := old.border;
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists profiles_guard_cosmetics on public.profiles;
+create trigger profiles_guard_cosmetics before insert or update on public.profiles
+  for each row execute function public.profiles_guard_cosmetics();
+
+-- What the signed-in player owns.
+create or replace function public.my_items()
+returns table (item_id text, bought_at timestamptz)
+language sql stable security definer set search_path = '' as $$
+  select s.item_id, s.bought_at from public.chiclet_spends s where s.user_id = auth.uid() order by s.bought_at;
+$$;
+revoke all on function public.my_items() from public, anon;
+grant execute on function public.my_items() to authenticated;
+
+create or replace function public.buy_item(p_item text)
+returns table (item_id text, price int, balance int)
+language plpgsql volatile security definer set search_path = '' as $$
+#variable_conflict use_column
+declare
+  uid uuid := auth.uid();
+  uname text;
+  it record;
+  bal int;
+begin
+  if uid is null then raise exception 'Sign in to shop.'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(uid::text, 19));   -- one purchase at a time per player
+  select p.username into uname from public.profiles p where p.user_id = uid;
+  if uname is null then raise exception 'Choose a username first.'; end if;
+  select * into it from public.shop_items s
+   where s.id = p_item and s.active
+     and (s.available_from is null or current_date >= s.available_from)
+     and (s.available_to is null or current_date <= s.available_to);
+  if not found then raise exception 'That item isn''t for sale right now.'; end if;
+  if exists (select 1 from public.chiclet_spends s where s.user_id = uid and s.item_id = p_item) then
+    raise exception 'You already own that.';
+  end if;
+  bal := public.chiclets_balance(uname);
+  if bal < it.price then raise exception 'Not enough Chiclets.'; end if;
+  insert into public.chiclet_spends (user_id, item_id, price) values (uid, it.id, it.price);
+  return query select it.id::text, it.price::int, public.chiclets_balance(uname);
+end $$;
+revoke all on function public.buy_item(text) from public, anon;
+grant execute on function public.buy_item(text) to authenticated;
+
+-- Wear an owned item in its slot, or take it off (p_item null).
+create or replace function public.equip_item(p_slot text, p_item text default null)
+returns void
+language plpgsql volatile security definer set search_path = '' as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  if p_slot <> 'border' then raise exception 'That can''t be worn yet.'; end if;
+  if p_item is not null and not exists (
+    select 1 from public.chiclet_spends s join public.shop_items i on i.id = s.item_id
+    where s.user_id = uid and s.item_id = p_item and i.slot = p_slot
+  ) then raise exception 'You don''t own that.'; end if;
+  perform set_config('stickpicks.equip', 'on', true);
+  update public.profiles set border = p_item where user_id = uid;
+  perform set_config('stickpicks.equip', 'off', true);
+end $$;
+revoke all on function public.equip_item(text, text) from public, anon;
+grant execute on function public.equip_item(text, text) to authenticated;
 
 notify pgrst, 'reload schema';

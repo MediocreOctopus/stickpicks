@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-10">
+<link rel="stylesheet" href="styles.css?v=2026-12-11">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -49,6 +49,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <div><small class="tb-kicker" id="chKicker">2026–27 season</small><h1>Chiclets</h1></div>
       <p class="ch-bal" id="chBal">Loading…</p>
     </div>
+    <a class="bb-back ch-shop" href="shop.html">Visit the shop</a>
   </header>
 
   <main>
@@ -77,14 +78,15 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-10"></script>
-<script src="teams.js?v=2026-12-10"></script>
+<script src="config.js?v=2026-12-11"></script>
+<script src="teams.js?v=2026-12-11"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
 mountTeamMenu($("teamMenu"));
 const PAGE=25;   // statement rows shown at first; "Show older" adds more
 let rows=[], shown=PAGE;
+const ITEM_NAMES={};
 
 function note(text, html){ const p=document.createElement("p"); p.className="hint st-empty"; html ? p.innerHTML=html : p.textContent=text; $("stBody").replaceChildren(p); }
 function setBalance(n){
@@ -107,6 +109,10 @@ async function start(){
   const {data,error}=await sb.rpc("chiclets_ledger",{p_username:me.username});
   if(error){ $("chBal").textContent=""; return note("Couldn’t load your Chiclets right now. Please try again in a moment."); }
   rows=(data||[]).slice().reverse();   // newest first
+  if(rows.some(r=>r.kind==="spend")){   // shop item names for purchases
+    const {data:it}=await sb.from("shop_items").select("id,name");
+    (it||[]).forEach(x=>ITEM_NAMES[x.id]=x.name);
+  }
   setBalance(rows.length ? rows[0].balance : 0);
   render();
 }
@@ -127,6 +133,7 @@ function render(){
     const what=document.createElement("span"); what.className="st-what";
     const bits=[];
     if(r.kind==="badge"){ what.textContent=`${BADGE_BY_ID[r.note]?.name||"Badge"} badge`; bits.push("Badge reward"); }
+    else if(r.kind==="spend"){ what.textContent=ITEM_NAMES[r.note]||"Shop item"; bits.push("Bought in the shop"); }
     else what.textContent=r.note;
     if(r.home && r.away) bits.push(`${r.away} at ${r.home}`); if(r.team) bits.push(`${TEAMS[r.team]?.name||r.team} sheet`);
     if(bits.length){ const sm=document.createElement("small"); sm.textContent=bits.join(" · "); what.append(sm); }

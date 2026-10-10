@@ -707,12 +707,27 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 }
 @media (max-width:420px){ .h2h .detail{display:none} .sh-seg button[data-short]{font-size:0} .sh-seg button[data-short]::after{content:attr(data-short);font-size:.74rem} }
 /* ───── Avatars: sweater (team + number), photo, or initial ───── */
-.avatar{--av-size:32px;width:var(--av-size);height:var(--av-size);flex:none;box-sizing:border-box;border-radius:50%;overflow:hidden;
-  display:inline-grid;place-items:center;vertical-align:middle;background:var(--wool);color:#9B1C1F;
+.avatar{--av-size:32px;--av-bg:var(--wool);width:var(--av-size);height:var(--av-size);flex:none;box-sizing:border-box;border-radius:50%;overflow:hidden;
+  display:inline-grid;place-items:center;vertical-align:middle;background:var(--av-bg);color:#9B1C1F;
   border:max(2px,calc(var(--av-size) * .045)) solid var(--av-ring,var(--gold));
   font:600 calc(var(--av-size) * .5)/1 var(--display);text-transform:uppercase;user-select:none}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block}
-.avatar-sweater{background:#F4EDDC}
+.avatar-sweater{--av-bg:#F4EDDC}
+/* Shop borders: a thicker ring painted behind the picture (the inside keeps its own background) */
+.avatar.av-b{border-width:max(3px,calc(var(--av-size) * .09));border-color:transparent;
+  background:linear-gradient(var(--av-bg),var(--av-bg)) padding-box, var(--av-frame,var(--gold)) border-box}
+.av-b-stitch{--av-frame:#1C2B45;box-shadow:0 0 0 1px rgba(244,237,220,.55);outline:max(1px,calc(var(--av-size) * .022)) dashed #F4EDDC;outline-offset:calc(var(--av-size) * -.066)}
+.av-b-hem{--av-frame:radial-gradient(circle closest-side,#C8302B 0 84%,#F4EDDC 84% 92%,#C8302B 92%)}
+.av-b-team{--av-frame:radial-gradient(circle closest-side,var(--bt1) 0 84%,var(--bt2) 84% 92%,var(--bt1) 92%)}
+.av-b-gold{--av-frame:conic-gradient(from 210deg,#8A6420,#F5D77A,#B8892E,#FFF0B3,#A87A24,#F5D77A,#8A6420);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
+.av-b-champion{--av-frame:radial-gradient(circle closest-side,#D9A33A 0 84%,#C8302B 84% 92%,#E9C46A 92%);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
+@property --av-spin{syntax:"<angle>";inherits:false;initial-value:0deg}
+.av-b-halloffame{--av-frame:conic-gradient(from var(--av-spin),#8A6420,#FFF6CF,#C9962E,#F5D77A,#7A5518,#FFF0B3,#B8892E,#8A6420);
+  box-shadow:0 0 calc(var(--av-size) * .14) rgba(233,196,106,.55),0 0 0 1px rgba(60,40,0,.35);animation:av-spin 3.2s linear infinite}
+@keyframes av-spin{to{--av-spin:360deg}}
+@media (prefers-reduced-motion:reduce){ .av-b-halloffame{animation:none} }
+/* small pictures (top bar, leaderboard rows, head-to-head) thin their ring; keep borders visible there */
+.navaccount.has-avatar .avatar.av-b,.lb-who .avatar.av-b,.h2h .who .avatar.av-b{border-width:3px}
 .avatar-sweater svg{width:94%;height:94%;display:block;margin-top:6%}
 .avatar-sweater text{font:600 30px "Oswald",sans-serif;letter-spacing:-.02em}
 .avatar-empty svg{width:62%;height:62%;fill:none;stroke:#1C2B45;stroke-width:2;stroke-linecap:round}
@@ -1192,6 +1207,36 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .ch-how[open] > summary span::after{transform:translateY(.05em) rotate(-135deg)}
 .ch-how > summary:focus-visible{outline:2px solid var(--gold);outline-offset:-4px}
 .ch-how + .bgroup{margin-top:14px}
+.ch-shop{display:inline-flex;margin-top:12px}
+/* Shop: item cards (your picture wearing the item), tier, price, and Buy / Wear / how far to go */
+.shop-note{margin:12px 2px 0;font:italic .92rem var(--serif);color:var(--muted)}
+.shop-note a{color:var(--ink)}
+.shop-group{margin-top:14px}
+.shop-slotnote{margin:0;padding:12px 14px 0;font:italic .9rem var(--serif);color:var(--muted)}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:12px;padding:12px 14px 14px}
+.shop-card{display:grid;justify-items:center;align-content:start;gap:4px;padding:16px 12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg);text-align:center}
+.shop-card.is-worn{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.shop-pv{display:grid;place-items:center;height:96px;width:96px}
+.shop-card h3{margin:2px 0 0;font:600 1.05rem var(--display);letter-spacing:.06em;text-transform:uppercase}
+.shop-tier{font:600 .66rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.shop-card[data-tier="classic"] .shop-tier{color:var(--red)}
+.shop-card[data-tier="premium"] .shop-tier,.shop-card[data-tier="legendary"] .shop-tier{color:var(--gold)}
+.shop-card[data-tier="legendary"]{border-color:color-mix(in srgb, var(--gold) 60%, var(--line))}
+.shop-blurb{margin:0;font:italic .82rem/1.35 var(--serif);color:var(--muted);min-height:2.7em}
+.shop-price{display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:wrap;justify-content:center}
+.shop-price b{font:700 1.15rem var(--display);font-variant-numeric:tabular-nums}
+.shop-limited{flex-basis:100%;font:600 .66rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+.shop-act{display:grid;justify-items:center;gap:6px;width:100%;margin-top:6px;min-height:38px;align-content:center}
+.shop-act .btn{min-width:110px}
+.shop-wearing{font:600 .8rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.shop-save{width:80%;height:7px}
+.shop-save i{background:var(--gold)}
+.shop-need{font:italic .8rem var(--serif);color:var(--muted)}
+.buy-preview{display:grid;place-items:center;margin:4px 0 6px}
+.buy-left{display:block;margin:-6px 0 14px;font:italic .85rem var(--serif);color:var(--muted)}
+.shop-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;max-width:calc(100% - 32px);
+  padding:10px 18px;border-radius:999px;background:var(--navy);color:var(--wool);border:1px solid rgba(239,230,210,.3);font:600 .85rem "Barlow",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.shop-toast.is-bad{background:#7E1518}
 .ch-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;padding:14px}
 .ch-rule{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:baseline;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
 .ch-rule b{font:700 1.3rem var(--display);font-variant-numeric:tabular-nums}

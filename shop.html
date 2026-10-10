@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="home shoppage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shop · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="The stickpicks shop: spend the Chiclets you earn picking NHL games on profile borders and more. Free to play, no real money.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="Shop · stickpicks">
+<meta property="og:description" content="Spend the Chiclets you earn on profile borders and more.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=2026-12-11">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navchiclets hidden" id="navChiclets"></span>
+    </div>
+  </nav>
+
+  <!-- Sweater banner: the shop and your balance -->
+  <header class="teams-banner badges-banner ch-banner">
+    <div class="ch-banner-in">
+      <div><small class="tb-kicker">Chiclets</small><h1>Shop</h1></div>
+      <p class="ch-bal" id="shopBal"></p>
+    </div>
+  </header>
+  <p class="shop-note" id="shopNote">Spend the Chiclets you earn picking games. Everything here is just for looks and never changes your score. <a href="chiclets.html">Your statement</a></p>
+
+  <main id="shop"><p class="hint">Loading…</p></main>
+
+  <footer>Chiclets are free to earn, can’t be bought with real money, and have no cash value. Purchases are final. <a href="rules.html#chiclets">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<!-- Buy? (a double-check before spending) -->
+<dialog class="bdlg askdlg" id="buyDlg" aria-labelledby="buyText">
+  <div class="bdlg-head"><b>Buy this?</b></div>
+  <div class="bdlg-body">
+    <div id="buyPreview" class="buy-preview"></div>
+    <p id="buyText"></p>
+    <small class="buy-left" id="buyLeft"></small>
+    <div class="form-actions"><button type="button" class="btn ghost" id="buyNo">Not now</button><button type="button" class="btn" id="buyYes">Buy</button></div>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-12-11"></script>
+<script src="teams.js?v=2026-12-11"></script>
+<script>
+const sb = makeClient();
+const $ = id => document.getElementById(id);
+mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
+const TIERS={starter:"Starter", classic:"Classic", premium:"Premium", legendary:"Legendary"};
+const SLOTS=[{slot:"border", name:"Profile borders", note:"A ring around your picture, everywhere it shows: leaderboards, profiles and the top bar."}];
+let me=null, items=[], owned=new Set(), balance=0, signedIn=false;
+
+function setBalance(n){
+  balance=Number(n||0);
+  const b=document.createElement("b"); b.textContent=balance.toLocaleString();
+  $("shopBal").replaceChildren(chicletIcon(40), b);
+  $("shopBal").setAttribute("aria-label", `Your balance: ${chicletsText(balance)}`);
+}
+const friendly=e=>{ const m=e?.message||String(e||""); return /function|does not exist/i.test(m) ? "The shop isn’t open yet. Please try again later." : m || "Something went wrong. Please try again."; };
+
+async function start(){
+  if(!sb) return $("shop").replaceChildren(Object.assign(document.createElement("p"),{className:"hint",textContent:"Database not connected yet."}));
+  const {data:{session}}=await sb.auth.getSession();
+  signedIn=!!session;
+  if(session){
+    const {data}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
+    me=data; if(me?.username) rememberMe(me.username, avatarFromProfile(me));
+  }
+  const {data:list,error}=await sb.from("shop_items").select("*").eq("active",true).order("sort");
+  if(error) return $("shop").replaceChildren(Object.assign(document.createElement("p"),{className:"hint",textContent:friendly(error)}));
+  const today=new Date().toISOString().slice(0,10);
+  items=(list||[]).filter(i=>(!i.available_from || today>=i.available_from) && (!i.available_to || today<=i.available_to));
+  if(me?.username){
+    await claimBadgeChiclets(sb);
+    const [{data:mine},bal]=await Promise.all([sb.rpc("my_items"), chicletBalance(sb, me.username)]);
+    owned=new Set((mine||[]).map(r=>r.item_id)); setBalance(bal);
+  }else{
+    $("shopBal").textContent="";
+    $("shopNote").innerHTML = signedIn ? 'Choose a username in <a href="profile.html#settings">Settings</a> to start earning Chiclets.'
+      : '<a href="index.html#signin">Sign in</a> to earn Chiclets by picking games, then spend them here. Free to play, no real money.';
+  }
+  render();
+}
+
+// Your own picture wearing a border (or a plain picture when signed out)
+function preview(border, px){
+  const av = me ? {...avatarFromProfile(me), border} : {border, fav:null};
+  return avatarEl(av, me?.username || "S", px);
+}
+
+function render(){
+  const root=$("shop"); root.innerHTML="";
+  SLOTS.forEach(s=>{
+    const list=items.filter(i=>i.slot===s.slot); if(!list.length) return;
+    const sec=document.createElement("section"); sec.className="bgroup shop-group";
+    const head=document.createElement("h2"); head.className="bgroup-head";
+    const nm=document.createElement("span"); nm.textContent=s.name;
+    const ct=document.createElement("small"); ct.textContent=`${list.filter(i=>owned.has(i.id)).length} of ${list.length} owned`;
+    head.append(nm,ct);
+    const note=document.createElement("p"); note.className="shop-slotnote"; note.textContent=s.note;
+    const grid=document.createElement("div"); grid.className="shop-grid";
+    list.forEach(i=>grid.append(card(i)));
+    sec.append(head,note,grid); root.append(sec);
+  });
+  // what's coming next
+  const soon=document.createElement("section"); soon.className="bgroup shop-group";
+  soon.innerHTML='<h2 class="bgroup-head"><span>Coming soon</span><small>Keep earning</small></h2>'+
+    '<p class="shop-slotnote">Retro sweaters for your picture, sweaters for your Breakaway skater, and limited-time items around the season’s big games.</p>';
+  root.append(soon);
+}
+
+function card(i){
+  const has=owned.has(i.id), wearing=me?.border===i.id;
+  const c=document.createElement("article"); c.className="shop-card"+(wearing?" is-worn":""); c.dataset.tier=i.tier;
+  const pv=document.createElement("div"); pv.className="shop-pv"; pv.append(preview(i.id, 76));
+  const tier=document.createElement("small"); tier.className="shop-tier"; tier.textContent=TIERS[i.tier]||i.tier;
+  const nm=document.createElement("h3"); nm.textContent=i.name;
+  const bl=document.createElement("p"); bl.className="shop-blurb"; bl.textContent=i.blurb;
+  const price=document.createElement("div"); price.className="shop-price"; price.append(chicletIcon(16), Object.assign(document.createElement("b"),{textContent:i.price.toLocaleString()}));
+  if(i.available_to){ const lt=document.createElement("small"); lt.className="shop-limited"; lt.textContent=`Until ${new Date(i.available_to+"T12:00:00").toLocaleDateString([], {month:"short",day:"numeric"})}`; price.append(lt); }
+  const act=document.createElement("div"); act.className="shop-act";
+  if(!me?.username){
+    if(!signedIn){ const a=document.createElement("a"); a.className="btn ghost"; a.href="index.html#signin"; a.textContent="Sign in to buy"; act.append(a); }
+  }else if(has){
+    if(wearing){
+      const w=document.createElement("span"); w.className="shop-wearing"; w.textContent="Wearing";
+      const off=document.createElement("button"); off.type="button"; off.className="linkbtn"; off.textContent="Take off";
+      off.addEventListener("click",()=>wear(i.slot,null));
+      act.append(w,off);
+    }else{
+      const b=document.createElement("button"); b.type="button"; b.className="btn"; b.textContent="Wear";
+      b.addEventListener("click",()=>wear(i.slot,i.id)); act.append(b);
+    }
+  }else if(balance>=i.price){
+    const b=document.createElement("button"); b.type="button"; b.className="btn"; b.textContent="Buy";
+    b.addEventListener("click",()=>askBuy(i)); act.append(b);
+  }else{
+    // not enough yet: how far along you are
+    const bar=document.createElement("span"); bar.className="bprog-bar shop-save"; bar.setAttribute("aria-hidden","true");
+    const f=document.createElement("i"); f.style.width=Math.round(balance/i.price*100)+"%"; bar.append(f);
+    const t=document.createElement("small"); t.className="shop-need"; t.textContent=`${(i.price-balance).toLocaleString()} more to go`;
+    act.append(bar,t);
+  }
+  c.append(pv,tier,nm,bl,price,act);
+  return c;
+}
+
+let buying=null;
+function askBuy(i){
+  buying=i;
+  $("buyPreview").replaceChildren(preview(i.id, 96));
+  $("buyText").textContent=`${i.name} for ${chicletsText(i.price)}?`;
+  $("buyLeft").textContent=`You’ll have ${(balance-i.price).toLocaleString()} left. Purchases are final.`;
+  $("buyYes").disabled=false; $("buyDlg").showModal();
+}
+$("buyNo").addEventListener("click",()=>$("buyDlg").close());
+$("buyYes").addEventListener("click", async ()=>{
+  const i=buying; if(!i) return;
+  $("buyYes").disabled=true;
+  const {data,error}=await sb.rpc("buy_item",{p_item:i.id});
+  $("buyDlg").close();
+  if(error) return toast(friendly(error), true);
+  owned.add(i.id); setBalance(data?.[0]?.balance ?? balance-i.price);
+  document.dispatchEvent(new CustomEvent("chiclets:changed"));
+  await wear(i.slot, i.id, `You bought ${i.name}, and you’re wearing it now.`);
+});
+
+async function wear(slot, id, message){
+  const {error}=await sb.rpc("equip_item",{p_slot:slot, p_item:id});
+  if(error) return toast(friendly(error), true);
+  me={...me, border:id};
+  rememberMe(me.username, avatarFromProfile(me));   // top bar and Me tab pick it up
+  render();
+  toast(message || (id ? `You’re wearing ${items.find(x=>x.id===id)?.name||"it"}.` : "Border taken off."));
+}
+
+function toast(text, bad){
+  document.querySelector(".shop-toast")?.remove();
+  const t=document.createElement("div"); t.className="shop-toast"+(bad?" is-bad":""); t.setAttribute("role","status"); t.textContent=text;
+  document.body.append(t); setTimeout(()=>t.remove(), 4000);
+}
+start();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

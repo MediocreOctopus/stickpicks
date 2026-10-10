@@ -12,6 +12,7 @@ privacy.html                                the Privacy Policy and Terms of Use
 badges.html                                 every badge, in groups (yours, or ?user=Name for another player's)
 compare.html                                your sheet and another player's, side by side
 chiclets.html                               your Chiclets balance and statement
+shop.html                                   the Chiclets shop (profile borders and more)
 intermission.html                           the Intermission page with the Breakaway game
 game.js                                     Breakaway, the hockey mini-game
 leaderboard.html                            the leaderboard
@@ -218,6 +219,20 @@ Each game pays once per player: if it's picked on two sheets (both teams), the r
 Badge rewards can't come from the browser (a player could fake badges there), so the database checks every badge itself: `badges_earned()` in `schema.sql` (section 18) follows the same rules as `computeBadges()` in `teams.js`. **If you change a badge's rules in `teams.js`, change them in `badges_earned()` too.** Paid rewards are kept in `chiclet_awards` (one row per player and badge, so each pays once). The site claims them when it loads your badges (`claim_badge_chiclets()`), and the GitHub Action pays everyone after each score update (`award_all_badge_chiclets()`).
 
 The balance never goes below 0. Chiclets can't be bought with real money and have no cash value (see the Terms). A later update will let players spend them on cosmetic extras (profile borders, retro sweaters), with spends recorded in their own table and taken off the balance.
+
+### The shop
+
+`shop.html` sells cosmetic items for Chiclets (never real money). The items and prices live in the database (`shop_items`, `schema.sql` section 19), so the browser can't change a price: Starter 150, Classic 400, Premium 800, Legendary 1,500. `available_from` / `available_to` make an item limited-time, and `active = false` takes it out of the shop (owners keep it). To add or re-price an item, edit the `insert into public.shop_items` list in section 19 and run it again.
+
+- `buy_item()` checks the item is on sale, not owned yet, and affordable, then records it in `chiclet_spends` (one purchase at a time per player). Purchases show on the statement as minus lines.
+- `equip_item()` wears an owned item. The worn border is `profiles.border`, so every page that shows a profile picture draws it (`avatarEl()` in `teams.js`, `.av-b-*` in `styles.css`). A trigger ignores any other attempt to change it.
+- Statements are private (`chiclets_ledger()` only answers for your own username); totals are public (`chiclets_balance()`).
+
+| Border | Tier | Price |
+|---|---|---|
+| Stitched, Hem Stripes, Team Colors | Starter | 150 |
+| Gold, Championship | Premium | 800 |
+| Hall of Fame (animated) | Legendary | 1,500 |
 
 ## Visitor stats
 

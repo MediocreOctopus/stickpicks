@@ -175,11 +175,24 @@ function ensureJerseyDefs(){
 // Photos are only shown from this project's own "avatars" storage.
 const AVATAR_BASE=((window.PICKS_CONFIG||{}).SUPABASE_URL||"").replace(/\/$/,"")+"/storage/v1/object/public/avatars/";
 // A profile row (from Supabase) → the avatar settings the pages pass around.
-function avatarFromProfile(p){ return p ? {kind:p.avatar_kind||null, team:p.avatar_team||null, number:p.avatar_number??null, url:p.avatar_url||null} : null; }
-// Builds a round avatar <span>: av = {kind, team, number, url}; falls back to the username's initial.
+function avatarFromProfile(p){ return p ? {kind:p.avatar_kind||null, team:p.avatar_team||null, number:p.avatar_number??null, url:p.avatar_url||null,
+  border:p.border||null, fav:p.fav_team||null} : null; }
+// Shop borders (bought with Chiclets; the worn one is profiles.border). Drawn in CSS: .avatar.av-b-<id>.
+const AVATAR_BORDERS=["border_stitch","border_hem","border_team","border_gold","border_champion","border_halloffame"];
+function applyAvatarBorder(el, border, fav){
+  if(!AVATAR_BORDERS.includes(border)) return;
+  el.classList.add("av-b", "av-b-"+border.replace("border_",""));
+  if(border==="border_team"){   // the favourite team's colours (brand red and cream until one is chosen)
+    const t=TEAMS[fav];
+    el.style.setProperty("--bt1", t ? t.board : "#9B1C1F");
+    el.style.setProperty("--bt2", t ? (t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)) : "#F4EDDC");
+  }
+}
+// Builds a round avatar <span>: av = {kind, team, number, url, border, fav}; falls back to the username's initial.
 function avatarEl(av, name, px){
   const el=document.createElement("span"); el.className="avatar"; el.setAttribute("aria-hidden","true");
   el.style.setProperty("--av-size", px+"px");
+  if(av?.border) applyAvatarBorder(el, av.border, av.fav);
   const team=av?.kind==="sweater" ? TEAMS[av.team] : null;
   if(av?.kind==="photo" && av.url && AVATAR_BASE.length>40 && av.url.startsWith(AVATAR_BASE)){
     const img=document.createElement("img"); img.src=av.url; img.alt=""; img.loading="lazy"; img.decoding="async";
