@@ -964,3 +964,14 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .lb-step button{width:1.9rem;height:1.9rem;border:1.5px solid color-mix(in srgb, var(--board-ink) 45%, transparent);border-radius:4px;background:transparent;color:var(--board-ink);
   font:600 1.2rem/1 var(--display);cursor:pointer;padding:0 0 2px}
 .lb-step button:disabled{opacity:.3;cursor:default}
+
+/* ───── Privacy & Terms page: the Rules page's look, with every section open ───── */
+.legal-jump{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.legal-jump a{font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding:6px 12px;border:2px solid var(--ink);border-radius:999px;background:var(--panel)}
+.legal-jump a:hover{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.legal section{scroll-margin-top:16px}
+.legal h3{font:600 1.05rem var(--display);letter-spacing:.06em;text-transform:uppercase;margin:24px 0 6px}
+.legal-short{margin-top:12px;padding:4px 16px 8px;background:var(--panel);border:2px solid var(--ink);border-left:6px solid var(--gold);border-radius:8px}
+.legal-short h3{margin-top:12px}
+.legal-agree{margin:10px 0 0;font-size:.82rem}
+.legal-agree a{color:var(--ink)}

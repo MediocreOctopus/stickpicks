@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-14">
+<link rel="stylesheet" href="styles.css?v=2026-11-15">
 </head>
 <body>
 
@@ -124,6 +124,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
             <div class="pw"><input id="upPass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required><button type="button" class="showpw" aria-label="Show password">Show</button></div>
           </div>
           <div class="form-actions"><button class="btn" type="submit">Create account</button></div>
+          <p class="hint legal-agree">By creating an account, you agree to the <a href="privacy.html#terms">Terms of Use</a> and <a href="privacy.html#privacy">Privacy Policy</a>. You must be 13 or older.</p>
           <p class="formmsg" id="upMsg" role="status"></p>
         </form>
       </div>
@@ -201,14 +202,14 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   </main>
 
   <footer>
-    Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN. <a href="rules.html">Rules</a>
+    Fan-made, not affiliated with the NHL. Scores from the NHL’s public feed; headlines from ESPN. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a>
   </footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-14"></script>
-<script src="teams.js?v=2026-11-14"></script>
+<script src="config.js?v=2026-11-15"></script>
+<script src="teams.js?v=2026-11-15"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");

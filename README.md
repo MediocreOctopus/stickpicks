@@ -8,6 +8,7 @@ Pick sheets for all 32 NHL teams. Pick a team, then call every regular-season ga
 index.html                                  home page: sign-in, news ticker, today's games
 sheet.html                                  the pick sheet for one team
 rules.html                                  the rules and scoring explained, with examples
+privacy.html                                the Privacy Policy and Terms of Use
 compare.html                                your sheet and another player's, side by side
 intermission.html                           the Intermission page with the Breakaway game
 game.js                                     Breakaway, the hockey mini-game
@@ -176,6 +177,10 @@ stickpicks lives at **stickpicks.hockey**, registered at Porkbun (bought October
 4. **Full web addresses in the code:** every page's `og:image` (the link-preview picture) and `SITE_URL` in `scripts/send-reminders.mjs` use `https://stickpicks.hockey/`. Every other link on the site is relative, so it works on any address.
 
 Browsers treat a new address as a separate site, so after a move, players sign in once more, turn puck-drop reminders back on, and re-add the app to their Home Screen. Their picks are stored online and carry over.
+
+## Privacy Policy and Terms
+
+`privacy.html` holds both, in plain language: what's collected (email, password, username, picks, picture, Look, reminder sign-ups), what other players can see, what stays on the device, the services involved (Supabase, GitHub Pages, Google Fonts, jsDelivr, GoatCounter, browser push services), account deletion, the 13+ age limit, and the terms (free fan game with no prizes, not affiliated with the NHL, fair play, scores can be corrected, provided as is). It's linked from every footer, the Create account form and profile Settings. **Keep it in sync** when the site starts collecting something new or uses a new service, and update the date in its banner. Contact goes through the repository's GitHub Issues page.
 
 ## Things to know
 
