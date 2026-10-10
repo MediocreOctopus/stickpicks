@@ -164,10 +164,20 @@ addEventListener("breakaway:end", async e=>{
 });
 
 // Phones held sideways: when you tap to play, line the rink up with the top of the screen so it and the buttons both fit
+// The jump is instant (phones cancel a smooth scroll while a finger is on the screen), and it also happens
+// when you turn the phone sideways or open the page sideways, so the game is already in place before you tap.
 const shortTouch=matchMedia("(pointer:coarse) and (max-height:520px)");
-const fitRink=()=>{ if(!shortTouch.matches) return; const r=document.querySelector(".rinkwrap").getBoundingClientRect(); if(Math.abs(r.top)>6) scrollBy({top:r.top, behavior:"smooth"}); };
+const fitRink=()=>{
+  if(!shortTouch.matches) return;
+  const r=document.querySelector(".rinkwrap").getBoundingClientRect();
+  if(Math.abs(r.top)>4) window.scrollTo(0, Math.max(0, Math.round(window.scrollY + r.top)));
+};
 document.getElementById("rink").addEventListener("pointerdown",fitRink);
 document.querySelectorAll("[data-run]").forEach(b=>b.addEventListener("pointerdown",fitRink));
+const fitSoon=()=>setTimeout(fitRink,350);   // after the rotation has settled
+shortTouch.addEventListener?.("change",e=>{ if(e.matches) fitSoon(); });
+addEventListener("orientationchange",fitSoon);
+addEventListener("load",fitSoon);
 
 init();
 </script>
