@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-08">
+<link rel="stylesheet" href="styles.css?v=2026-12-09">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -66,7 +66,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 
     <!-- The statement: every change, newest first, grouped by month -->
     <section class="bgroup" aria-labelledby="stTitle">
-      <h2 class="bgroup-head" id="stTitle"><span>Statement</span><small id="stCount"></small></h2>
+      <h2 class="bgroup-head" id="stTitle"><span>Statement</span></h2>
       <div id="stBody"><p class="hint st-empty">Loading…</p></div>
     </section>
   </main>
@@ -76,8 +76,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-08"></script>
-<script src="teams.js?v=2026-12-08"></script>
+<script src="config.js?v=2026-12-09"></script>
+<script src="teams.js?v=2026-12-09"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -88,8 +88,8 @@ let rows=[], shown=PAGE;
 function note(text, html){ const p=document.createElement("p"); p.className="hint st-empty"; html ? p.innerHTML=html : p.textContent=text; $("stBody").replaceChildren(p); }
 function setBalance(n){
   const b=document.createElement("b"); b.textContent=Number(n||0).toLocaleString();
-  const t=document.createElement("span"); t.textContent=Number(n)===1 ? "Chiclet" : "Chiclets";
-  $("chBal").replaceChildren(chicletIcon(40), b, t);
+  $("chBal").replaceChildren(chicletIcon(40), b);
+  $("chBal").setAttribute("aria-label", `Balance: ${chicletsText(n)}`);
 }
 
 async function start(){
@@ -111,10 +111,7 @@ async function start(){
 
 function render(){
   const body=$("stBody");
-  $("stCount").textContent="";
   if(!rows.length) return note("Nothing yet. Your first Chiclets arrive when a game you picked goes final.");
-  const earned=rows.filter(r=>r.delta>0).reduce((s,r)=>s+r.delta,0), lost=rows.filter(r=>r.delta<0).reduce((s,r)=>s-r.delta,0);
-  $("stCount").textContent=`Earned ${earned.toLocaleString()} · Lost ${lost.toLocaleString()}`;
   const out=[];
   const head=document.createElement("div"); head.className="st-row st-head"; head.setAttribute("aria-hidden","true");
   head.innerHTML="<span>Date</span><span>What</span><span>Change</span><span>Total</span>";

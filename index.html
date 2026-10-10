@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-08">
+<link rel="stylesheet" href="styles.css?v=2026-12-09">
 </head>
 <body>
 
@@ -209,8 +209,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-08"></script>
-<script src="teams.js?v=2026-12-08"></script>
+<script src="config.js?v=2026-12-09"></script>
+<script src="teams.js?v=2026-12-09"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -602,7 +602,7 @@ async function renderSignedIn(session, note=""){
 function showInvite(){
   const box=$("acctInvite"); box.querySelector(".sharebtn")?.remove();
   box.classList.toggle("hidden", !profile?.username);
-  if(profile?.username) box.append(shareButton("Invite friends", inviteSpec(profile.username)));
+  if(profile?.username) box.append(shareButton("Invite friends", inviteSpec(profile.username), "invite-patch"));
 }
 
 // Only for players without a username yet; changing it lives on the profile page.
@@ -660,9 +660,20 @@ async function loadMyStats(){
     showReach(r, badgesInReach(r,3));
   }).catch(()=>{});
 }
-// "Badges in reach": progress bars for a few badges (hidden when there's nothing left to earn).
+// One badge in reach: the patch, its name and a progress bar, as a button to that badge on the Badges page.
+function reachTile(id, meter){
+  const b=BADGE_BY_ID[id], [have,need]=meter||[0,1], pct=need?Math.round(Math.min(have,need)/need*100):0;
+  const a=document.createElement("a"); a.className="reach-tile bprog"; a.href=`badges.html?badge=${id}`; a.dataset.ring=b.ring;
+  a.setAttribute("aria-label", `${b.name}: ${Math.min(have,need)} of ${need}. Open it on the Badges page.`);
+  const nm=document.createElement("b"); nm.textContent=b.name;
+  const bar=document.createElement("span"); bar.className="bprog-bar"; bar.setAttribute("aria-hidden","true");
+  const fill=document.createElement("i"); fill.style.width=pct+"%"; bar.append(fill);
+  a.append(badgeEl(id,52,false), nm, bar);
+  return a;
+}
+// "Badges in reach": a few badges you're closest to (hidden when there's nothing left to earn).
 function showReach(r, ids){
-  $("reachList").replaceChildren(...ids.map(id=>badgeProgressEl(id, r.meter[id], true)));
+  $("reachList").replaceChildren(...ids.map(id=>reachTile(id, r.meter[id])));
   $("reach").classList.toggle("hidden", !ids.length);
 }
 

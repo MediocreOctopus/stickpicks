@@ -5,7 +5,7 @@
 // ?v=YYYY-MM-DD, so they can be served straight from the cache. Live data (Supabase) is never cached.
 //
 // When bumping the ?v= date in the pages, bump VERSION here too, so the old cache is cleared.
-const VERSION = "2026-12-08";
+const VERSION = "2026-12-09";
 const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 

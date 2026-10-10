@@ -902,6 +902,14 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .acct-reach .acct-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .acct-reach .acct-label a{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--ink)}
 .reach-list{display:grid;gap:12px}
+/* Home: badges in reach as three tappable tiles (patch, name, progress); each opens that badge on the Badges page */
+#reachList{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.reach-tile{display:grid;justify-items:center;align-content:start;gap:6px;padding:10px 6px 9px;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg);color:var(--ink);text-decoration:none;text-align:center;transition:border-color .12s,transform .12s}
+.reach-tile:hover{border-color:var(--ink);transform:translateY(-1px)}
+.reach-tile:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.reach-tile b{font:600 .72rem/1.15 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.reach-tile .bprog-bar{width:80%;height:6px;margin-top:auto}
 /* Upcoming Picks: a navy day header with a red-and-cream hem above each day's games */
 .upday{position:relative;padding:8px 14px 13px;background:var(--navy);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
 [data-scheme="dark"] .upday{background:#14203A}
@@ -951,9 +959,26 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .badge-item .badge-share{grid-column:2;justify-self:start;margin-top:4px}
 .pf-acts{margin-left:auto}
 .pf-acts:empty{display:none}
-.pf-invite{background:var(--wool);border-color:var(--wool);color:var(--navy)}
-.you .you-share{margin-top:14px}
-.you .you-invite{display:flex;margin:10px auto 0;color:var(--board-ink)}
+/* Leaderboard "Your best sheet": rank beside team and points; Share (a felt pill in the board's title colour) and
+   Invite (the red felt patch) as one row of buttons */
+.you-main{display:grid;gap:8px;margin-top:10px}
+.you-main .you-rank{margin-top:0}
+.you-info{display:grid;gap:6px;justify-items:start;min-width:0}
+.you-info .you-team{margin-top:0}
+.you-info .you-pts{margin-top:0}
+.you-acts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.you-pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:4px 14px;border-radius:999px;white-space:nowrap;cursor:pointer;
+  background:var(--title);color:var(--board);border:0;font:600 .8rem var(--display);letter-spacing:.12em;text-transform:uppercase}
+.you-pill:hover{filter:brightness(1.08)}
+@media (max-width:760px){
+  .you{padding:12px 14px 22px 36px}
+  .you-main{grid-template-columns:auto minmax(0,1fr);align-items:center;gap:16px;margin-top:6px}
+  .you-rank{font-size:2.8rem}
+  .you-info .you-team{font-size:.92rem}
+  .you-note{display:none}
+  .you-acts{flex-direction:row;margin-top:12px}
+  .you-acts > *{flex:1 1 0;min-width:0;padding-left:8px;padding-right:8px}
+}
 .sharesheet{width:min(520px,calc(100% - 32px));padding:0;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);box-shadow:0 18px 44px rgba(0,0,0,.35)}
 .sharesheet::backdrop{background:rgba(15,24,40,.55)}
 .ss-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--navy);color:var(--wool);
@@ -1129,11 +1154,13 @@ a.chiclet-chip:hover .chiclet-ico svg{transform:rotate(25deg)}
 button.pf-pill:hover,a.pf-pill:hover,.pf-pill[aria-expanded="true"]{background:var(--wool);border-color:var(--wool);color:var(--navy)}
 span.pf-pill{cursor:default}
 .pf-acts .chiclet-chip b{font-size:1.05rem;letter-spacing:.04em}
-/* Invite friends: a red felt patch with white stitching, like the sweater stripes */
-.pf-pill.pf-invite{background:#C8302B;border:0;color:#FBF7EE;outline:1.5px dashed rgba(251,247,238,.8);outline-offset:-5px;padding:4px 16px 4px 13px;
-  box-shadow:0 2px 0 rgba(0,0,0,.25)}
-.pf-pill.pf-invite:hover{background:#E8463F;color:#FBF7EE;outline-color:#FBF7EE}
-.pf-pill.pf-invite:active{transform:translateY(1px);box-shadow:none}
+/* Invite friends (home, leaderboard, profile): a red felt patch with white stitching, like the sweater stripes */
+.invite-patch{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:4px 16px 4px 13px;border-radius:999px;white-space:nowrap;
+  background:#C8302B;border:0;color:#FBF7EE;outline:1.5px dashed rgba(251,247,238,.8);outline-offset:-5px;box-shadow:0 2px 0 rgba(0,0,0,.25);
+  font:600 .8rem var(--display);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;text-decoration:none}
+button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF7EE;outline-color:#FBF7EE}
+.invite-patch:active{transform:translateY(1px);box-shadow:none}
+.invite-patch:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 /* Settings and Invite share one line: beside the name on wide screens, under the name on narrower ones,
    and splitting the full width on phones */
 @media (max-width:900px){

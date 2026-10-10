@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-08">
+<link rel="stylesheet" href="styles.css?v=2026-12-09">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -96,8 +96,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-08"></script>
-<script src="teams.js?v=2026-12-08"></script>
+<script src="config.js?v=2026-12-09"></script>
+<script src="teams.js?v=2026-12-09"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
@@ -284,7 +284,9 @@ function renderYou(total, mine){
     else { el("p",null,"Sign in and choose a username to get your sheets on the leaderboard."); link("index.html#signin","Sign in"); }
     return;
   }
-  const w=when(), invite=()=>youEl.append(shareButton("Invite friends", inviteSpec(myName), "linkbtn you-invite"));
+  // Share my spot and Invite friends: felt pills in one row (stacked in the desktop sidebar)
+  let actsEl=null; const acts=()=>actsEl ||= el("div","you-acts");
+  const w=when(), invite=()=>acts().append(shareButton("Invite friends", inviteSpec(myName), "invite-patch you-invite"));
   if(!mine.length){
     el("div","you-label","Your sheets");
     el("p",null, period!=="season"
@@ -297,20 +299,24 @@ function renderYou(total, mine){
   const best=mine[0]; // the list is sorted, so the first match is the best
   el("div","you-label", (team ? "Your spot" : "Your best sheet") + (period==="season" ? "" : ` · ${w.kicker.toLowerCase()}`));
   const teamName=TEAMS[best.team]?.name||best.team;
-  if(!team){
-    const t=el("div","you-team"); t.append(swatch(best.team));
-    const nm=document.createElement("span"); nm.textContent=teamName; t.append(nm);
-  }
-  const r=el("div","you-rank"); r.textContent=`#${best.rank}`;
+  // Rank beside the team and points (side by side on phones, stacked in the desktop sidebar)
+  const main=el("div","you-main");
+  const r=document.createElement("div"); r.className="you-rank"; r.textContent=`#${best.rank}`;
   const of=document.createElement("span"); of.textContent=` of ${total}`; r.append(of);
-  el("div","you-pts",`${best.pts} point${best.pts===1?"":"s"}`);
-  if(mine.length>1) el("p",null,`You have ${mine.length} sheets on the board, highlighted in the table.`);
+  const info=document.createElement("div"); info.className="you-info";
+  if(!team){
+    const t=document.createElement("div"); t.className="you-team"; t.append(swatch(best.team));
+    const nm=document.createElement("span"); nm.textContent=teamName; t.append(nm); info.append(t);
+  }
+  const pts=document.createElement("div"); pts.className="you-pts"; pts.textContent=`${best.pts} point${best.pts===1?"":"s"}`; info.append(pts);
+  main.append(r, info);
+  if(mine.length>1) el("p","you-note",`You have ${mine.length} sheets on the board, highlighted in the table.`);
   // Share your spot: links straight to this board and time frame
   const board = team ? `${teamName} leaderboard` : "All-Teams leaderboard";
-  youEl.append(shareButton("Share my spot", {kind:"standing", title:`stickpicks ${board}`, url:SITE_URL+"leaderboard.html"+location.search,
+  acts().append(shareButton("Share my spot", {kind:"standing", title:`stickpicks ${board}`, url:SITE_URL+"leaderboard.html"+location.search,
     text:`I’m #${best.rank} of ${total} on the stickpicks ${board} ${w.phrase}, with ${best.pts} point${best.pts===1?"":"s"} on my ${teamName} sheet. Think you can pick better?`,
     card:{kicker:`${w.kicker} · ${team ? teamName : "All-Teams"} board`, title:`#${best.rank} of ${total}`,
-      sub:`${myName} · ${best.pts} point${best.pts===1?"":"s"} on the ${teamName} sheet.`}}, "btn you-share"));
+      sub:`${myName} · ${best.pts} point${best.pts===1?"":"s"} on the ${teamName} sheet.`}}, "you-pill you-share"));
   invite();
 }
 
