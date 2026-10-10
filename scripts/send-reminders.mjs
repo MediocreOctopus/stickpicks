@@ -10,7 +10,7 @@ const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const SECRET = process.env.SUPABASE_SECRET_KEY || "";
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || "";
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || "";
-const SITE_URL = process.env.SITE_URL || "https://mediocreoctopus.github.io/nhl-picks/";
+const SITE_URL = process.env.SITE_URL || "https://stickpicks.hockey/";
 const WINDOW_MINUTES = 75;
 
 const NAMES = {
