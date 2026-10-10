@@ -48,7 +48,8 @@
     pucks:["Tripped over a loose puck. Two minutes in the box.","Pucks everywhere! Down goes the skater.","Stumbled on the puck pile. Back to the bench."],
     cones:["Took out the cones. Practice is over.","Hooked by a cone. Tough break.","The cones win this shift."],
     net:["Crashed the net! Goaltender interference.","Ran into the goal. That one's going to leave a mark.","Knocked the net off its moorings."],
-    slap:["Caught a slap shot. Keep your head down!","Should have ducked. That's a long shift.","Took one off the helmet. Shake it off."]
+    slap:["Caught a slap shot. Keep your head down!","Should have ducked. That's a long shift.","Took one off the helmet. Shake it off."],
+    barrage:["Stepped in front of the point shots. Blocked them with the visor.","That's a lot of rubber. Get low next time!","Caught the whole barrage. Hit the deck sooner."]
   };
 
   function resize(){
@@ -63,26 +64,61 @@
   function reset(){
     speed=START_SPEED; dist=0; score=0; t=0; obstacles=[]; spawnIn=W*0.6; sparks=[];
     P.y=0; P.vy=0; P.ducking=false; P.onIce=true; P.stride=0; message=""; note=""; newBest=false;
+    lastGround=-9; lastShot=-9; per=0; callout={text:"",until:0};
   }
 
+  /* ───── Periods: the game gets harder as it goes ───── */
+  // 1st (0–299), 2nd (300–699), 3rd (700–1,199), then overtime. Each period brings more obstacles, tighter and
+  // steadier gaps, faster shots, and more you can only duck: slap shots, "point shots" (a barrage of pucks too
+  // high to jump), and combos (jump something, then a shot arrives just after you land).
+  // The speed and scoring don't change, so posted scores stay comparable (and pass the server's check).
+  const PERIODS=[
+    {at:0,    name:"1ST", call:"",           mix:{pucks:.34,cones:.3,net:.2,slap:.16,barrage:0,  combo:0  }, minGap:.8,  spread:.9,  breather:.15, shot:1.18},
+    {at:300,  name:"2ND", call:"2ND PERIOD", mix:{pucks:.2,cones:.2,net:.16,slap:.22,barrage:.1,combo:.12}, minGap:.74, spread:.62, breather:.1,  shot:1.24},
+    {at:700,  name:"3RD", call:"3RD PERIOD", mix:{pucks:.16,cones:.14,net:.12,slap:.24,barrage:.16,combo:.18}, minGap:.72, spread:.48, breather:.07, shot:1.3},
+    {at:1200, name:"OT",  call:"OVERTIME",   mix:{pucks:.14,cones:.14,net:.14,slap:.2,barrage:.18,combo:.2 }, minGap:.7,  spread:.38, breather:.05, shot:1.36},
+  ];
+  let per=0, callout={text:"",until:0}, lastGround=-9, lastShot=-9;   // when the last ground obstacle / shot reaches the skater (game time)
+  const periodFor=s=>PERIODS.reduce((k,p,i)=>s>=p.at?i:k,0);
+  const SHOT_GAP=0.82, STAND_GAP=0.45;   // seconds: land a jump before a shot arrives; get up from a duck before jumping again
+
   /* ───── Obstacles ───── */
+  function pick(mix){ let r=Math.random(), k; for(k in mix){ r-=mix[k]; if(r<=0) return k; } return "pucks"; }
   function spawn(){
-    const r=Math.random(), x=W+30;
-    if(score>250 && r<0.18){                        // flying puck at head height: duck!
-      obstacles.push({kind:"slap", x, w:22, h:9, lift:42+Math.random()*6});
-    }else if(r<0.42){                               // stack of 1–3 pucks
-      const n=1+Math.floor(Math.random()*(score>150?3:2));
-      obstacles.push({kind:"pucks", x, w:24, h:8*n, n});
-    }else if(r<0.72){                               // one or two cones
-      const n=Math.random()<(score>100?0.45:0.2)?2:1, big=Math.random()<0.4;
-      const cw=big?24:18, ch=big?34:26;
-      obstacles.push({kind:"cones", x, w:n*cw+(n-1)*4, h:ch, n, cw, ch});
-    }else{                                          // the net
-      obstacles.push({kind:"net", x, w:44, h:36});
-    }
-    // next gap scales with speed so every obstacle stays clearable
-    const scale=Math.max(0.62,Math.min(1,W/720));
-    spawnIn = speed*scale*(0.72+Math.random()*0.9) + (Math.random()<0.15?speed*scale*0.6:0);
+    const p=PERIODS[per], scale=Math.max(0.62,Math.min(1,W/720)), v=speed*scale;
+    let kind=pick(p.mix);
+    if(kind==="slap" && score<120) kind="pucks";        // the first few seconds are all jumps
+    let x=W+30;
+    const arrive=(xx,f=1)=>t+(xx-PLAYER_X)/(v*f);
+    // shots (duck): never arrive while you're still coming down from the last jump
+    const shot=(o)=>{
+      const f=p.shot; o.v=f;
+      if(arrive(o.x,f) < lastGround+SHOT_GAP) o.x=PLAYER_X+v*f*(lastGround+SHOT_GAP-t);
+      lastShot=arrive(o.x,f); obstacles.push(o); return o;
+    };
+    // ground obstacles (jump): leave time to stand up after a shot
+    const ground=(o)=>{
+      if(arrive(o.x) < lastShot+STAND_GAP) o.x=PLAYER_X+v*(lastShot+STAND_GAP-t);
+      lastGround=arrive(o.x); obstacles.push(o); return o;
+    };
+    const groundAt=(xx)=>{
+      const r=Math.random();
+      if(r<0.42){ const n=1+Math.floor(Math.random()*(score>150?3:2)); return ground({kind:"pucks", x:xx, w:24, h:8*n, n}); }
+      if(r<0.75){ const n=Math.random()<(score>100?0.45:0.2)?2:1, big=Math.random()<0.4, cw=big?24:18, ch=big?34:26;
+        return ground({kind:"cones", x:xx, w:n*cw+(n-1)*4, h:ch, n, cw, ch}); }
+      return ground({kind:"net", x:xx, w:44, h:36});
+    };
+    let last;
+    if(kind==="slap") last=shot({kind:"slap", x, w:22, h:9, lift:42+Math.random()*6});
+    else if(kind==="barrage") last=shot({kind:"barrage", x, w:22, h:9, lifts:[40,72,104,136]});   // too high to jump: duck
+    else if(kind==="combo"){ groundAt(x); last=shot({kind:"slap", x:x+1, w:22, h:9, lift:42+Math.random()*6}); }
+    else if(kind==="pucks"){ const n=1+Math.floor(Math.random()*(score>150?3:2)); last=ground({kind:"pucks", x, w:24, h:8*n, n}); }
+    else if(kind==="cones"){ const n=Math.random()<(score>100?0.45:0.2)?2:1, big=Math.random()<0.4, cw=big?24:18, ch=big?34:26;
+      last=ground({kind:"cones", x, w:n*cw+(n-1)*4, h:ch, n, cw, ch}); }
+    else last=ground({kind:"net", x, w:44, h:36});
+    // next gap (in ice distance) scales with speed so every obstacle stays clearable; later periods are tighter and steadier
+    const extra=Math.max(0,(last.x-x)/(last.v||1));      // a shot pushed back to keep it fair also pushes back what follows
+    spawnIn = extra + v*(p.minGap+Math.random()*p.spread) + (Math.random()<p.breather?v*0.6:0);
   }
 
   function playerBox(){
@@ -91,6 +127,7 @@
   }
   function obstacleBox(o){
     if(o.kind==="slap") return {x:o.x+2, y:GROUND-o.lift-o.h, w:o.w-4, h:o.h};
+    if(o.kind==="barrage"){ const top=Math.max(...o.lifts)+o.h, low=Math.min(...o.lifts); return {x:o.x+2, y:GROUND-top, w:o.w+2, h:top-low}; }   // pucks are staggered 6px
     return {x:o.x+3, y:GROUND-o.h+3, w:o.w-6, h:o.h-3};
   }
   const hit=(a,b)=>a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
@@ -104,6 +141,7 @@
     const before=Math.floor(score/100);
     score+=speed*dt/38;
     if(Math.floor(score/100)>before) flashUntil=t+0.6;
+    const np=periodFor(score); if(np>per){ per=np; callout={text:PERIODS[per].call, until:t+1.8}; }
 
     // player physics
     if(!P.onIce){
@@ -124,7 +162,7 @@
     // obstacles
     spawnIn-=dx;
     if(spawnIn<=0) spawn();
-    obstacles.forEach(o=>o.x-=dx*(o.kind==="slap"?1.18:1));
+    obstacles.forEach(o=>o.x-=dx*(o.v||1));                 // shots fly faster than the ice moves
     obstacles=obstacles.filter(o=>o.x+o.w>-20);
 
     const pb=playerBox();
@@ -260,6 +298,7 @@
     }
 
     obstacles?.forEach(drawObstacle);
+    drawWarnings();
     drawSkater();
     sparks.forEach(s=>{ ctx.fillStyle=`rgba(255,255,255,${Math.min(1,s.life*3)})`; ctx.fillRect(s.x,s.y,2.2,2.2); });
 
@@ -268,17 +307,47 @@
     if(state!=="running") overlay();
   }
 
-  // Score in a navy scoreboard box with gold digits
+  // Shots give a moment's warning: a red marker at the right edge, at the height they'll arrive
+  function drawWarnings(){
+    if(state!=="running") return;
+    const v=speed*Math.max(0.62,Math.min(1,W/720));
+    obstacles.forEach(o=>{
+      if(!o.v || o.x<W-6) return;
+      const secs=(o.x-W)/(v*o.v); if(secs>0.75) return;
+      const a=0.55+0.45*Math.sin(t*28);
+      const marks = o.kind==="barrage" ? o.lifts : [o.lift];
+      ctx.fillStyle=`rgba(232,70,63,${a})`;
+      marks.forEach(l=>{ const y=GROUND-l-o.h/2; ctx.beginPath(); ctx.moveTo(W-4,y-6); ctx.lineTo(W-14,y); ctx.lineTo(W-4,y+6); ctx.closePath(); ctx.fill(); });
+      if(o.kind==="barrage"){ ctx.fillRect(W-3,GROUND-Math.max(...o.lifts)-o.h,2,Math.max(...o.lifts)-Math.min(...o.lifts)+o.h); }
+    });
+  }
+
+  // Score in a navy scoreboard box with gold digits, the period, and a call-out when a new period starts
   function drawScoreboard(){
     const s=String(Math.floor(score||0)).padStart(5,"0"), flashing=state==="running" && t<flashUntil && Math.floor(t*10)%2===0;
-    const bw=150, bx=W-bw-10, by=8;                    // up in the stands, like the arena scoreboard, clear of the ice
+    const bw=184, bx=W-bw-10, by=8;                    // up in the stands, like the arena scoreboard, clear of the ice
     ctx.fillStyle="#0F1828"; roundRect(bx,by,bw,24,4); ctx.fill();
     ctx.strokeStyle="rgba(217,163,58,.7)"; ctx.lineWidth=1; roundRect(bx+.5,by+.5,bw-1,23,4); ctx.stroke();
     ctx.fillStyle=C.red2; ctx.fillRect(bx,by+21,bw,1.5);
     ctx.textBaseline="middle"; ctx.textAlign="left";
-    ctx.font='600 9px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.65)"; ctx.fillText("HI", bx+8, by+11.5);
-    ctx.font='600 13px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.8)"; ctx.fillText(String(hi).padStart(5,"0"), bx+22, by+11.5);
+    ctx.fillStyle=C.red; roundRect(bx+4,by+4,28,14,2); ctx.fill();
+    ctx.font='700 9.5px "Oswald", system-ui, sans-serif'; ctx.fillStyle=C.wool; ctx.textAlign="center"; ctx.fillText(PERIODS[per].name, bx+18, by+11.5);
+    ctx.textAlign="left";
+    ctx.font='600 9px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.65)"; ctx.fillText("HI", bx+40, by+11.5);
+    ctx.font='600 13px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.8)"; ctx.fillText(String(hi).padStart(5,"0"), bx+54, by+11.5);
     ctx.textAlign="right"; ctx.font='700 16px "Oswald", system-ui, sans-serif'; ctx.fillStyle=flashing?C.red2:C.gold; ctx.fillText(s, bx+bw-8, by+11.5);
+    if(state==="running" && callout.text && t<callout.until){
+      const fade=Math.min(1,(callout.until-t)/0.4);
+      ctx.save(); ctx.globalAlpha=fade;
+      const cw=150, cx=(W-cw)/2, cy=34;                // in the stands, so it never hides what's coming
+      ctx.fillStyle=C.navy; roundRect(cx,cy,cw,26,4); ctx.fill();
+      ctx.fillStyle=C.red2; ctx.fillRect(cx,cy+22,cw,2); ctx.fillStyle=C.wool; ctx.fillRect(cx,cy+24.5,cw,1.5);
+      ctx.fillStyle=C.gold; ctx.font='700 14px "Oswald", system-ui, sans-serif'; ctx.textAlign="center";
+      if("letterSpacing" in ctx) ctx.letterSpacing="3px";
+      ctx.fillText(callout.text, W/2, cy+12);
+      if("letterSpacing" in ctx) ctx.letterSpacing="0px";
+      ctx.restore();
+    }
   }
 
   // Start and game-over cards: a navy sweater panel with sleeve and hem stripes
@@ -297,7 +366,7 @@
       ctx.fillStyle=C.gold; ctx.font='600 12px "Oswald", system-ui, sans-serif';
       ctx.fillText((touch?"TAP TO START":"TAP OR PRESS SPACE TO START"), cx, py+82);
       ctx.fillStyle="rgba(239,230,210,.75)"; ctx.font='italic 12px "Libre Caslon Text", Georgia, serif';
-      ctx.fillText(W<520?"Jump the obstacles. Duck the slap shots.":"Jump the pucks, cones and nets. Duck the slap shots.", cx, py+104, pw-40);
+      ctx.fillText(W<520?"Jump the obstacles. Duck the shots.":"Jump the pucks, cones and nets. Duck the shots. It gets harder every period.", cx, py+104, pw-40);
     }else{
       ctx.fillStyle=newBest?C.gold:"rgba(239,230,210,.7)"; ctx.font='600 11px "Oswald", system-ui, sans-serif';
       ctx.fillText(newBest?"NEW PERSONAL BEST":"FINAL SCORE", cx, py+20);
@@ -343,6 +412,15 @@
       ctx.strokeStyle="#C8102E"; ctx.lineWidth=4;
       ctx.beginPath(); ctx.moveTo(front,GROUND); ctx.lineTo(front,top+2); ctx.lineTo(front+16,top+2); ctx.stroke();
       ctx.lineCap="butt";
+    }else if(o.kind==="barrage"){
+      // point shots: a spray of pucks from shoulder height to well above a jump, each with a motion trail
+      o.lifts.forEach((lift,i)=>{
+        const px=x+(i%2)*6, y=GROUND-lift-o.h;
+        const tr=ctx.createLinearGradient(px+o.w,0,px+o.w+40,0); tr.addColorStop(0,"rgba(155,28,31,.35)"); tr.addColorStop(1,"rgba(155,28,31,0)");
+        ctx.fillStyle=tr; ctx.fillRect(px+o.w-2,y+1.5,40,o.h-3);
+        ctx.fillStyle="#141414"; roundRect(px,y,o.w,o.h,4); ctx.fill();
+        ctx.fillStyle="#3B3B3B"; ctx.fillRect(px+3,y+1.2,o.w-6,1.6);
+      });
     }else if(o.kind==="slap"){
       const y=GROUND-o.lift-o.h;
       const tr=ctx.createLinearGradient(x+o.w,0,x+o.w+46,0); tr.addColorStop(0,"rgba(28,43,69,.35)"); tr.addColorStop(1,"rgba(28,43,69,0)");
@@ -504,6 +582,11 @@
     setBest(n){ n=Math.floor(Number(n)||0); if(n>hi){ hi=n; try{ localStorage.setItem(HI_KEY,String(hi)); }catch(e){} } if(state!=="running") draw(); },
     setNote(text){ note=text||""; if(state==="over") draw(); },
   };
+
+  // Testing on a local preview only: jump ahead to a score, and peek at what's on the ice.
+  if(location.hostname==="localhost") window.breakaway.test={ setScore(n){ score=n; },
+    peek:()=>({score:Math.floor(score), period:PERIODS[per].name, state, v:speed*Math.max(0.62,Math.min(1,W/720)), onIce:P.onIce, ducking:P.ducking, crashed:message,
+      obstacles:obstacles.map(o=>({kind:o.kind, x:o.x, w:o.w, v:o.v||1}))}) };
 
   reset();
   resize();
