@@ -2,6 +2,8 @@
 
 Pick sheets for all 32 NHL teams. Pick a team, then call every regular-season game a win, loss, or overtime loss, and guess the combined goals. Each sheet uses its team's colors, final scores fill in automatically, and leaderboards rank every sheet by points. A home page handles accounts and shows an NHL news ticker and the day's games. It's hosted free on GitHub Pages, with a Supabase database.
 
+**Live at [stickpicks.hockey](https://stickpicks.hockey/).** The old address, `mediocreoctopus.github.io/nhl-picks/`, forwards there automatically.
+
 ```
 index.html                                  home page: sign-in, news ticker, today's games
 sheet.html                                  the pick sheet for one team
@@ -17,6 +19,7 @@ supabase/schema.sql                         database tables and security rules
 supabase/migrate-from-kraken-version.sql    optional, only if you set up the Kraken-only version
 scripts/update-games.mjs                    syncs schedules, scores, and news headlines
 .github/workflows/update-games.yml          runs that sync every 15 minutes
+CNAME                                       the custom domain (stickpicks.hockey) for GitHub Pages
 ```
 
 ## How it works
@@ -33,7 +36,7 @@ Every 15 minutes, a GitHub Action downloads all 32 team schedules from the NHL's
 - **Rules page:** explains picks, scoring, shootouts, locking, and leaderboards, with worked examples and a short FAQ. It's linked from the home page, every sheet, and the leaderboard. Players sign in, create accounts, and manage their username here. Once signed in, they see their points, overall rank, and a shortcut to each sheet they've started.
 - **Accounts:** players sign in with an email and password and stay signed in on that device until they sign out. After signing out, they sign back in with their password, with no email needed. "Forgot password?" emails a link to choose a new one.
 
-- **Choosing a team:** pick a team on the home page, or switch teams with the menu in a sheet's header. You can link straight to one sheet with `?team=`. For example, `.../nhl-picks/sheet.html?team=TOR` opens the Maple Leafs sheet. Older links like `.../nhl-picks/?team=TOR` still work.
+- **Choosing a team:** pick a team on the home page, or switch teams with the menu in a sheet's header. You can link straight to one sheet with `?team=`. For example, `https://stickpicks.hockey/sheet.html?team=TOR` opens the Maple Leafs sheet. Older links like `https://stickpicks.hockey/?team=TOR` still work.
 - **Picks:** each team's sheet has its own separate picks. The same game can have different picks on two sheets, such as the Kraken's sheet and the Flames' sheet.
 - **Times:** start times are shown in whatever time zone the viewer's device uses.
 - **Colors:** team colors are set in the `TEAMS` list inside `teams.js`. Each team has a `board` color (header background), an `accent` color (highlights), and a `brand` color (buttons and row shading). Change any of them there. The page automatically checks contrast and falls back to white or black text where a color wouldn't be readable.
@@ -57,14 +60,14 @@ Open `config.js` and replace the placeholders with your Project URL and publisha
 
 1. Create a **public** GitHub repository, for example `nhl-picks`, and upload everything in this folder. Keep the folder structure, and make sure the hidden `.github` folder is included.
 2. Go to **Settings → Pages**, choose **Deploy from a branch**, then select `main` and `/ (root)`, and click **Save**.
-3. Your site will be live at `https://YOUR-GITHUB-NAME.github.io/nhl-picks/`.
+3. Your site will be live at `https://YOUR-GITHUB-NAME.github.io/nhl-picks/`. To use your own domain instead, see [Custom domain](#custom-domain) below.
 
 ### 4. Allow sign-in
 
 In Supabase, go to **Authentication → URL Configuration**:
 
-- Set **Site URL** to your GitHub Pages address.
-- Under **Redirect URLs**, add the same address with `**` on the end, for example `https://YOUR-GITHUB-NAME.github.io/nhl-picks/**`. This covers account confirmation and password reset links.
+- Set **Site URL** to your site's address (stickpicks uses `https://stickpicks.hockey/`).
+- Under **Redirect URLs**, add the same address with `**` on the end, for example `https://stickpicks.hockey/**` or `https://YOUR-GITHUB-NAME.github.io/nhl-picks/**`. This covers account confirmation and password reset links.
 
 Then open your home page, choose **Create account**, and enter a username, email, and password. Supabase emails a confirmation link once. After you open it, you sign in with your email and password from then on.
 
@@ -150,6 +153,17 @@ Badges are worked out in the browser from picks and final scores (`BADGES` and `
 ## Visitor stats
 
 Every page loads [GoatCounter](https://www.goatcounter.com/) (stickpicks.goatcounter.com), a free, privacy-friendly visitor counter: no cookies and no personal data. Page addresses are counted without usernames (for example `sheet.html?team=SEA`). Visits from `localhost` aren't counted. See the numbers by signing in at https://stickpicks.goatcounter.com.
+
+## Custom domain
+
+stickpicks lives at **stickpicks.hockey**, registered at Porkbun (bought October 2026). Here's how it's connected, in case it ever needs redoing or the site moves to another domain:
+
+1. **DNS (at Porkbun, Domain Management → DNS):** four `A` records for the domain itself (Host left blank) pointing to GitHub's servers `185.199.108.153`, `185.199.109.153`, `185.199.110.153` and `185.199.111.153`, plus the matching `AAAA` records, and a `CNAME` record for `www` pointing to `mediocreoctopus.github.io`. Porkbun's **Quick DNS Config → GitHub** adds these in one step. Porkbun's parking records (pointing to `pixie.porkbun.com`) must be deleted.
+2. **GitHub:** **Settings → Pages → Custom domain** is set to `stickpicks.hockey`, with **Enforce HTTPS** ticked. Saving the domain there creates the `CNAME` file in the repository; don't delete it.
+3. **Supabase:** **Authentication → URL Configuration** has the new address as the Site URL and in Redirect URLs (see step 4 of Setup).
+4. **Full web addresses in the code:** every page's `og:image` (the link-preview picture) and `SITE_URL` in `scripts/send-reminders.mjs` use `https://stickpicks.hockey/`. Every other link on the site is relative, so it works on any address.
+
+Browsers treat a new address as a separate site, so after a move, players sign in once more, turn puck-drop reminders back on, and re-add the app to their Home Screen. Their picks are stored online and carry over.
 
 ## Things to know
 
