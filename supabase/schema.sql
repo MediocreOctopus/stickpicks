@@ -435,3 +435,65 @@ $$;
 revoke all on function public.push_reminders_due(int) from public, anon, authenticated;
 grant execute on function public.push_reminders_due(int) to service_role;
 grant select, insert, update, delete on public.push_subscriptions, public.push_reminders_sent to service_role;
+-- 14) Honours: badges that depend on everyone's results over the season, worked out here.
+--     captain: a sheet that was #1 (with points) on its team's leaderboard at the end of any
+--              game day. Once earned it stays, even if the sheet drops later.
+--     mvp:     only once every regular-season game is final: the player(s) whose best sheet is
+--              #1 on the All-Teams season leaderboard (ties share it).
+--     Returns usernames and dates only, never anyone's picks.
+create or replace function public.badge_honours(p_season text default '20262027')
+returns table (username text, badge text, team text, earned_on date)
+language sql stable security definer set search_path = ''
+as $$
+  with daily as (        -- points each sheet earned on each game day (finished games only)
+    select tp.user_id, tp.team, g.game_date,
+      sum(
+        (case when tp.pick is not null and tp.pick =
+           (case when (case when g.home = tp.team then g.home_score else g.away_score end)
+                    > (case when g.home = tp.team then g.away_score else g.home_score end) then 'W'
+                 when g.period_type = 'REG' then 'L' else 'OTL' end) then 1 else 0 end)
+      + (case when tp.goals is not null and tp.goals = g.home_score + g.away_score then 1 else 0 end)
+      ) as pts
+    from public.team_picks tp
+    join public.profiles p on p.user_id = tp.user_id
+    join public.games g on g.game_id = tp.game_id and g.season = p_season
+    where g.period_type is not null and g.home_score is not null and g.away_score is not null
+    group by tp.user_id, tp.team, g.game_date
+  ),
+  sheets as (select distinct d.user_id, d.team from daily d),
+  days as (select distinct d.team, d.game_date from daily d),
+  running as (           -- each sheet's season total at the end of each of its team's game days
+    select s.user_id, s.team, dy.game_date,
+      sum(coalesce(d.pts, 0)) over (partition by s.user_id, s.team order by dy.game_date) as total
+    from sheets s
+    join days dy on dy.team = s.team
+    left join daily d on d.user_id = s.user_id and d.team = s.team and d.game_date = dy.game_date
+  ),
+  ranked as (
+    select r.*, max(r.total) over (partition by r.team, r.game_date) as top from running r
+  ),
+  captains as (
+    select k.user_id, k.team, min(k.game_date) as earned_on
+    from ranked k where k.total > 0 and k.total = k.top
+    group by k.user_id, k.team
+  ),
+  season_over as (       -- every regular-season game final (cancelled games don't count)
+    select max(g.game_date) as last_day from public.games g
+    where g.season = p_season
+    having count(*) > 0
+       and count(*) filter (where g.period_type is null and coalesce(g.schedule_state, 'OK') not in ('CNCL', 'CANCELLED')) = 0
+  ),
+  finals as (select d.user_id, d.team, sum(d.pts) as pts from daily d group by d.user_id, d.team),
+  best as (select f.user_id, max(f.pts) as pts from finals f group by f.user_id),
+  mvps as (
+    select b.user_id, (select so.last_day from season_over so) as earned_on
+    from best b
+    where exists (select 1 from season_over)
+      and b.pts > 0 and b.pts = (select max(x.pts) from best x)
+  )
+  select p.username, 'captain', c.team, c.earned_on from captains c join public.profiles p on p.user_id = c.user_id
+  union all
+  select p.username, 'mvp', null, m.earned_on from mvps m join public.profiles p on p.user_id = m.user_id;
+$$;
+revoke all on function public.badge_honours(text) from public;
+grant execute on function public.badge_honours(text) to anon, authenticated;

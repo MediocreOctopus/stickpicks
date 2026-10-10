@@ -414,9 +414,9 @@ const BADGES=[
    art:`<path d="M21 16h11l1.2 16Q44 32.5 46 37v4H21Z" fill="${BI.n}"/><path d="M26 22h5M26 26h5.4M26 30h5.8" stroke="${BI.c}" stroke-width="1.4" stroke-linecap="round"/><path d="M24.5 41v4M42 41v4" stroke="${BI.n}" stroke-width="2.2"/><path d="M17 45.5h29q4 0 4-4" fill="none" stroke="${BI.s}" stroke-width="2.6" stroke-linecap="round"/>`},
   {id:"pointstreak", name:"Point Streak", ring:"gold", how:"Score at least a point in 10 straight finished games.",
    art:`<path d="M20 13L37 42" stroke="${BI.w}" stroke-width="3.6" stroke-linecap="round"/><path d="M36 42h11" stroke="${BI.n}" stroke-width="4.6" stroke-linecap="round"/><path d="M39 36q2.5-3 .5-6.5M44 36q2.5-3 .5-6.5M49 37q2-2.6.4-5.4" stroke="${BI.r}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M22.6 17.5l2.6-1.5M24.2 20.2l2.6-1.5" stroke="${BI.n}" stroke-width="1.4"/>`},
-  {id:"captain", name:"Captain", ring:"gold", how:"Sit at #1 on a team leaderboard.",
+  {id:"captain", name:"Captain", ring:"gold", how:"Reach #1 on a team leaderboard at any point in the season.",
    art:`<text x="32" y="44" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="31" fill="${BI.r}" stroke="${BI.n}" stroke-width="1.6" paint-order="stroke">C</text>`},
-  {id:"mvp", name:"MVP", ring:"gold", how:"Sit at #1 on the season’s All-Teams leaderboard.",
+  {id:"mvp", name:"MVP", ring:"gold", how:"Finish the regular season #1 on the All-Teams leaderboard.",
    // a gold trophy cup with a star, on a navy base lettered MVP
    art:`<path d="M23 21h-4.2q0 7.4 6 8.4M41 21h4.2q0 7.4-6 8.4" fill="none" stroke="${BI.n}" stroke-width="2.2" stroke-linecap="round"/>`+
        `<path d="M22 15.5h20v8q0 10.5-10 10.5t-10-10.5Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1.5"/><path d="M25 18.5v5q0 4 2.6 6.4" stroke="#F0D58C" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".8"/>`+
@@ -442,7 +442,7 @@ function badgeEl(id, px=56, earned=true){
 // board: the All teams season leaderboard (for Captain and MVP); who: the player's username;
 // joined: when their profile was made (Inaugural Season, and the year on its banner)
 const ORIGINAL_SIX=["BOS","CHI","DET","MTL","NYR","TOR"];
-function computeBadges(picks, games, board, who, joined){
+function computeBadges(picks, games, board, who, joined, honours){
   BADGE_JOIN_YEAR = joined ? new Date(joined).getFullYear() : null;
   const G=new Map(games.map(g=>[Number(g.game_id),g]));
   const sheets=[...new Set(picks.map(p=>p.team))];
@@ -480,6 +480,10 @@ function computeBadges(picks, games, board, who, joined){
     const top={}; board.forEach(r=>{ const p=Number(r.points); if(top[r.team]===undefined || p>top[r.team]) top[r.team]=p; });
     captain=board.some(r=>r.username.toLowerCase()===who.toLowerCase() && Number(r.points)>0 && Number(r.points)===top[r.team]);
   }
+  // Honours worked out by the database (badge_honours): Captain stays once you've been #1 on a team
+  // board at the end of any game day; MVP is only given once the regular season is over.
+  const honoured=id=>!!who && (honours||[]).some(h=>h.badge===id && h.username.toLowerCase()===who.toLowerCase());
+  captain = captain || honoured("captain");
   // for progress bars
   const maxPts=scored.reduce((m,x)=>Math.max(m,x.sc.points),0);
   const nightBest=Object.values(nights).reduce((m,a)=>a.every(Boolean)?Math.max(m,a.length):m,0);
@@ -521,7 +525,7 @@ function computeBadges(picks, games, board, who, joined){
     barnstormer: divs.size===4,
     pointstreak: ptBest>=10,
     captain,
-    mvp: overall?.rank===1 && overall.pts>0,
+    mvp: honoured("mvp"),
   };
   const run=n=>`Best run on a sheet: ${Math.min(sheetBest,n)} of ${n}`;
   const progress={ hattrick:`${hatBest} of 3 kinds on one sheet`, star3:run(3), star2:run(5), star1:run(10),
@@ -545,8 +549,8 @@ function computeBadges(picks, games, board, who, joined){
     original6:[o6,6,"Original Six sheets"],
     barnstormer:[divs.size,4,"divisions"],
     pointstreak:[Math.min(ptBest,10),10,"games in a row with a point"],
-    captain:[bestRank===1?1:0,1, bestRank ? `#1 spot (best so far: #${bestRank})` : "#1 spot"],
-    mvp:[earned.mvp?1:0,1, overall ? `#1 overall (best so far: #${overall.rank})` : "#1 overall"],
+    captain:[0,1, bestRank ? `#1 spot on a team board (now: #${bestRank})` : "#1 spot on a team board"],
+    mvp:[0,1, overall ? `#1 overall when the season ends (now: #${overall.rank})` : "#1 overall when the season ends"],
   };
   Object.keys(earned).forEach(id=>{ if(earned[id]) meter[id][0]=meter[id][1]; });
   return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, meter, streak:{current:cur, best}};
@@ -598,9 +602,14 @@ async function gamesForTeams(sb, teams){
 async function myBadges(sb, username){
   const picks=await fetchAllRows(()=>sb.from("team_picks").select("team,game_id,pick,goals").order("game_id"));
   const teams=[...new Set(picks.map(p=>p.team))];
-  const [games, board, joined] = await Promise.all([gamesForTeams(sb,teams),
-    username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : [], profileJoined(sb, username)]);
-  return computeBadges(picks, games, board, username, joined);
+  const [games, board, joined, honours] = await Promise.all([gamesForTeams(sb,teams),
+    username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : [], profileJoined(sb, username), seasonHonours(sb)]);
+  return computeBadges(picks, games, board, username, joined, honours);
+}
+// Captains (anyone who has held a #1 spot) and, once the regular season is over, MVPs. Fetched once per page.
+let honoursReq=null;
+function seasonHonours(sb){
+  return honoursReq ||= sb.rpc("badge_honours",{p_season:SEASON}).then(({data,error})=>error ? null : data||[]).catch(()=>null);
 }
 // When a player's profile was made (for Inaugural Season), or null.
 async function profileJoined(sb, username){
@@ -614,8 +623,8 @@ async function playerBadges(sb, username, board){
   const sets=await Promise.all(teams.map(t=>sb.rpc("sheet_picks",{p_username:username,p_team:t,p_season:SEASON})
     .then(({data})=>(data||[]).map(r=>({team:t, game_id:r.game_id, pick:r.pick, goals:r.goals, hidden:!r.revealed})))));
   const picks=sets.flat();
-  const [games, joined]=await Promise.all([gamesForTeams(sb,teams), profileJoined(sb, username)]);
-  return computeBadges(picks, games, board, username, joined);
+  const [games, joined, honours]=await Promise.all([gamesForTeams(sb,teams), profileJoined(sb, username), seasonHonours(sb)]);
+  return computeBadges(picks, games, board, username, joined, honours);
 }
 
 // "New badge" pop-up: compares with the badges this device has already shown you.
@@ -653,12 +662,12 @@ const SITE_URL="https://stickpicks.hockey/";
 function inviteUrl(name){ return SITE_URL+(name && USERNAME_RULE.test(name) ? `?invite=${encodeURIComponent(name)}` : ""); }
 // What each badge means, as a brag ("I just earned the Hat Trick badge on stickpicks: …")
 const BADGE_BRAG={
-  inaugural:"joined stickpicks", faceoff:"made my first pick", season2627:"made my picks for the 2026–27 season", mvp:"took the #1 spot on the All-Teams leaderboard", hattrick:"called a W, an L and an OTL right on one sheet",
+  inaugural:"joined stickpicks", faceoff:"made my first pick", season2627:"made my picks for the 2026–27 season", mvp:"finished the regular season #1 on the All-Teams leaderboard", hattrick:"called a W, an L and an OTL right on one sheet",
   star3:"got 3 results right in a row on one sheet", star2:"got 5 results right in a row on one sheet", star1:"got 10 results right in a row on one sheet",
   topshelf:"nailed the result and the exact goals in the same game", lamp:"nailed the exact combined goals 5 times",
   shutout:"got every result right on a night with 3+ games", overtime:"called an overtime loss right", shootout:"called a shootout game right",
   fullsheet:"picked every game on a sheet", original6:"started sheets for all of the Original Six", barnstormer:"started sheets in all four divisions",
-  pointstreak:"scored a point in 10 straight games", captain:"took the #1 spot on a team leaderboard" };
+  pointstreak:"scored a point in 10 straight games", captain:"reached #1 on a team leaderboard" };
 
 function badgeSpec(id, who){
   const b=BADGE_BY_ID[id];

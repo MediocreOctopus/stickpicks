@@ -26,7 +26,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-16">
+<link rel="stylesheet" href="styles.css?v=2026-11-17">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -176,7 +176,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="rules.html">Rules</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-11-16"></script>
+<script src="teams.js?v=2026-11-17"></script>
 <script>mountTeamMenu(document.getElementById("teamMenu"));</script>
 <!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
 <script>window.goatcounter={path:function(){var t=new URLSearchParams(location.search).get("team");return location.pathname+(t?"?team="+t:"")}};</script>

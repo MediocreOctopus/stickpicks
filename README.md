@@ -162,10 +162,10 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Original Six | Sheets for BOS, CHI, DET, MTL, NYR and TOR |
 | Barnstormer | Sheets in all four divisions |
 | Point Streak | At least a point in 10 straight finished games |
-| Captain | #1 on a team leaderboard |
-| MVP | #1 on the season's All-Teams leaderboard (ties share it) |
+| Captain | #1 on a team leaderboard at the end of any game day (it stays, even if you drop later) |
+| MVP | #1 on the All-Teams leaderboard when the regular season ends (ties share it) |
 
-Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
+Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. The exceptions are Captain and MVP, which depend on everyone's results over time: the database works those out (`badge_honours()` in `schema.sql`, section 14). It replays the season one game day at a time to find every sheet that has held a #1 spot, and it names MVPs only once every regular-season game is final. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.
 ## Visitor stats
 
 Every page loads [GoatCounter](https://www.goatcounter.com/) (stickpicks.goatcounter.com), a free, privacy-friendly visitor counter: no cookies and no personal data. Page addresses are counted without usernames (for example `sheet.html?team=SEA`). Visits from `localhost` aren't counted. See the numbers by signing in at https://stickpicks.goatcounter.com.
