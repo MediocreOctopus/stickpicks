@@ -1091,8 +1091,9 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
   .pf-banner-in{grid-template-columns:auto minmax(0,1fr);gap:0 14px;padding:16px 14px 14px 38px}
   .pf-avatar .avatar{--av-size:64px !important}
   .pf-banner .pf-name{font-size:clamp(1.8rem,8vw,2.3rem)}
-  .pf-acts{grid-column:1 / -1;margin-top:12px;justify-content:flex-start;max-width:none}
-  .pf-acts .btn{width:100%}
+  .pf-acts{grid-column:1 / -1;margin-top:12px;justify-content:flex-start}
+  .pf-acts > span:not(:empty),.pf-acts > .pf-pill:not(.hidden){flex:1 1 0}
+  .pf-acts .pf-pill,.pf-acts .chiclet-chip{width:100%;justify-content:center}
   .pf-teams{gap:6px}
   .pf-team{flex:1 1 100%}
 }
@@ -1115,18 +1116,32 @@ a.chiclet-chip:hover{background:var(--btn);border-color:var(--btn);color:var(--b
 a.chiclet-chip:hover .chiclet-ico svg{transform:rotate(25deg)}
 .navchiclets{display:inline-flex}
 .navchiclets.hidden{display:none}
-/* Banner pills on the profile (Chiclets, Settings): felt on the navy banner */
-.pf-acts{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;max-width:250px}
-.pf-acts .pf-invitebox{flex:1 1 100%;display:flex}
-.pf-acts .pf-invitebox .btn{width:100%;justify-content:center}
+/* the top bar wraps rather than running off the edge when the counter is added on a mid-size screen */
+.topnav{flex-wrap:wrap;justify-content:flex-end;row-gap:8px}
+/* Banner pills on the profile (Settings, Invite friends; another player's Chiclets): one line, felt on the navy banner */
+.pf-acts{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:8px}
+.pf-acts > span{display:flex}
 .pf-acts > span:empty{display:none}
-.pf-pill,.pf-acts .chiclet-chip{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:4px 14px 4px 8px;border-radius:999px;
+.pf-pill,.pf-acts .chiclet-chip{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:4px 14px 4px 10px;border-radius:999px;white-space:nowrap;
   background:rgba(239,230,210,.08);border:1px solid rgba(239,230,210,.3);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;text-decoration:none}
 .pf-pill svg{flex:none}
 .pf-pill.hidden{display:none}
-.pf-pill:hover,a.pf-pill:hover,.pf-pill[aria-expanded="true"]{background:var(--wool);border-color:var(--wool);color:var(--navy)}
+button.pf-pill:hover,a.pf-pill:hover,.pf-pill[aria-expanded="true"]{background:var(--wool);border-color:var(--wool);color:var(--navy)}
 span.pf-pill{cursor:default}
 .pf-acts .chiclet-chip b{font-size:1.05rem;letter-spacing:.04em}
+/* Invite friends: a red felt patch with white stitching, like the sweater stripes */
+.pf-pill.pf-invite{background:#C8302B;border:0;color:#FBF7EE;outline:1.5px dashed rgba(251,247,238,.8);outline-offset:-5px;padding:4px 16px 4px 13px;
+  box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.pf-pill.pf-invite:hover{background:#E8463F;color:#FBF7EE;outline-color:#FBF7EE}
+.pf-pill.pf-invite:active{transform:translateY(1px);box-shadow:none}
+/* Settings and Invite share one line: beside the name on wide screens, under the name on narrower ones,
+   and splitting the full width on phones */
+@media (max-width:900px){
+  .pf-acts{grid-column:2 / -1;justify-content:flex-start;margin-top:12px}
+}
+@media (max-width:560px){
+  .pf-acts{grid-column:1 / -1}
+}
 /* Settings card: a header with Done; rows flow into two columns when there's room */
 .pf-settings{outline:none}
 .pf-sethead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;border-bottom:4px double var(--ink)}
@@ -1135,9 +1150,20 @@ span.pf-pill{cursor:default}
 .pf-rows{columns:2 340px;column-gap:36px}
 .pf-rows .pf-row{break-inside:avoid}
 .pf-rows .pf-row:first-child{padding-top:0}
-/* Chiclets page */
-.ch-banner .ch-bal{display:flex;align-items:center;gap:10px;margin:8px 0 0;font:italic 1rem var(--serif)}
+/* Chiclets page: title and balance on one line; How it works folded away; a tight statement */
+.ch-banner{padding-top:14px;padding-bottom:24px}
+.ch-banner-in{display:flex;align-items:center;justify-content:space-between;gap:8px 18px;flex-wrap:wrap}
+.ch-banner h1{margin:0}
+.ch-banner .ch-bal{display:flex;align-items:center;gap:8px;margin:0;font:italic 1rem var(--serif)}
 .ch-banner .ch-bal b{font:700 2.6rem/1 var(--display);font-style:normal;font-variant-numeric:tabular-nums}
+.ch-how{margin-top:14px}
+.ch-how > summary{cursor:pointer;list-style:none;user-select:none}
+.ch-how > summary::-webkit-details-marker{display:none}
+.ch-how > summary span::after{content:"";display:inline-block;width:.45em;height:.45em;margin-left:.6em;border:solid currentColor;border-width:0 2px 2px 0;
+  transform:translateY(-.2em) rotate(45deg);transition:transform .15s}
+.ch-how[open] > summary span::after{transform:translateY(.05em) rotate(-135deg)}
+.ch-how > summary:focus-visible{outline:2px solid var(--gold);outline-offset:-4px}
+.ch-how + .bgroup{margin-top:14px}
 .ch-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;padding:14px}
 .ch-rule{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:baseline;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
 .ch-rule b{font:700 1.3rem var(--display);font-variant-numeric:tabular-nums}
@@ -1147,9 +1173,9 @@ span.pf-pill{cursor:default}
 .st-delta.up,.st-sum .up,.ch-rule .up{color:var(--win)} .st-delta.down,.st-sum .down,.ch-rule .down{color:var(--loss)}
 .st-sum{display:flex;flex-wrap:wrap;gap:6px 22px;padding:12px 14px;border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .st-sum b{font-size:1rem;letter-spacing:.04em}
-.st-month{margin:0;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.st-month{margin:0;padding:5px 14px;background:var(--bg);border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .st-list{list-style:none;margin:0;padding:0}
-.st-row{display:grid;grid-template-columns:3.6em minmax(0,1fr) auto 3em;gap:10px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--line)}
+.st-row{display:grid;grid-template-columns:3.6em minmax(0,1fr) auto 3em;gap:10px;align-items:baseline;padding:6px 14px;border-bottom:1px solid var(--line)}
 .st-date{font:600 .78rem var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .st-what{display:grid;min-width:0}
 .st-what small{color:var(--muted);font-size:.82rem}

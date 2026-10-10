@@ -203,7 +203,7 @@ Badges are worked out in the browser from picks and final scores (`BADGES` and `
 
 ## Chiclets
 
-Chiclets are free, earned-only points. A counter (a tilted tooth and the count) sits in the top-right corner of the home page and in the profile banner; on your own profile or the home page it's a button to `chiclets.html`, your balance and full statement (every Chiclet gained or lost, newest first, by month). On another player's profile it just shows their total. Nothing is stored: `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time:
+Chiclets are free, earned-only points. When you're signed in, a counter (a tilted tooth and the count) sits in the top-right corner of the home, Pick Teams, Leaderboard and profile pages (`mountChicletNav()` in `teams.js`; the home page fills its own). It's a button to `chiclets.html`: your balance, a fold-out "How it works", and your full statement (every Chiclet gained or lost, newest first, by month). Another player's profile shows their total in the banner, as a count only. Nothing is stored: `chiclets_ledger()` and `chiclets_balance()` in `schema.sql` (section 17) work them out from picks and final scores every time:
 
 | Change | When |
 |---|---|

@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-07">
+<link rel="stylesheet" href="styles.css?v=2026-12-08">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -45,24 +45,24 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 
   <!-- Sweater banner: the balance -->
   <header class="teams-banner badges-banner ch-banner">
-    <small class="tb-kicker" id="chKicker">2026–27 season</small>
-    <h1>Chiclets</h1>
-    <p class="ch-bal" id="chBal">Loading…</p>
-    <a class="bb-back" href="profile.html">Back to your profile</a>
+    <div class="ch-banner-in">
+      <div><small class="tb-kicker" id="chKicker">2026–27 season</small><h1>Chiclets</h1></div>
+      <p class="ch-bal" id="chBal">Loading…</p>
+    </div>
   </header>
 
   <main>
-    <!-- How you earn and lose them -->
-    <section class="bgroup" aria-labelledby="howTitle">
-      <h2 class="bgroup-head" id="howTitle"><span>How it works</span><small>Free to earn</small></h2>
+    <!-- How you earn and lose them: closed until tapped -->
+    <details class="bgroup ch-how">
+      <summary class="bgroup-head"><span>How it works</span><small>+1 · +2 · +5 · −1</small></summary>
       <div class="ch-rules">
         <div class="ch-rule"><b class="up">+1</b><span>Each right result (W, L or OTL)</span></div>
         <div class="ch-rule"><b class="up">+2</b><span>Each exact combined-goals pick</span></div>
         <div class="ch-rule"><b class="up">+5</b><span>A perfect night: 3+ games on one day, every result right</span></div>
         <div class="ch-rule"><b class="down">−1</b><span>Each skipped game on a sheet you’ve started (at most −5 a week)</span></div>
       </div>
-      <p class="ch-more">Your balance never drops below 0. Chiclets can’t be bought with real money and have no cash value. Soon you’ll be able to spend them on fun extras like profile borders and retro sweaters. <a href="rules.html#chiclets">Full rules</a></p>
-    </section>
+      <p class="ch-more">Never below 0. Free to earn, no cash value, and soon you can spend them on profile extras. <a href="rules.html#chiclets">Full rules</a></p>
+    </details>
 
     <!-- The statement: every change, newest first, grouped by month -->
     <section class="bgroup" aria-labelledby="stTitle">
@@ -76,13 +76,13 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-07"></script>
-<script src="teams.js?v=2026-12-07"></script>
+<script src="config.js?v=2026-12-08"></script>
+<script src="teams.js?v=2026-12-08"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
 mountTeamMenu($("teamMenu"));
-const PAGE=60;   // statement rows shown at first; "Show older" adds more
+const PAGE=25;   // statement rows shown at first; "Show older" adds more
 let rows=[], shown=PAGE;
 
 function note(text, html){ const p=document.createElement("p"); p.className="hint st-empty"; html ? p.innerHTML=html : p.textContent=text; $("stBody").replaceChildren(p); }
@@ -97,7 +97,6 @@ async function start(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session){
     $("chBal").textContent="Free points for picking well.";
-    document.querySelector(".bb-back").classList.add("hidden");
     return note("", '<a href="index.html#signin">Sign in</a> to see your Chiclets and your statement.');
   }
   const {data:me}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
@@ -112,12 +111,11 @@ async function start(){
 
 function render(){
   const body=$("stBody");
-  $("stCount").textContent = rows.length ? `${rows.length} entr${rows.length===1?"y":"ies"}` : "";
+  $("stCount").textContent="";
   if(!rows.length) return note("Nothing yet. Your first Chiclets arrive when a game you picked goes final.");
   const earned=rows.filter(r=>r.delta>0).reduce((s,r)=>s+r.delta,0), lost=rows.filter(r=>r.delta<0).reduce((s,r)=>s-r.delta,0);
-  const sum=document.createElement("div"); sum.className="st-sum";
-  sum.innerHTML=`<span>Earned <b class="up">+${earned.toLocaleString()}</b></span><span>Lost <b class="${lost?"down":""}">${lost?"−":""}${lost.toLocaleString()}</b></span><span>Balance <b>${Number(rows[0].balance).toLocaleString()}</b></span>`;
-  const out=[sum];
+  $("stCount").textContent=`Earned ${earned.toLocaleString()} · Lost ${lost.toLocaleString()}`;
+  const out=[];
   const head=document.createElement("div"); head.className="st-row st-head"; head.setAttribute("aria-hidden","true");
   head.innerHTML="<span>Date</span><span>What</span><span>Change</span><span>Total</span>";
   out.push(head);

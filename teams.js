@@ -1331,6 +1331,22 @@ function chicletChip(n, href, cls=""){
   el.setAttribute("aria-label", href ? `${chicletsText(n)}. See your Chiclets statement.` : chicletsText(n));
   return el;
 }
+// The top-bar counter (top-right corner, beside the account button) for whoever is signed in, on any page with
+// <span class="navchiclets hidden" id="navChiclets">. Stays hidden when signed out or without a username.
+async function mountChicletNav(sb){
+  const box=document.getElementById("navChiclets");
+  if(!box || !sb) return;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session) return box.classList.add("hidden");
+    const {data:me}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
+    if(!me?.username) return box.classList.add("hidden");
+    const n=await chicletBalance(sb, me.username);
+    if(n==null) return;
+    box.replaceChildren(chicletChip(n, "chiclets.html"));
+    box.classList.remove("hidden");
+  }catch(e){}
+}
 async function chicletBalance(sb, username){
   if(!sb || !username) return null;
   const {data,error}=await sb.rpc("chiclets_balance",{p_username:username});

@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-07">
+<link rel="stylesheet" href="styles.css?v=2026-12-08">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -40,6 +40,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <a href="rules.html" class="navrules">Rules</a>
       <a href="leaderboard.html" aria-current="page">Leaderboard</a>
       <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navchiclets hidden" id="navChiclets"></span>
     </div>
   </nav>
 
@@ -95,12 +96,13 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-07"></script>
-<script src="teams.js?v=2026-12-07"></script>
+<script src="config.js?v=2026-12-08"></script>
+<script src="teams.js?v=2026-12-08"></script>
 <script>
 const sb = makeClient();
 let team=null, myName=null;
 mountTeamMenu(document.getElementById("teamMenu"));
+mountChicletNav(sb);
 
 const sel=document.getElementById("teamsel");
 (function buildSelect(){

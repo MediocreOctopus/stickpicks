@@ -17,6 +17,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
@@ -26,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-07">
+<link rel="stylesheet" href="styles.css?v=2026-12-08">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -38,6 +39,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <a href="rules.html" class="navrules">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
       <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navchiclets hidden" id="navChiclets"></span>
     </div>
   </nav>
 
@@ -53,8 +55,11 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>Fan-made, not affiliated with the NHL. Team colors are approximations. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
-<script src="teams.js?v=2026-12-07"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-12-08"></script>
+<script src="teams.js?v=2026-12-08"></script>
 <script>
+mountChicletNav(makeClient());   // your Chiclets counter, top right
 // All 32 teams by division. Each tile is a cream card with the team's sweater (the same jersey
 // drawing as profile pictures) in a stitched patch, and a hem in the team's colours. Marks the
 // sheet you opened last and any sheets with picks saved in this browser.

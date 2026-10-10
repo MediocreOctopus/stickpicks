@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-07">
+<link rel="stylesheet" href="styles.css?v=2026-12-08">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -40,6 +40,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <a href="rules.html" class="navrules">Rules</a>
       <a href="leaderboard.html">Leaderboard</a>
       <a href="profile.html" class="navaccount" data-me aria-current="page">Sign in</a>
+      <span class="navchiclets hidden" id="navChiclets"></span>
     </div>
   </nav>
 
@@ -230,8 +231,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-07"></script>
-<script src="teams.js?v=2026-12-07"></script>
+<script src="config.js?v=2026-12-08"></script>
+<script src="teams.js?v=2026-12-08"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -270,7 +271,7 @@ function setName(name){
   $("delInput").placeholder = name || "";
   showAvatar();
   // Invite friends (your own profile, once you have a username)
-  $("pfInvite").replaceChildren(...(name ? [shareButton("Invite friends", inviteSpec(name), "btn pf-invite")] : []));
+  $("pfInvite").replaceChildren(...(name ? [shareButton("Invite friends", inviteSpec(name), "pf-pill pf-invite")] : []));
 }
 // Settings stay closed until you ask for them (the Settings button in the banner, or a link to #settings / #reminders)
 function openSettings(open=true, target){
@@ -307,12 +308,14 @@ async function load(session){
   loadStats();
 }
 
-// Chiclets counter in the banner: a button to the Chiclets page on your own profile, just the count on someone else's
+// Chiclets: your own counter is in the top-right corner (a button to the Chiclets page, as on every page);
+// someone else's profile also shows their total in the banner (just the count)
 async function showChiclets(who, own){
+  mountChicletNav(sb);
   const box=$("pfChiclets");
-  if(!who) return box.replaceChildren();
+  if(own || !who) return box.replaceChildren();
   const n=await chicletBalance(sb, who);
-  if(n!=null) box.replaceChildren(chicletChip(n, own ? "chiclets.html" : null, "pf-pill"));
+  if(n!=null) box.replaceChildren(chicletChip(n, null, "pf-pill"));
 }
 
 async function loadStats(){
