@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-21">
+<link rel="stylesheet" href="styles.css?v=2026-11-22">
 </head>
 <body>
 
@@ -183,7 +183,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <a class="btn acct-picknow hidden" id="pickNow" href="teams.html">Pick Now</a>
         <!-- Badges in reach: the three unearned badges you're closest to, easiest first -->
         <section class="acct-reach hidden" id="reach" aria-label="Badges in reach">
-          <h3 class="acct-label">Badges in reach <a href="profile.html#badges">All badges</a></h3>
+          <h3 class="acct-label">Badges in reach <a href="badges.html">All badges</a></h3>
           <div class="reach-list" id="reachList"></div>
         </section>
         <!-- Invite friends: shares a link that says who invited them -->
@@ -208,8 +208,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-21"></script>
-<script src="teams.js?v=2026-11-21"></script>
+<script src="config.js?v=2026-11-22"></script>
+<script src="teams.js?v=2026-11-22"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");

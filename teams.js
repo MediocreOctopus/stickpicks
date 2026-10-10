@@ -764,6 +764,22 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
 const BADGE_ORDER=["inaugural","faceoff","season2627","star3","topshelf","rivalry","overtime","goalieduel","hattrick","shootout","barnstormer","earlybird","ironman","fullslate",
   "lamp","roadwarrior","goalfest","star2","original6","ocanada","heritageclassic","winterclassic","stadiumseries","globalseries","buzzer","shutout","recruiter","halfseason","captain",
   "divisionchamp","naturalhattrick","perfectweek","playerweek","pointstreak","star1","playermonth","dynasty","fullsheet","pt100","commissioner","mvp","openingnight"];
+// The groups on the Badges page, in order.
+const BADGE_GROUPS=[
+  {name:"Getting started", ids:["inaugural","faceoff","season2627","openingnight"]},
+  {name:"Calling games", ids:["hattrick","naturalhattrick","topshelf","lamp","goalfest","goalieduel","overtime","shootout","roadwarrior"]},
+  {name:"Streaks", ids:["star3","star2","star1","pointstreak","shutout","perfectweek"]},
+  {name:"Habits", ids:["earlybird","buzzer","ironman","fullslate","halfseason","fullsheet"]},
+  {name:"Collector", ids:["original6","ocanada","rivalry","barnstormer","divisionchamp","commissioner"]},
+  {name:"Big games", ids:["heritageclassic","winterclassic","stadiumseries","globalseries"]},
+  {name:"Leaderboard honours", ids:["playerweek","playermonth","dynasty","captain","pt100","mvp"]},
+  {name:"Social", ids:["recruiter"]},
+];
+// Rarest first: gold rings, then red, then navy; within a ring, hardest first (BADGE_ORDER, reversed).
+function rarestBadges(ids, n){
+  const ring={gold:0, red:1, navy:2};
+  return [...ids].sort((a,b)=>ring[BADGE_BY_ID[a].ring]-ring[BADGE_BY_ID[b].ring] || BADGE_ORDER.indexOf(b)-BADGE_ORDER.indexOf(a)).slice(0,n);
+}
 // The n unearned badges you're closest to (highest share done; easier first on ties), listed easiest to hardest.
 function badgesInReach(r, n=3){
   const rank=id=>BADGE_ORDER.indexOf(id), share=id=>{ const [h,need]=r.meter[id]; return need ? h/need : 0; };
@@ -853,7 +869,7 @@ function announceBadges(userId, earned, who){
   const text=document.createElement("div"); text.className="badge-toast-text";
   const k=document.createElement("small"); k.textContent = fresh.length===1 ? "New badge" : `${fresh.length} new badges`;
   const n=document.createElement("b"); n.textContent = fresh.length===1 ? b.name : fresh.map(id=>BADGE_BY_ID[id].name).join(" · ");
-  const a=document.createElement("a"); a.href="profile.html#badges"; a.textContent="See your badges";
+  const a=document.createElement("a"); a.href="badges.html"; a.textContent="See your badges";
   const row=document.createElement("div"); row.className="badge-toast-acts";
   row.append(shareButton("Share", badgeSpec(fresh[0], who), "linkbtn"), a);
   text.append(k,n,row);

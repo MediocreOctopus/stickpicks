@@ -9,6 +9,7 @@ index.html                                  home page: sign-in, news ticker, tod
 sheet.html                                  the pick sheet for one team
 rules.html                                  the rules and scoring explained, with examples
 privacy.html                                the Privacy Policy and Terms of Use
+badges.html                                 every badge, in groups (yours, or ?user=Name for another player's)
 compare.html                                your sheet and another player's, side by side
 intermission.html                           the Intermission page with the Breakaway game
 game.js                                     Breakaway, the hockey mini-game
@@ -142,7 +143,7 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 42 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges, and every badge on the profile has a progress bar (for example "3 of 5 exact goal totals").
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 42 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges. The profile shows a trophy case of your **5 rarest** badges (gold rings first, then red, then navy; hardest first within a ring), the 3 you're closest to under **Next up**, and **See all badges**, which opens `badges.html`. That page lists all of them in 8 groups (Getting started, Calling games, Streaks, Habits, Collector, Big games, Leaderboard honours, Social), each with its own count, plus All / Earned / Not yet filters. Tap a patch for a card with how to earn it, a progress bar, and Share for badges you've earned. `badges.html?user=Name` shows another player's, and `&badge=id` opens one badge's card. The groups are `BADGE_GROUPS` in `teams.js`.
 
 | Badge | How to earn it |
 |---|---|

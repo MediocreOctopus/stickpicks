@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-11-21">
+<link rel="stylesheet" href="styles.css?v=2026-11-22">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -201,8 +201,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-11-21"></script>
-<script src="teams.js?v=2026-11-21"></script>
+<script src="config.js?v=2026-11-22"></script>
+<script src="teams.js?v=2026-11-22"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -273,21 +273,29 @@ async function loadStats(){
     .catch(()=>{ $("badgeGrid").innerHTML='<p class="hint" style="margin:0">Couldn’t load badges right now.</p>'; });
 }
 
-// Badges card + streak tile. Earned patches in full colour; the rest faded, with how to earn them.
-function showBadges(r, own){
+// Badges card + streak tile: a trophy case of the 5 rarest badges earned, the 3 closest to earning,
+// and a link to the full collection on the Badges page. (who = the player for someone else's profile.)
+function showBadges(r, own, who){
   $("stStreak").textContent = r.streak.current ? `${r.streak.current}` : "0";
   $("stStreakBest").textContent = `in a row · best ${r.streak.best}`;
   $("badgeCount").textContent=`${r.earned.length} of ${BADGES.length}`;
-  const grid=$("badgeGrid"); grid.innerHTML="";
-  BADGES.forEach(b=>{
-    const has=r.earned.includes(b.id), item=document.createElement("div"); item.className="badge-item"+(has?"":" is-locked");
-    const name=document.createElement("b"); name.textContent=b.name;
-    const how=document.createElement("small"); how.textContent=b.how;
-    item.append(badgeEl(b.id,60,has), name, how, badgeProgressEl(b.id, r.meter[b.id]));   // progress bar ("Earned" when done)
-    if(has && own && username) item.append(shareButton("Share", badgeSpec(b.id, username), "linkbtn badge-share", true));
-    item.title = `${b.name}: ${has?"earned":"not yet"}. ${b.how}`;
-    grid.appendChild(item);
-  });
+  const box=$("badgeGrid"); box.className="pf-badges"; box.innerHTML="";
+  const href = own ? "badges.html" : `badges.html?user=${encodeURIComponent(who)}`;
+  const label=t=>{ const h=document.createElement("h3"); h.className="pf-sub"; h.textContent=t; return h; };
+  // Trophy case
+  box.append(label(own ? "Your rarest" : "Rarest"));
+  const best=rarestBadges(r.earned,5);
+  if(best.length){
+    const row=document.createElement("div"); row.className="trophy-case";
+    best.forEach(id=>{ const a=document.createElement("a"); a.className="trophy"; a.href=`${href}${own?"?":"&"}badge=${id}`; a.title=BADGE_BY_ID[id].how;
+      const nm=document.createElement("span"); nm.textContent=BADGE_BY_ID[id].name; a.append(badgeEl(id,64), nm); row.append(a); });
+    box.append(row);
+  }else{ const p=document.createElement("p"); p.className="hint"; p.style.margin="0"; p.textContent = own ? "No badges yet. Make your first pick to earn Rookie." : "No badges yet."; box.append(p); }
+  // Next up
+  const next=badgesInReach(r,3);
+  if(next.length){ box.append(label("Next up")); const list=document.createElement("div"); list.className="reach-list"; list.append(...next.map(id=>badgeProgressEl(id, r.meter[id], true))); box.append(list); }
+  const all=document.createElement("a"); all.className="btn ghost pf-allbadges"; all.href=href; all.textContent=`See all ${BADGES.length} badges`;
+  box.append(all);
   if(location.hash==="#badges") $("badges").scrollIntoView({block:"start"});
 }
 
@@ -523,7 +531,7 @@ async function loadPublic(name){
   const rows=(board||[]).filter(r=>r.username.toLowerCase()===who.toLowerCase())
     .map(r=>({team:r.team, points:Number(r.points), graded:Math.max(Number(r.outcome_graded),Number(r.goals_graded)), total_picks:r.total_picks}));
   showStats(rows, board||[], who, team=>`sheet.html?team=${team}&user=${encodeURIComponent(who)}`, `${who} hasn’t made any picks yet.`);
-  playerBadges(sb, who, board||[]).then(r=>showBadges(r,false))
+  playerBadges(sb, who, board||[]).then(r=>showBadges(r,false,who))
     .catch(()=>{ $("badgeGrid").innerHTML='<p class="hint" style="margin:0">Couldn’t load badges right now.</p>'; });
 }
 // On someone else's profile the Me tab and account button aren't "this page".

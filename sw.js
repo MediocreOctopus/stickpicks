@@ -5,12 +5,12 @@
 // ?v=YYYY-MM-DD, so they can be served straight from the cache. Live data (Supabase) is never cached.
 //
 // When bumping the ?v= date in the pages, bump VERSION here too, so the old cache is cleared.
-const VERSION = "2026-11-21";
+const VERSION = "2026-11-22";
 const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 
 const SHELL = [
-  "./", "index.html", "teams.html", "profile.html", "sheet.html", "leaderboard.html", "rules.html", "intermission.html", "compare.html", "privacy.html",
+  "./", "index.html", "teams.html", "profile.html", "sheet.html", "leaderboard.html", "rules.html", "intermission.html", "compare.html", "privacy.html", "badges.html",
   `styles.css${V}`, `teams.js${V}`, `config.js${V}`, `game.js${V}`, `logo.svg${V}`,
   "manifest.webmanifest", "icon-32.png", "icon-180.png", "icon-192.png", "icon-512.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" class="home badgespage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Badges · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Every stickpicks badge: felt sweater patches for calling games, streaks, collecting sheets, big games and leaderboard honours.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="Badges · stickpicks">
+<meta property="og:description" content="Felt sweater patches for calling NHL games, streaks, big games and leaderboard honours.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=2026-11-22">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+    </div>
+  </nav>
+
+  <!-- Sweater banner: whose collection, and how much of it is earned -->
+  <header class="teams-banner badges-banner">
+    <small class="tb-kicker" id="bKicker">2026–27 season</small>
+    <h1>Badges</h1>
+    <p id="bSummary">Loading…</p>
+    <a class="bb-back hidden" id="bBack" href="profile.html">Back to profile</a>
+  </header>
+
+  <!-- All · Earned · Not yet -->
+  <div class="bfilter hidden" id="bFilter" role="group" aria-label="Show">
+    <button type="button" data-f="all" aria-pressed="true">All</button><button type="button" data-f="earned" aria-pressed="false">Earned</button><button type="button" data-f="todo" aria-pressed="false">Not yet</button>
+  </div>
+
+  <main id="bGroups"><p class="hint" id="bMsg">Loading…</p></main>
+
+  <footer>Badges are just for fun and don’t change your score. Tap a patch for how to earn it. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<!-- One badge, up close: tap a patch to open -->
+<dialog class="bdlg" id="bDlg" aria-labelledby="bDlgName">
+  <div class="bdlg-head"><b id="bDlgGroup"></b><button type="button" class="ss-x" id="bDlgX" aria-label="Close">×</button></div>
+  <div class="bdlg-body" id="bDlgBody"></div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=2026-11-22"></script>
+<script src="teams.js?v=2026-11-22"></script>
+<script>
+const sb = makeClient();
+const $ = id => document.getElementById(id);
+mountTeamMenu($("teamMenu"));
+// badges.html = your badges; badges.html?user=Name = another player's; &badge=id opens that one
+const q=new URL(location.href).searchParams;
+const VIEW=(()=>{ const u=q.get("user"); return u && USERNAME_RULE.test(u) ? u : null; })();
+let own=false, who=null, result=null, filter="all";
+
+function message(text){ $("bGroups").innerHTML=""; const p=document.createElement("p"); p.className="hint"; p.textContent=text; $("bGroups").append(p); }
+
+async function start(){
+  if(!sb){ $("bSummary").textContent="Database not connected"; return message("Add your Supabase URL and key to config.js (see README)."); }
+  const {data:{session}}=await sb.auth.getSession();
+  let me=null;
+  if(session){
+    const {data}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
+    me=data; if(me?.username) rememberMe(me.username, avatarFromProfile(me));
+  }
+  try{
+    if(VIEW && !(me?.username && me.username.toLowerCase()===VIEW.toLowerCase())){
+      const {data:prof}=await sb.from("profiles").select("username").ilike("username", VIEW.replace(/[\\%_]/g,"\\$&")).maybeSingle();
+      if(!prof){ $("bSummary").textContent=""; return message(`There’s no player called ${VIEW}.`); }
+      who=prof.username;
+      const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
+      result=await playerBadges(sb, who, board||[]);
+      $("bBack").href=`profile.html?user=${encodeURIComponent(who)}`; $("bBack").textContent=`Back to ${who}’s profile`;
+    }else if(session){
+      own=true; who=me?.username||null;
+      if(VIEW) history.replaceState(null,"","badges.html"+(q.get("badge")?`?badge=${q.get("badge")}`:""));
+      result=await myBadges(sb, who);
+      try{ localStorage.setItem(`stickpicks-badges-${session.user.id}`, JSON.stringify(result.earned)); }catch(e){}   // seen here: no pop-up for them
+      $("bBack").textContent="Back to your profile";
+    }else{
+      // signed out: show every badge (all to earn), with a nudge to join
+      result={earned:[], meter:Object.fromEntries(BADGES.map(b=>[b.id,[0,1,""]])), streak:{current:0,best:0}};
+      $("bKicker").textContent="2026–27 season";
+      $("bSummary").innerHTML=`${BADGES.length} felt patches to collect. <a href="index.html#signin">Sign in</a> to start earning them.`;
+      return render();
+    }
+  }catch(e){ return message("Couldn’t load badges right now. Please try again in a moment."); }
+  $("bKicker").textContent = own ? "Your collection" : `${who}’s collection`;
+  $("bSummary").textContent = `${result.earned.length} of ${BADGES.length} earned`;
+  $("bBack").classList.remove("hidden");
+  document.title = `${own ? "Your badges" : who+"’s badges"} · stickpicks 2026–27`;
+  render();
+  const open=q.get("badge"); if(open && BADGE_BY_ID[open]) openBadge(open);
+}
+
+// Groups of patches, each with a navy header band and its own count
+function render(){
+  const root=$("bGroups"); root.innerHTML="";
+  $("bFilter").classList.toggle("hidden", !result.earned.length);
+  BADGE_GROUPS.forEach(g=>{
+    const ids=g.ids.filter(id=>BADGE_BY_ID[id]), got=ids.filter(id=>result.earned.includes(id));
+    const show=ids.filter(id=> filter==="all" || (filter==="earned") === result.earned.includes(id));
+    if(!show.length) return;
+    const sec=document.createElement("section"); sec.className="bgroup";
+    const head=document.createElement("h2"); head.className="bgroup-head";
+    const nm=document.createElement("span"); nm.textContent=g.name;
+    const ct=document.createElement("small"); ct.textContent=`${got.length} of ${ids.length}`;
+    head.append(nm,ct);
+    const grid=document.createElement("div"); grid.className="bgrid";
+    show.forEach(id=>{
+      const b=BADGE_BY_ID[id], has=result.earned.includes(id), [h,need]=result.meter[id]||[0,1];
+      const t=document.createElement("button"); t.type="button"; t.className="btile"+(has?" is-earned":"");
+      t.setAttribute("aria-label",`${b.name}: ${has?"earned":"not yet"}`);
+      const n=document.createElement("b"); n.textContent=b.name;
+      const bar=document.createElement("span"); bar.className="btile-bar"; bar.dataset.ring=b.ring;
+      const fill=document.createElement("i"); fill.style.width=`${need?Math.round(Math.min(h,need)/need*100):0}%`; bar.append(fill);
+      t.append(badgeEl(id,58,has), n, bar);
+      t.addEventListener("click",()=>openBadge(id));
+      grid.append(t);
+    });
+    sec.append(head,grid); root.append(sec);
+  });
+  if(!root.children.length) message(filter==="earned" ? "No badges earned yet." : "Every badge earned. Legend.");
+}
+
+// A badge up close: big patch, how to earn it, progress, and Share for your own earned ones
+function openBadge(id){
+  const b=BADGE_BY_ID[id], has=result.earned.includes(id), body=$("bDlgBody");
+  $("bDlgGroup").textContent=BADGE_GROUPS.find(g=>g.ids.includes(id))?.name||"Badge";
+  body.innerHTML="";
+  const nm=document.createElement("h3"); nm.id="bDlgName"; nm.textContent=b.name;
+  const st=document.createElement("small"); st.className="bdlg-state"+(has?" is-earned":""); st.textContent=has?"Earned":"Not yet";
+  const how=document.createElement("p"); how.textContent=b.how;
+  body.append(badgeEl(id,132,has), nm, st, how);
+  if(result.meter[id] && (own || VIEW)) body.append(badgeProgressEl(id, result.meter[id]));
+  if(own && has && who) body.append(shareButton("Share this badge", badgeSpec(id, who), "btn"));
+  const d=$("bDlg"); if(!d.open) d.showModal();
+}
+$("bDlgX").addEventListener("click",()=>$("bDlg").close());
+$("bDlg").addEventListener("click",e=>{ if(e.target===$("bDlg")) $("bDlg").close(); });
+document.querySelectorAll(".bfilter button").forEach(btn=>btn.addEventListener("click",()=>{
+  filter=btn.dataset.f; document.querySelectorAll(".bfilter button").forEach(x=>x.setAttribute("aria-pressed",String(x===btn))); render();
+}));
+start();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

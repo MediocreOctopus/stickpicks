@@ -975,3 +975,50 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .legal-short h3{margin-top:12px}
 .legal-agree{margin:10px 0 0;font-size:.82rem}
 .legal-agree a{color:var(--ink)}
+
+/* ───── Badges page: groups of felt patches under navy sweater bands; tap one for the details ───── */
+.badges-banner{margin-top:4px}
+.badges-banner p a{color:var(--wool)}
+.bb-back{display:inline-block;margin-top:12px;font:600 .75rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--wool);text-decoration:none;
+  padding:4px 12px;border:1.5px solid rgba(239,230,210,.55);border-radius:999px}
+.bb-back:hover{background:var(--wool);color:var(--navy)}
+.bfilter{display:inline-flex;margin-top:16px;border:2px solid var(--ink);border-radius:999px;padding:2px;background:var(--panel)}
+.bfilter.hidden{display:none}
+.bfilter button{border:0;background:transparent;color:var(--ink);font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;padding:5px 14px;border-radius:999px;cursor:pointer}
+.bfilter button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink)}
+.bgroup{margin-top:18px;background:var(--panel);border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.bgroup-head{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0;padding:9px 14px 15px;background:var(--navy);color:var(--wool);
+  font:600 .9rem var(--display);letter-spacing:.14em;text-transform:uppercase}
+[data-scheme="dark"] .bgroup-head{background:#14203A}
+.bgroup-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+.bgroup-head small{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--gold)}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:4px;padding:10px 8px}
+.btile{display:grid;justify-items:center;align-content:start;gap:6px;padding:10px 6px;border:0;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;text-align:center}
+.btile:hover{background:color-mix(in srgb, var(--ink) 7%, transparent)}
+.btile:focus-visible{outline:3px solid var(--alarm);outline-offset:1px}
+.btile b{font:600 .76rem/1.2 var(--display);letter-spacing:.07em;text-transform:uppercase}
+.btile:not(.is-earned) b{color:var(--muted)}
+.btile-bar{display:block;width:70%;height:5px;border-radius:999px;background:color-mix(in srgb, var(--ink) 12%, transparent);overflow:hidden;--bp:#1C2B45}
+.btile-bar[data-ring="red"]{--bp:#9B1C1F} .btile-bar[data-ring="gold"]{--bp:#C08A2A}
+[data-scheme="dark"] .btile-bar{--bp:#EFE6D2} [data-scheme="dark"] .btile-bar[data-ring="red"]{--bp:#E8463F} [data-scheme="dark"] .btile-bar[data-ring="gold"]{--bp:#D9A33A}
+.btile-bar i{display:block;height:100%;background:var(--bp);border-radius:inherit}
+.bdlg{width:min(400px,calc(100% - 32px));padding:0;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);box-shadow:0 18px 44px rgba(0,0,0,.35)}
+.bdlg::backdrop{background:rgba(15,24,40,.55)}
+.bdlg-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--navy);color:var(--wool);
+  font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+.bdlg-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:linear-gradient(to bottom,#E8463F 0 3px,transparent 3px 4px,var(--wool) 4px 7px)}
+.bdlg-body{display:grid;justify-items:center;gap:6px;padding:18px 20px 20px;text-align:center}
+.bdlg-body h3{margin:6px 0 0;font:700 1.5rem var(--display);letter-spacing:.04em;text-transform:uppercase}
+.bdlg-state{font:600 .72rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.bdlg-state.is-earned{color:var(--win)}
+.bdlg-body p{margin:4px 0 6px;font:italic .95rem/1.5 var(--serif)}
+.bdlg-body .bprog{width:100%;text-align:left}
+.bdlg-body .sharebtn{margin-top:10px}
+/* Profile: trophy case (5 rarest), Next up, and a link to the Badges page */
+.pf-sub{font:600 .75rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+.pf-badges > .pf-sub:first-child{margin-top:0}
+.trophy-case{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.trophy{display:grid;justify-items:center;gap:5px;text-decoration:none;color:var(--ink);text-align:center}
+.trophy span{font:600 .68rem/1.2 var(--display);letter-spacing:.06em;text-transform:uppercase}
+.trophy .badge{width:min(64px,100%);height:auto;aspect-ratio:1}
+.pf-allbadges{display:flex;margin-top:16px}
