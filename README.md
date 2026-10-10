@@ -143,7 +143,7 @@ Players can turn on **Puck-drop reminders** in Settings on their profile (each d
 
 ## Badges and streaks
 
-Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 49 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges. The profile shows a trophy case of your **5 rarest** badges (gold rings first, then red, then navy; hardest first within a ring), the 3 you're closest to under **Next up**, and **See all badges**, which opens `badges.html`. That page lists all of them in 9 groups (Getting started, Calling games, Streaks, Habits, Collector, Big games, Leaderboard honours, Breakaway, Social), each with its own count, plus All / Earned / Not yet filters. Tap a patch for a card with how to earn it, a progress bar, and Share for badges you've earned. `badges.html?user=Name` shows another player's, and `&badge=id` opens one badge's card. The groups are `BADGE_GROUPS` in `teams.js`.
+Profiles show a **Hot streak** (results right in a row across all sheets, plus the best run) and 59 **badges**, drawn as old-school felt sweater patches: navy rings for everyday badges, red for scoring, gold for rare ones. A pop-up on the home page announces new badges. The profile shows a trophy case of your **5 rarest** badges (gold rings first, then red, then navy; hardest first within a ring), the 3 you're closest to under **Next up**, and **See all badges**, which opens `badges.html`. That page lists all of them in 10 groups (Getting started, Calling games, Streaks, Habits, Bad habits, Collector, Big games, Leaderboard honours, Breakaway, Social), each with its own count, plus All / Earned / Not yet filters. Tap a patch for a card with how to earn it, a progress bar, and Share for badges you've earned. `badges.html?user=Name` shows another player's, and `&badge=id` opens one badge's card. The groups are `BADGE_GROUPS` in `teams.js`.
 
 | Badge | How to earn it |
 |---|---|
@@ -167,7 +167,9 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | MVP | #1 on the All-Teams leaderboard when the regular season ends (ties share it) |
 | Player of the Week | #1 on the All-Teams weekly board when a week (Mon–Sun) ends |
 | Player of the Month | #1 on the All-Teams monthly board when a month ends |
-| Dynasty | Player of the Week 3 times |
+| Weekly Dynasty | Player of the Week 3 times |
+| Monthly Dynasty | Player of the Month 3 times |
+| Season Dynasty | MVP in 3 different seasons |
 | Iron Man | Picks on games in 4 weeks in a row |
 | Early Bird | 10 picks made at least a day before puck drop |
 | Buzzer Beater | A right result picked in the last 5 minutes before puck drop |
@@ -184,11 +186,14 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | O, Canada | Sheets for all 7 Canadian teams |
 | Division Champ | Sheets for every team in one division |
 | Commissioner | Sheets for all 32 teams |
-| 100pt Player | 100 points on one sheet in a season |
+| 20pt / 50pt / 100pt Player | 20 / 50 / 100 points on one sheet in a season |
+| Point/Game Player | Points / game (profile) of 1.00 or more once all the games on your sheets are final |
+| 2 Min. Minor / Double Minor / 5 Min. Major / 10 Min. Misconduct | **Bad habits:** miss 5 / 10 / 20 / 50 games on one sheet you've started (a game that started with no pick, after your first pick on that sheet; sheets you haven't started don't count). Never suggested in "Badges in reach" or shown as a profile trophy. |
+| Ejection | **Bad habits:** start a sheet, then miss every one of its remaining games (judged once that team's season is over) |
 | Recruiter | A friend you invited creates an account |
 | First Shift | Play a game of Breakaway while signed in |
-| Dangler / Deke Master / Coast to Coast / Highlight Reel | Score 250 / 500 / 1,000 / 2,000 in Breakaway |
-| Rink Rat | Play 50 games of Breakaway |
+| Dangler / Deke Master / Coast to Coast / 200ft Player | Score 250 / 500 / 1,000 / 2,000 in Breakaway |
+| Rink Rat | Play 100 games of Breakaway |
 | Breakaway Champ | Hold the #1 score on the Breakaway leaderboard (it stays) |
 
 Badges are worked out in the browser from picks and final scores (`BADGES` and `computeBadges()` in `teams.js`), so changing a rule or adding a badge needs no database change. The exceptions depend on everyone's results over time, or on when picks were made, so the database works them out (`badge_honours()` in `schema.sql`, section 16): Captain (it replays the season one game day at a time to find every sheet that has held a #1 spot), MVP (only once every regular-season game is final), Player of the Week and Month (finished weeks and months only), Early Bird and Buzzer Beater (from when each pick was last changed), Recruiter (from the private `invites` table, section 14, filled in when someone who arrived from an invitation link makes their profile), and the Breakaway badges (from `breakaway_scores`, section 15). Badges about games (Iron Man, Full Slate, Opening Night, the big-game badges) count only games that have started, so filling a sheet in advance doesn't earn them early. On another player's profile only picks for games that have started count, so their upcoming picks stay hidden.

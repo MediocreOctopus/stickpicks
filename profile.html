@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-01">
+<link rel="stylesheet" href="styles.css?v=2026-12-02">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -70,6 +70,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
           <div>
             <h1 class="pf-name" id="pfName"></h1>
             <div class="pf-est" id="pfEst"></div>
+            <div class="pf-teams hidden" id="pfTeams"></div>
           </div>
           <div class="pf-acts" id="pfActs"></div>
         </div>
@@ -132,6 +133,16 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
                 <div class="form-actions"><button class="btn" type="submit">Save</button><button class="linkbtn" type="button" id="unCancel">Cancel</button></div>
               </form>
               <p class="formmsg" id="unMsg" role="status"></p>
+            </div>
+
+            <!-- Favourite and least favourite teams (shown on your profile) -->
+            <div class="pf-row">
+              <div class="pf-label">Your teams</div>
+              <div class="av-fields pf-teampick">
+                <div class="field"><label for="favTeam">Favorite team</label><select id="favTeam"></select></div>
+                <div class="field"><label for="leastTeam">Least favorite team</label><select id="leastTeam"></select></div>
+              </div>
+              <p class="formmsg" id="tmMsg" role="status"></p>
             </div>
 
             <div class="pf-row">
@@ -199,10 +210,18 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>Fan-made, not affiliated with the NHL. Your email is never shown to other players. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
+<!-- Yes / No double-check (favourite and least favourite teams) -->
+<dialog class="bdlg askdlg" id="askDlg" aria-labelledby="askText">
+  <div class="bdlg-head"><b>Just checking</b></div>
+  <div class="bdlg-body">
+    <p id="askText"></p>
+    <div class="form-actions"><button type="button" class="btn ghost" id="askNo">No</button><button type="button" class="btn" id="askYes">Yes</button></div>
+  </div>
+</dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-01"></script>
-<script src="teams.js?v=2026-12-01"></script>
+<script src="config.js?v=2026-12-02"></script>
+<script src="teams.js?v=2026-12-02"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -258,6 +277,7 @@ async function load(session){
   const {data:prof}=await sb.from("profiles").select("*").eq("user_id",user.id).maybeSingle();
   avatar=avatarFromProfile(prof);
   setName(prof?.username||null);
+  setTeams(prof?.fav_team||"", prof?.least_team||"");
   startPicker();
   if(!prof) openUsername();
   syncLook(sb).then(markLook);
@@ -331,14 +351,61 @@ function showStats(rows, board, who, sheetHref, emptyText){
 const AV_PATH = () => `${user.id}/avatar`;
 let avMode="sweater";
 (function fillTeams(){
-  const sel=$("avTeam");
-  DIVISIONS.forEach(d=>{
-    const g=document.createElement("optgroup"); g.label=d;
-    Object.entries(TEAMS).filter(([,t])=>t.div===d).sort((a,b)=>a[1].name.localeCompare(b[1].name))
-      .forEach(([code,t])=>g.appendChild(new Option(t.name,code)));
-    sel.appendChild(g);
+  [$("avTeam"),$("favTeam"),$("leastTeam")].forEach((sel,i)=>{
+    if(i) sel.appendChild(new Option("Choose a team…",""));
+    DIVISIONS.forEach(d=>{
+      const g=document.createElement("optgroup"); g.label=d;
+      Object.entries(TEAMS).filter(([,t])=>t.div===d).sort((a,b)=>a[1].name.localeCompare(b[1].name))
+        .forEach(([code,t])=>g.appendChild(new Option(t.name,code)));
+      sel.appendChild(g);
+    });
   });
 })();
+
+/* ───────── Favourite and least favourite teams ───────── */
+// Shown under the name on the profile. Choosing Vegas as a favourite, or anyone but Vegas as a least favourite,
+// gets a double-check first.
+let favNow="", leastNow="";
+function showTeams(fav, least){
+  const box=$("pfTeams"), bits=[];
+  if(fav && TEAMS[fav]) bits.push(["Favorite", fav]);
+  if(least && TEAMS[least]) bits.push(["Least favorite", least]);
+  box.replaceChildren(...bits.map(([label,code])=>{ const s=document.createElement("span"); s.className="pf-team";
+    const sw=teamStyle(document.createElement("span"),code); sw.className="sw"; sw.textContent=code;
+    const t=document.createElement("span"); t.textContent=`${label}: ${TEAMS[code].name}`; s.append(sw,t); return s; }));
+  box.classList.toggle("hidden", !bits.length);
+}
+function setTeams(fav, least){ favNow=fav||""; leastNow=least||""; $("favTeam").value=favNow; $("leastTeam").value=leastNow; showTeams(favNow, leastNow); }
+// An on-brand Yes / No pop-up. Resolves true for Yes, false for No (or closing it).
+function askYesNo(question){
+  return new Promise(done=>{
+    const d=$("askDlg"); $("askText").textContent=question;
+    const finish=v=>{ d.close(); done(v); };
+    $("askYes").onclick=()=>finish(true); $("askNo").onclick=()=>finish(false);
+    d.oncancel=e=>{ e.preventDefault(); finish(false); };
+    d.showModal(); $("askNo").focus();
+  });
+}
+async function saveTeams(fav, least){
+  if(!user) return;
+  const {error}=await sb.from("profiles").update({fav_team:fav||null, least_team:least||null}).eq("user_id",user.id);
+  if(error) return msg("tmMsg", error.message||"Couldn’t save your teams.", "err");
+  favNow=fav||""; leastNow=least||""; showTeams(favNow, leastNow); msg("tmMsg","Saved.","ok");
+}
+$("favTeam").addEventListener("change", async e=>{
+  const v=e.target.value;
+  if(v==="VGK" && !(await askYesNo("Are you sure the Vegas Golden Knights are your favorite team?"))){
+    e.target.value=favNow; e.target.focus(); return;          // No: back to choosing a favourite
+  }
+  saveTeams(v, leastNow);
+});
+$("leastTeam").addEventListener("change", async e=>{
+  let v=e.target.value;
+  if(v && v!=="VGK" && !(await askYesNo("Are you sure the Vegas Golden Knights are not your least favorite team?"))){
+    v="VGK"; e.target.value=v;                                 // No: Vegas it is
+  }
+  saveTeams(favNow, v);
+});
 function draftSweater(){ return {kind:"sweater", team:$("avTeam").value, number:Math.max(0,Math.min(99,parseInt($("avNum").value,10)||0))}; }
 function showPreview(av){ $("avPreview").replaceChildren(avatarEl(av, username||"?", 72)); }
 function setMode(mode){
@@ -525,6 +592,7 @@ async function loadPublic(name){
   $("pfName").textContent=who;
   $("pfEst").textContent = prof.created_at ? "Est. "+new Date(prof.created_at).toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"}) : "";
   $("pfAvatar").replaceChildren(avatarEl(avatarFromProfile(prof), who, 88));
+  showTeams(prof.fav_team, prof.least_team);
   $("pfSheetsTitle").textContent=`${who}’s sheets`;
   const {data:board}=await sb.rpc("leaderboard",{p_season:SEASON,p_team:null});
   // Finished games picked ≈ the larger of graded results and graded goal totals (the leaderboard counts each separately).

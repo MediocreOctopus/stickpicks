@@ -1063,3 +1063,14 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .bk-signin{margin:12px 0 0}
 .bk-signin a{color:var(--ink);font-weight:600}
 .bk-all{display:flex;margin-top:14px}
+
+/* ───── Profile: favourite and least favourite teams (under the name, and the Settings row) ───── */
+.pf-teams{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px}
+.pf-teams.hidden{display:none}
+.pf-team{display:inline-flex;align-items:center;gap:6px;font:500 .82rem "Barlow",sans-serif;color:var(--wool)}
+.pf-team .sw{font-size:.66rem}
+.pf-teampick .field{flex:1 1 180px}
+.askdlg{width:min(380px,calc(100% - 32px))}
+.askdlg .bdlg-body p{font:600 1.05rem/1.4 var(--display);letter-spacing:.02em;font-style:normal;margin:4px 0 14px}
+.askdlg .form-actions{justify-content:center;gap:10px}
+.askdlg .btn{min-width:96px}

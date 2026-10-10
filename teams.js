@@ -431,16 +431,33 @@ const bText=(s,x,y,size,fill,extra="")=>`<text x="${x}" y="${y}" text-anchor="mi
 const bCalendar=label=>`<rect x="24" y="14.5" width="2.6" height="6" rx="1" fill="${BI.n}"/><rect x="37.4" y="14.5" width="2.6" height="6" rx="1" fill="${BI.n}"/>`+
   `<rect x="18.5" y="17.5" width="27" height="27" rx="2.4" fill="${BI.p}" stroke="${BI.n}" stroke-width="1.8"/><path d="M18.5 19.9q0-2.4 2.4-2.4h22.2q2.4 0 2.4 2.4V25.6h-27Z" fill="${BI.r}"/>`+
   bText(label,32,23.8,5.4,BI.c,'letter-spacing=".6"');
+// three rafter banners in the given colours, with something drawn on each (dynasty badges)
+const bBanners=(cols,mark)=>`<path d="M15 17h34" stroke="${BI.n}" stroke-width="2.2" stroke-linecap="round"/>`+
+  [17.5,27.5,37.5].map((x,i)=>`<path d="M${x} 18.5h9V40l-4.5-3.4L${x} 40Z" fill="${cols[i]}"/>`+mark(x,i)).join("");
+// the penalty box: the clock above, glass, bench and door (Bad habits badges)
+const bPenalty=clock=>`<rect x="19" y="12.6" width="26" height="9.4" rx="1.4" fill="${BI.n}"/>`+bText(clock,32,20,clock.length>4?6.4:7.2,"#E8463F",'letter-spacing=".3"')+
+  `<rect x="15.6" y="24" width="32.8" height="20.6" rx="1.4" fill="#DCE8EF" stroke="${BI.n}" stroke-width="1.6"/><path d="M19 27l4-2.4M22.6 29.6l5-3" stroke="#FFFFFF" stroke-width="1.1" opacity=".9"/>`+
+  `<rect x="18.4" y="35.2" width="20" height="3" rx=".6" fill="${BI.w}"/><path d="M20.4 38.2v4.6M36.4 38.2v4.6" stroke="${BI.w}" stroke-width="1.4"/>`+
+  `<path d="M41.2 24.6v19.4" stroke="${BI.n}" stroke-width="1.4"/><rect x="42.6" y="32" width="1.6" height="3.6" rx=".6" fill="${BI.r}"/>`;
 BADGES.push(
   // ── Fresh races ──
   {id:"playerweek", name:"Player of the Week", ring:"red", how:"Finish a week (Monday to Sunday) #1 on the All-Teams weekly leaderboard.",
    art:bCalendar("WEEK")+bStar(32,35.4,7.4,"#C08A2A")},
   {id:"playermonth", name:"Player of the Month", ring:"gold", how:"Finish a calendar month #1 on the All-Teams monthly leaderboard.",
    art:bCalendar("MONTH")+bStar(32,35.4,7.4,BI.r)},
-  {id:"dynasty", name:"Dynasty", ring:"gold", how:"Be Player of the Week 3 times.",
+  // (id stays "dynasty" so players who already have it keep it)
+  {id:"dynasty", name:"Weekly Dynasty", ring:"gold", how:"Be Player of the Week 3 times.",
    // three championship banners hanging from the rafters
-   art:`<path d="M15 17h34" stroke="${BI.n}" stroke-width="2.2" stroke-linecap="round"/>`+
-       [[17.5,BI.r],[27.5,BI.n],[37.5,BI.r]].map(([x,c])=>`<path d="M${x} 18.5h9V40l-4.5-3.4L${x} 40Z" fill="${c}"/>`+bStar(x+4.5,26.5,3,BI.c)).join("")},
+   art:bBanners([BI.r,BI.n,BI.r], x=>bStar(x+4.5,26.5,3,BI.c))},
+  {id:"monthlydynasty", name:"Monthly Dynasty", ring:"gold", how:"Be Player of the Month 3 times.",
+   // three gold-and-navy banners, each marked M
+   art:bBanners([BI.n,"#C08A2A",BI.n], (x,i)=>bText("M",x+4.5,30,7.4,i===1?BI.n:"#E9C46A"))},
+  {id:"seasondynasty", name:"Season Dynasty", ring:"gold", how:"Be MVP in 3 different seasons.",
+   // three MVP trophies in a row
+   art:[19,32,45].map(x=>`<path d="M${x-5.2} 22h10.4v4q0 5.6-5.2 5.6t-5.2-5.6Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1"/>`+
+       `<path d="M${x-5.2} 23.6h-2q0 3.6 2.8 4.2M${x+5.2} 23.6h2q0 3.6-2.8 4.2" fill="none" stroke="${BI.n}" stroke-width="1.1"/>`+
+       `<rect x="${x-1.3}" y="31.4" width="2.6" height="3" fill="${BI.n}"/><rect x="${x-4.4}" y="34.2" width="8.8" height="3.6" rx=".6" fill="${BI.n}"/>`).join("")+
+       `<path d="M14 42.5h36" stroke="${BI.r}" stroke-width="2.2" stroke-linecap="round"/>`+bText("MVP",32,48.4,5.4,BI.n,'letter-spacing=".6"')},
   // ── Habit ──
   {id:"ironman", name:"Iron Man", ring:"navy", how:"Make picks in 4 weeks in a row.",
    // a skate
@@ -524,8 +541,25 @@ BADGES.push(
    art:`<path d="M18 39L16 21l8.4 7.4L32 17l7.6 11.4L48 21l-2 18Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1.4" stroke-linejoin="round"/><rect x="18" y="39.5" width="28" height="5.6" rx="1" fill="${BI.n}"/>`+
        `<circle cx="16" cy="20.5" r="1.8" fill="${BI.r}"/><circle cx="32" cy="16.5" r="1.8" fill="${BI.r}"/><circle cx="48" cy="20.5" r="1.8" fill="${BI.r}"/>`+bText("32",32,36.8,9,BI.n)},
   // ── Milestones ──
+  {id:"pt20", name:"20pt Player", ring:"navy", how:"Score 20 points on one sheet in a season.",
+   art:bText("20",32,37.5,20,BI.n,`stroke="${BI.c}" stroke-width="1" paint-order="stroke"`)+bText("PTS",32,46,6.6,BI.r,'letter-spacing="1"')},
+  {id:"pt50", name:"50pt Player", ring:"red", how:"Score 50 points on one sheet in a season.",
+   art:bText("50",32,37.5,20,BI.r,`stroke="${BI.n}" stroke-width="1.2" paint-order="stroke"`)+bText("PTS",32,46,6.6,BI.n,'letter-spacing="1"')},
   {id:"pt100", name:"100pt Player", ring:"gold", how:"Score 100 points on one sheet in a season.",
    art:bText("100",32,37.5,18,BI.r,`stroke="${BI.n}" stroke-width="1.2" paint-order="stroke" letter-spacing="-.4"`)+bText("PTS",32,46,6.6,BI.n,'letter-spacing="1"')},
+  // ── Calling games ──
+  {id:"ppg", name:"Point/Game Player", ring:"red", how:"Finish the season with 1.00 or more on your profile’s Points / game.",
+   art:bText("1.00",32,36.5,15,BI.r,`stroke="${BI.n}" stroke-width="1" paint-order="stroke"`)+`<path d="M18 40h28" stroke="${BI.n}" stroke-width="1.4"/>`+bText("PTS / GP",32,46.4,5.6,BI.n,'letter-spacing=".6"')},
+  // ── Bad habits (on sheets you've started: games that started with no pick, after your first pick) ──
+  {id:"minor", name:"2 Min. Minor", ring:"navy", how:"Miss 5 games on a sheet you’ve started.", art:bPenalty("2:00")},
+  {id:"doubleminor", name:"Double Minor", ring:"navy", how:"Miss 10 games on a sheet you’ve started.", art:bPenalty("4:00")},
+  {id:"major", name:"5 Min. Major", ring:"red", how:"Miss 20 games on a sheet you’ve started.", art:bPenalty("5:00")},
+  {id:"misconduct", name:"10 Min. Misconduct", ring:"red", how:"Miss 50 games on a sheet you’ve started.", art:bPenalty("10:00")},
+  {id:"ejection", name:"Ejection", ring:"gold", how:"Start a sheet, then miss every one of its remaining games.",
+   // the door out of the rink, and the way to the dressing room
+   art:`<rect x="17" y="15" width="19" height="31" rx="1.2" fill="#22324D" stroke="${BI.n}" stroke-width="1.8"/><path d="M17.6 15.6L27.4 18.6V43.4L17.6 45.4Z" fill="${BI.r}"/><circle cx="25" cy="31" r="1.1" fill="${BI.c}"/>`+
+       `<path d="M33 31h14" stroke="${BI.n}" stroke-width="2.6" stroke-linecap="round"/><path d="M42.6 26.4L47.8 31l-5.2 4.6" fill="none" stroke="${BI.n}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`+
+       bText("OUT",43.6,23.6,6.2,BI.r,'letter-spacing=".5"')},
   // ── Social ──
   {id:"recruiter", name:"Recruiter", ring:"navy", how:"Invite a friend who joins stickpicks (use Invite friends).",
    // an invitation envelope with a wax seal
@@ -547,15 +581,22 @@ BADGES.push(
    // the rink from above, with a rush from end to end
    art:`<rect x="13.5" y="20" width="37" height="24" rx="8" fill="${BI.p}" stroke="${BI.n}" stroke-width="1.8"/><path d="M32 20v24" stroke="${BI.r}" stroke-width="1.4"/><path d="M24 20v24M40 20v24" stroke="#33476A" stroke-width="1.1"/>`+
        `<circle cx="32" cy="32" r="3.6" fill="none" stroke="${BI.r}" stroke-width="1"/><path d="M17 32h26" stroke="${BI.n}" stroke-width="2" stroke-linecap="round"/><path d="M40 28.6L45 32l-5 3.4" fill="${BI.n}"/>`},
-  {id:"highlightreel", name:"Highlight Reel", ring:"gold", how:"Score 2,000 in Breakaway.",
-   // a strip of film with a star
-   art:`<rect x="14" y="21" width="36" height="22" rx="1.6" fill="${BI.n}"/>`+[16,22,28,34,40,46].map(x=>`<rect x="${x}" y="22.6" width="2.6" height="2.4" rx=".5" fill="${BI.c}"/><rect x="${x}" y="39" width="2.6" height="2.4" rx=".5" fill="${BI.c}"/>`).join("")+
-       `<rect x="18" y="26.6" width="28" height="10.8" fill="#33476A"/>`+bStar(32,32,5.6,"#C08A2A")},
-  {id:"rinkrat", name:"Rink Rat", ring:"navy", how:"Play 50 games of Breakaway.",
-   // the ice resurfacer
-   art:`<path d="M15 39V27q0-2.4 2.4-2.4H31l3-6.6h7.4q2 0 2 2V27h3.2q2 0 2 2v10Z" fill="${BI.r}"/><rect x="36" y="20.4" width="5.6" height="5" rx=".6" fill="#C9DCE6"/>`+
-       `<path d="M15 33.6h34" stroke="${BI.c}" stroke-width="1.6"/><rect x="13" y="39" width="5" height="3.4" rx=".6" fill="${BI.s}"/>`+
-       `<circle cx="22" cy="41.6" r="3.6" fill="${BI.n}"/><circle cx="41" cy="41.6" r="3.6" fill="${BI.n}"/><circle cx="22" cy="41.6" r="1.2" fill="${BI.s}"/><circle cx="41" cy="41.6" r="1.2" fill="${BI.s}"/>`},
+  // (id stays "highlightreel" so players who already have it keep it)
+  {id:"highlightreel", name:"200ft Player", ring:"gold", how:"Score 2,000 in Breakaway.",
+   // the full 200-foot rink, measured end to end
+   art:bText("200 FT",32,19.4,7.4,BI.r,'letter-spacing=".6"')+`<path d="M15.5 23.6h33" stroke="${BI.n}" stroke-width="1.4"/><path d="M18.6 21.2L15.4 23.6l3.2 2.4M45.4 21.2l3.2 2.4-3.2 2.4" fill="none" stroke="${BI.n}" stroke-width="1.4" stroke-linejoin="round"/>`+
+       `<rect x="14" y="28" width="36" height="17" rx="7.5" fill="${BI.p}" stroke="${BI.n}" stroke-width="1.6"/><path d="M32 28v17" stroke="${BI.r}" stroke-width="1.4"/><path d="M26 28v17M38 28v17" stroke="#33476A" stroke-width="1.1"/>`+
+       `<path d="M18.6 28.6v15.8M45.4 28.6v15.8" stroke="${BI.r}" stroke-width=".8"/><circle cx="32" cy="36.5" r="3" fill="none" stroke="${BI.r}" stroke-width=".9"/>`},
+  {id:"rinkrat", name:"Rink Rat", ring:"navy", how:"Play 100 games of Breakaway.",
+   // a Zamboni: the driver up front on the open deck, the big snow tank behind with its sloped front,
+   // and the conditioner at the back leaving fresh, shiny ice
+   art:`<path d="M47 44.6h8" stroke="#9FC6DC" stroke-width="1.8" stroke-linecap="round"/>`+
+       `<path d="M13 40.5V30.4q0-2.6 2.6-2.6H25l3.6-7.4h15.8q2.6 0 2.6 2.6v17.5Z" fill="${BI.r}"/><path d="M25.6 27.8l3.4-6.6" stroke="#E07070" stroke-width="1" opacity=".6"/>`+
+       `<path d="M13 33.6h34" stroke="${BI.c}" stroke-width="1.8"/><path d="M13 36.2h34" stroke="${BI.n}" stroke-width=".9"/>`+
+       `<rect x="46.4" y="33" width="5.4" height="8" rx=".8" fill="${BI.s}"/><path d="M47 41.6h6.4" stroke="#B9C3CE" stroke-width="1.6"/>`+
+       `<path d="M17.6 27.8l-1.6-4.6" stroke="${BI.n}" stroke-width="1.2"/><ellipse cx="15.8" cy="22.8" rx="2.2" ry=".9" fill="none" stroke="${BI.n}" stroke-width="1.1"/>`+
+       `<rect x="19.4" y="22.6" width="4.6" height="5.2" rx="1.4" fill="${BI.n}"/><circle cx="21.8" cy="20.4" r="2.4" fill="#E8B994"/><path d="M19.4 19.8a2.5 2.5 0 0 1 4.8 0Z" fill="${BI.n}"/>`+
+       `<circle cx="20" cy="41.6" r="3.8" fill="${BI.n}"/><circle cx="40.4" cy="41.6" r="3.8" fill="${BI.n}"/><circle cx="20" cy="41.6" r="1.3" fill="${BI.s}"/><circle cx="40.4" cy="41.6" r="1.3" fill="${BI.s}"/>`},
   {id:"breakawaychamp", name:"Breakaway Champ", ring:"gold", how:"Hold the #1 score on the Breakaway leaderboard.",
    // the arcade high-score board, crowned
    art:`<path d="M24 22l-1.6-7 5.2 3.6L32 13l4.4 5.6 5.2-3.6-1.6 7Z" fill="#C08A2A" stroke="${BI.n}" stroke-width="1.1" stroke-linejoin="round"/>`+
@@ -565,7 +606,8 @@ BADGES.push(
 const BADGE_SHOW=["inaugural","faceoff","season2627","openingnight","hattrick","naturalhattrick","star3","star2","star1","topshelf","lamp","goalfest","goalieduel",
   "overtime","shootout","roadwarrior","shutout","perfectweek","earlybird","buzzer","ironman","fullslate","halfseason","fullsheet","original6","ocanada","rivalry",
   "barnstormer","divisionchamp","commissioner","winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter",
-  "firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"];
+  "firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp",
+  "pt20","pt50","monthlydynasty","seasondynasty","ppg","minor","doubleminor","major","misconduct","ejection"];
 BADGES.sort((a,b)=>BADGE_SHOW.indexOf(a.id)-BADGE_SHOW.indexOf(b.id));
 const badgeArt=b=>typeof b.art==="function" ? b.art() : b.art;
 const BADGE_BY_ID=Object.fromEntries(BADGES.map(b=>[b.id,b]));
@@ -693,6 +735,23 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const half=Math.ceil(fillOf/2);
   const weeksWon=H("playerweek").length;
   const brkBest=hN("breakaway"), brkRuns=hN("breakawayruns");   // Breakaway (from the database)
+  const monthsWon=H("playermonth").length, mvpSeasons=H("mvp").length;   // (MVPs from earlier seasons will add to this)
+  // Bad habits: on each sheet you've started, games that have started with no pick at all, counted from your first pick on
+  let missBest=0, ejected=false;
+  sheets.forEach(t=>{
+    const tg=games.filter(g=>g.home===t||g.away===t).sort((a,b)=>String(a.start_utc).localeCompare(String(b.start_utc)));
+    const has=g=>byKey.has(`${t}|${Number(g.game_id)}`), first=tg.findIndex(has);
+    if(first<0) return;
+    const after=tg.slice(first+1), missed=after.filter(g=>hasStarted(g) && !has(g)).length;
+    missBest=Math.max(missBest, missed);
+    // Ejection: after starting the sheet, every remaining game went unpicked (once that team's season is over)
+    if(after.length && after.every(g=>hasStarted(g) && !has(g)) && after.every(g=>g.period_type || g.schedule_state==="PPD")) ejected=true;
+  });
+  // Point/Game Player: your profile's Points / game (points ÷ finished games picked), once all your sheets' games are final
+  const gradedGames=scored.filter(x=>x.sc.outcomeHit!==null || x.sc.goalsHit!==null).length;
+  const ppg=gradedGames ? scored.reduce((s,x)=>s+x.sc.points,0)/gradedGames : 0;
+  const sheetGames=games.filter(g=>sheets.includes(g.home)||sheets.includes(g.away));
+  const seasonDone=sheetGames.length>0 && sheetGames.every(g=>g.period_type || g.schedule_state==="PPD");
   const earned={
     inaugural: !!(who && joined),
     faceoff: picks.length>0,
@@ -741,8 +800,18 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     dekemaster: brkBest>=500,
     coasttocoast: brkBest>=1000,
     highlightreel: brkBest>=2000,
-    rinkrat: brkRuns>=50,
+    rinkrat: brkRuns>=100,
     breakawaychamp: hN("breakawaychamp")>=1,
+    pt20: topSheet>=20,
+    pt50: topSheet>=50,
+    monthlydynasty: monthsWon>=3,
+    seasondynasty: mvpSeasons>=3,
+    minor: missBest>=5,
+    doubleminor: missBest>=10,
+    major: missBest>=20,
+    misconduct: missBest>=50,
+    ejection: ejected,
+    ppg: seasonDone && gradedGames>0 && ppg>=1,
   };
   const run=n=>`Best run on a sheet: ${Math.min(sheetBest,n)} of ${n}`;
   const progress={ hattrick:`${hatBest} of 3 kinds on one sheet`, star3:run(3), star2:run(5), star1:run(10),
@@ -797,9 +866,20 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     dekemaster:[Math.min(brkBest,500),500,"best Breakaway score"],
     coasttocoast:[Math.min(brkBest,1000),1000,"best Breakaway score"],
     highlightreel:[Math.min(brkBest,2000),2000,"best Breakaway score"],
-    rinkrat:[Math.min(brkRuns,50),50,"Breakaway games played"],
+    rinkrat:[Math.min(brkRuns,100),100,"Breakaway games played"],
     breakawaychamp:[0,1,"#1 score on the Breakaway leaderboard"],
+    pt20:[Math.min(topSheet,20),20,"points on your best sheet"],
+    pt50:[Math.min(topSheet,50),50,"points on your best sheet"],
+    monthlydynasty:[Math.min(monthsWon,3),3,"months as Player of the Month"],
+    seasondynasty:[Math.min(mvpSeasons,3),3,"seasons as MVP"],
+    minor:[Math.min(missBest,5),5,"games missed on a started sheet"],
+    doubleminor:[Math.min(missBest,10),10,"games missed on a started sheet"],
+    major:[Math.min(missBest,20),20,"games missed on a started sheet"],
+    misconduct:[Math.min(missBest,50),50,"games missed on a started sheet"],
+    ejection:[0,1,"sheet with every game missed after you started it"],
+    ppg:[Math.min(ppg,1),1, gradedGames ? `points per game now: ${ppg.toFixed(2)} (counts at season’s end)` : "points per game, at season’s end"],
   };
+  meter.ppg[0]=Math.round(meter.ppg[0]*100)/100;
   Object.keys(earned).forEach(id=>{ if(earned[id]) meter[id][0]=meter[id][1]; });
   return {earned:BADGES.filter(b=>earned[b.id]).map(b=>b.id), progress, meter, streak:{current:cur, best}};
 }
@@ -812,27 +892,36 @@ const BADGE_ORDER=["inaugural","faceoff","season2627","star3","topshelf","rivalr
 // Breakaway badges, easiest first, slot in after the pick badges of similar difficulty
 BADGE_ORDER.splice(3,0,"firstshift"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("lamp"),0,"dangler","rinkrat"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("captain"),0,"dekemaster");
 BADGE_ORDER.splice(BADGE_ORDER.indexOf("playermonth"),0,"coasttocoast"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("pt100"),0,"highlightreel","breakawaychamp");
+// Points milestones and dynasties by difficulty; Bad habits and Point/Game Player near the end (you don't chase those
+// on purpose, and Point/Game is only settled at season's end)
+BADGE_ORDER.splice(BADGE_ORDER.indexOf("topshelf")+1,0,"pt20"); BADGE_ORDER.splice(BADGE_ORDER.indexOf("halfseason"),0,"pt50");
+BADGE_ORDER.splice(BADGE_ORDER.indexOf("fullsheet"),0,"monthlydynasty");
+BADGE_ORDER.splice(BADGE_ORDER.indexOf("mvp"),0,"ppg","seasondynasty");
+BADGE_ORDER.push("minor","doubleminor","major","misconduct","ejection");
 // The groups on the Badges page, in order.
 const BADGE_GROUPS=[
   {name:"Getting started", ids:["inaugural","faceoff","season2627","openingnight"]},
-  {name:"Calling games", ids:["hattrick","naturalhattrick","topshelf","lamp","goalfest","goalieduel","overtime","shootout","roadwarrior"]},
+  {name:"Calling games", ids:["hattrick","naturalhattrick","topshelf","lamp","goalfest","goalieduel","overtime","shootout","roadwarrior","ppg"]},
   {name:"Streaks", ids:["star3","star2","star1","pointstreak","shutout","perfectweek"]},
   {name:"Habits", ids:["earlybird","buzzer","ironman","fullslate","halfseason","fullsheet"]},
+  {name:"Bad habits", ids:["minor","doubleminor","major","misconduct","ejection"]},
   {name:"Collector", ids:["original6","ocanada","rivalry","barnstormer","divisionchamp","commissioner"]},
   {name:"Big games", ids:["heritageclassic","winterclassic","stadiumseries","globalseries"]},
-  {name:"Leaderboard honours", ids:["playerweek","playermonth","dynasty","captain","pt100","mvp"]},
+  {name:"Leaderboard honours", ids:["playerweek","playermonth","dynasty","monthlydynasty","seasondynasty","captain","pt20","pt50","pt100","mvp"]},
   {name:"Breakaway", ids:["firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"]},
   {name:"Social", ids:["recruiter"]},
 ];
 // Rarest first: gold rings, then red, then navy; within a ring, hardest first (BADGE_ORDER, reversed).
 function rarestBadges(ids, n){
-  const ring={gold:0, red:1, navy:2};
-  return [...ids].sort((a,b)=>ring[BADGE_BY_ID[a].ring]-ring[BADGE_BY_ID[b].ring] || BADGE_ORDER.indexOf(b)-BADGE_ORDER.indexOf(a)).slice(0,n);
+  const ring={gold:0, red:1, navy:2}, bad=BADGE_GROUPS.find(g=>g.name==="Bad habits")?.ids||[];   // penalties aren't trophies
+  return [...ids].filter(id=>!bad.includes(id)).sort((a,b)=>ring[BADGE_BY_ID[a].ring]-ring[BADGE_BY_ID[b].ring] || BADGE_ORDER.indexOf(b)-BADGE_ORDER.indexOf(a)).slice(0,n);
 }
 // The n unearned badges you're closest to (highest share done; easier first on ties), listed easiest to hardest.
 function badgesInReach(r, n=3){
   const rank=id=>BADGE_ORDER.indexOf(id), share=id=>{ const [h,need]=r.meter[id]; return need ? h/need : 0; };
-  return BADGE_ORDER.filter(id=>!r.earned.includes(id))
+  // never nudge anyone toward missing games, and skip the ones only settled at season's end
+  const bad=[...(BADGE_GROUPS.find(g=>g.name==="Bad habits")?.ids||[]), "ppg", "mvp", "seasondynasty"];
+  return BADGE_ORDER.filter(id=>!r.earned.includes(id) && !bad.includes(id))
     .sort((a,b)=>share(b)-share(a) || rank(a)-rank(b)).slice(0,n)
     .sort((a,b)=>rank(a)-rank(b));
 }
@@ -958,8 +1047,13 @@ const BADGE_BRAG={
   divisionchamp:"started sheets for a whole division", commissioner:"started sheets for all 32 teams",
   pt100:"scored 100 points on one sheet", recruiter:"brought a friend to stickpicks",
   firstshift:"played my first game of Breakaway", dangler:"scored 250 in Breakaway", dekemaster:"scored 500 in Breakaway",
-  coasttocoast:"scored 1,000 in Breakaway", highlightreel:"scored 2,000 in Breakaway", rinkrat:"played 50 games of Breakaway",
-  breakawaychamp:"took the #1 score on the Breakaway leaderboard" };
+  coasttocoast:"scored 1,000 in Breakaway", highlightreel:"scored 2,000 in Breakaway", rinkrat:"played 100 games of Breakaway",
+  breakawaychamp:"took the #1 score on the Breakaway leaderboard",
+  pt20:"scored 20 points on one sheet", pt50:"scored 50 points on one sheet",
+  monthlydynasty:"was Player of the Month 3 times", seasondynasty:"was MVP in 3 different seasons",
+  ppg:"finished the season with a point a game", minor:"took a 2-minute minor for missing 5 games",
+  doubleminor:"took a double minor for missing 10 games", major:"took a 5-minute major for missing 20 games",
+  misconduct:"took a 10-minute misconduct for missing 50 games", ejection:"got ejected for missing every game on a sheet" };
 
 function badgeSpec(id, who){
   const b=BADGE_BY_ID[id];

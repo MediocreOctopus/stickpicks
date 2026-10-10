@@ -329,6 +329,18 @@ begin
   end if;
 end $$;
 
+-- 11b) Favourite and least favourite teams, chosen in profile Settings and shown on the profile (public, like usernames).
+alter table public.profiles add column if not exists fav_team text;
+alter table public.profiles add column if not exists least_team text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_teams_valid') then
+    alter table public.profiles add constraint profiles_teams_valid check (
+      (fav_team is null or fav_team ~ '^[A-Z]{3}$') and (least_team is null or least_team ~ '^[A-Z]{3}$')
+    );
+  end if;
+end $$;
+
 -- 12) Storage for uploaded photos: a public "avatars" bucket (small images only).
 --     Each player can add, replace or remove files only in their own folder (<user id>/...).
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
