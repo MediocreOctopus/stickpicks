@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-02">
+<link rel="stylesheet" href="styles.css?v=2026-12-03">
 </head>
 <body>
 <div class="hem-top" aria-hidden="true"></div>
@@ -65,14 +65,16 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <!-- Signed in -->
     <div class="hidden" id="pfIn">
       <section class="pf-banner" aria-label="Player">
+        <!-- Picture beside kicker, name and Est. date (and Invite on your own profile); teams as felt pills underneath -->
         <div class="pf-banner-in">
           <div class="pf-avatar" id="pfAvatar" aria-hidden="true"></div>
-          <div>
+          <div class="pf-who">
+            <small class="tb-kicker pf-kicker">2026–27 player</small>
             <h1 class="pf-name" id="pfName"></h1>
             <div class="pf-est" id="pfEst"></div>
-            <div class="pf-teams hidden" id="pfTeams"></div>
           </div>
           <div class="pf-acts" id="pfActs"></div>
+          <div class="pf-teams hidden" id="pfTeams"></div>
         </div>
       </section>
 
@@ -220,8 +222,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-02"></script>
-<script src="teams.js?v=2026-12-02"></script>
+<script src="config.js?v=2026-12-03"></script>
+<script src="teams.js?v=2026-12-03"></script>
 <script>
 const sb = makeClient();
 const $ = id => document.getElementById(id);
@@ -372,7 +374,10 @@ function showTeams(fav, least){
   if(least && TEAMS[least]) bits.push(["Least favorite", least]);
   box.replaceChildren(...bits.map(([label,code])=>{ const s=document.createElement("span"); s.className="pf-team";
     const sw=teamStyle(document.createElement("span"),code); sw.className="sw"; sw.textContent=code;
-    const t=document.createElement("span"); t.textContent=`${label}: ${TEAMS[code].name}`; s.append(sw,t); return s; }));
+    const t=document.createElement("span"); t.className="pf-team-text";
+    const k=document.createElement("small"); k.textContent=label;
+    const n=document.createElement("b"); n.textContent=TEAMS[code].name;
+    t.append(k,n); s.append(sw,t); return s; }));
   box.classList.toggle("hidden", !bits.length);
 }
 function setTeams(fav, least){ favNow=fav||""; leastNow=least||""; $("favTeam").value=favNow; $("leastTeam").value=leastNow; showTeams(favNow, leastNow); }

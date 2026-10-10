@@ -1065,10 +1065,36 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .bk-all{display:flex;margin-top:14px}
 
 /* ───── Profile: favourite and least favourite teams (under the name, and the Settings row) ───── */
-.pf-teams{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px}
+/* The player banner: sleeve stripes on the left (like the other sweater banners); picture beside the kicker, name and
+   Est. date; Invite on the right; the teams as felt pills under a stitched divider */
+.pf-banner{position:relative}
+.pf-banner::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
+  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+.pf-banner-in{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:0 18px;padding:18px 20px 16px 44px}
+.pf-who{min-width:0}
+.pf-kicker{display:block;margin-bottom:2px}
+.pf-banner .pf-name{margin:0;line-height:1.05;padding-right:.25em;overflow-wrap:anywhere}
+.pf-banner .pf-est{margin-top:4px}
+.pf-acts{margin-left:0;align-self:center}
+.pf-teams{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed rgba(239,230,210,.3)}
 .pf-teams.hidden{display:none}
-.pf-team{display:inline-flex;align-items:center;gap:6px;font:500 .82rem "Barlow",sans-serif;color:var(--wool)}
-.pf-team .sw{font-size:.66rem}
+.pf-team{display:inline-flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;border-radius:999px;
+  background:rgba(239,230,210,.07);border:1px solid rgba(239,230,210,.2);color:var(--wool);min-width:0}
+.pf-team .sw{font-size:.68rem;flex:none}
+.pf-team-text{display:grid;line-height:1.15;min-width:0}
+.pf-team-text small{font:600 .6rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.pf-team-text b{font:600 .88rem "Barlow",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Phones: a smaller picture so the name sits beside it; Invite drops below; pills share the row */
+@media (max-width:560px){
+  .pf-banner-in{grid-template-columns:auto minmax(0,1fr);gap:0 14px;padding:16px 14px 14px 38px}
+  .pf-avatar .avatar{--av-size:64px !important}
+  .pf-banner .pf-name{font-size:clamp(1.8rem,8vw,2.3rem)}
+  .pf-acts{grid-column:1 / -1;margin-top:12px}
+  .pf-acts .btn{width:100%}
+  .pf-teams{gap:6px}
+  .pf-team{flex:1 1 100%}
+}
+.pf-team-text small{white-space:nowrap}
 .pf-teampick .field{flex:1 1 180px}
 .askdlg{width:min(380px,calc(100% - 32px))}
 .askdlg .bdlg-body p{font:600 1.05rem/1.4 var(--display);letter-spacing:.02em;font-style:normal;margin:4px 0 14px}
