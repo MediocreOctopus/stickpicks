@@ -114,7 +114,8 @@
     const wasDucking=P.ducking;
     P.ducking = downHeld && P.onIce;
     if(P.ducking && !wasDucking) spray(5);
-    if(P.onIce) P.stride += dx*(P.ducking?0.03:0.042);
+    // stride rate: long, gliding strides that quicken only a little with speed (about 1.1 to 1.5 a second)
+    if(P.onIce && !P.ducking) P.stride += dt*2*Math.PI*(0.85+speed/1500);
 
     // ice spray
     sparks.forEach(s=>{ s.x+=s.vx*dt-dx; s.y+=s.vy*dt; s.vy+=500*dt; s.life-=dt; });
@@ -270,8 +271,9 @@
   // Score in a navy scoreboard box with gold digits
   function drawScoreboard(){
     const s=String(Math.floor(score||0)).padStart(5,"0"), flashing=state==="running" && t<flashUntil && Math.floor(t*10)%2===0;
-    const bw=150, bx=W-bw-10, by=128;
-    ctx.fillStyle="rgba(20,32,58,.9)"; roundRect(bx,by,bw,24,4); ctx.fill();
+    const bw=150, bx=W-bw-10, by=8;                    // up in the stands, like the arena scoreboard, clear of the ice
+    ctx.fillStyle="#0F1828"; roundRect(bx,by,bw,24,4); ctx.fill();
+    ctx.strokeStyle="rgba(217,163,58,.7)"; ctx.lineWidth=1; roundRect(bx+.5,by+.5,bw-1,23,4); ctx.stroke();
     ctx.fillStyle=C.red2; ctx.fillRect(bx,by+21,bw,1.5);
     ctx.textBaseline="middle"; ctx.textAlign="left";
     ctx.font='600 9px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.65)"; ctx.fillText("HI", bx+8, by+11.5);
@@ -375,20 +377,31 @@
       for(let i=0;i<3;i++){ const yy=baseY-14-i*12, xx=x0-8-((t*900+i*37)%30); ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx-16,yy); ctx.stroke(); }
     }
 
-    const lean = duck ? 1.12 : air ? 0.52 : 0.66;          // torso tilt forward from upright (radians)
-    const hipH = duck ? 17 : air ? 25 : 26.5, T = duck ? 18 : 21;
+    // A skating stride, not a walk: each skate glides under the body on a deeply bent knee, then pushes
+    // back (and out) until the leg is straight, then returns low along the ice, barely lifting. The two
+    // legs are half a stride apart, so one is always gliding while the other pushes. The body stays
+    // low and level, dipping slightly with each push.
+    const stride=(((P.stride/(2*Math.PI))%1)+1)%1;
+    const bob = air||duck ? 0 : Math.cos(stride*4*Math.PI)*0.7;
+    const lean = duck ? 1.12 : air ? 0.52 : 0.7;            // torso tilt forward from upright (radians)
+    const hipH = duck ? 17 : air ? 25 : 23.5+bob, T = duck ? 18 : 21;
     const hip={x:x0+10, y:baseY-hipH};
     const u={x:Math.sin(lean), y:-Math.cos(lean)}, pv={x:Math.cos(lean), y:Math.sin(lean)};   // spine, and chest side
     const sh={x:hip.x+u.x*T, y:hip.y+u.y*T};
     const TH=13.5, SH=13, ANK=6;                            // thigh, shin, ankle height above the ice
+    const smooth=q=>q*q*(3-2*q);
 
     // where each skate is in the stride
     const feet=[0,1].map(i=>{
       if(air){ return i ? {x:hip.x-5, y:hip.y+15, lift:5} : {x:hip.x+7, y:hip.y+13, lift:5}; }
-      const p=(((P.stride/(2*Math.PI))+i*0.5)%1+1)%1, reach=duck?9:12, back=duck?12:17;
-      if(p<0.62){ const q=p/0.62; return {x:hip.x+reach-(reach+back)*q, y:baseY-ANK, lift:0}; }
-      const q=(p-0.62)/0.38; const lift=Math.sin(q*Math.PI)*(duck?3:6.5);
-      return {x:hip.x-back+(reach+back)*q, y:baseY-ANK-lift, lift};
+      if(duck) return i ? {x:hip.x-12, y:baseY-ANK, lift:0} : {x:hip.x+6, y:baseY-ANK, lift:0};   // tucked: both skates gliding
+      const p=(stride+i*0.5)%1;
+      if(p<0.6){                                            // on the ice: glide under the hip, then push back to a straight leg
+        const q=p/0.6, e = q<0.35 ? q/0.35*0.12 : 0.12+0.88*smooth((q-0.35)/0.65);
+        return {x:hip.x+5-27*e, y:baseY-ANK, lift:0};
+      }
+      const q=(p-0.6)/0.4, lift=Math.sin(q*Math.PI)*2.4;    // recovery: back under the body, skimming the ice
+      return {x:hip.x-22+27*smooth(q), y:baseY-ANK-lift, lift};
     });
     // draw the far leg (the one further back) first, a shade darker
     const order=feet[0].x<feet[1].x ? [0,1] : [1,0];
