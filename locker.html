@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" class="home lockerpage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Locker Room · stickpicks 2026–27</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Your stickpicks Locker Room: Chiclets, the shop, your gear and your badges in one place.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="Locker Room · stickpicks">
+<meta property="og:description" content="Chiclets, the shop, your gear and your badges in one place.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+<link rel="stylesheet" href="styles.css?v=__V__">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="intermission.html">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navchiclets hidden" id="navChiclets"></span>
+    </div>
+  </nav>
+
+  <!-- Banner: you, in your gear, with your Chiclets -->
+  <header class="lr-banner">
+    <span class="lr-face" id="lrFace" aria-hidden="true"></span>
+    <div class="lr-who">
+      <small class="tb-kicker">Locker Room</small>
+      <h1 class="lr-name" id="lrName">Your locker</h1>
+      <a class="lr-profile" id="lrProfile" href="profile.html">Profile &amp; settings ›</a>
+    </div>
+    <a class="lr-bal hidden" id="lrBal" href="chiclets.html" aria-label="Your Chiclets statement"></a>
+  </header>
+
+  <main id="locker"><p class="hint">Loading…</p></main>
+
+  <footer>Chiclets are free to earn, can’t be bought with real money, and have no cash value. <a href="rules.html#chiclets">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=__V__"></script>
+<script src="teams.js?v=__V__"></script>
+<script>
+const sb = makeClient();
+const $ = id => document.getElementById(id);
+mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
+const SLOT_NAMES={border:"Border", sweater:"Sweater style", skater:"Breakaway skater"};
+const SLOT_FIELD={border:"border", sweater:"sweater_style", skater:"skater"};
+const SLOT_NONE={border:"No border", sweater:"Plain sweater", skater:"House sweater"};
+
+// Everything the page shows, loaded at once: your profile, Chiclets, what you own, the shop, and your badges
+async function load(){
+  if(!sb) return message("Database not connected yet.");
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) return signedOut();
+  const {data:me}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
+  if(!me?.username) return message("", 'Choose a username in <a href="profile.html#settings">Settings</a> to open your locker.');
+  rememberMe(me.username, avatarFromProfile(me));
+  await claimBadgeChiclets(sb);
+  const [ledger, mine, shop, badges]=await Promise.all([
+    sb.rpc("chiclets_ledger",{p_username:me.username}).then(r=>r.data||[]),
+    sb.rpc("my_items").then(r=>(r.data||[]).map(x=>x.item_id)),
+    sb.from("shop_items").select("*").eq("active",true).order("sort").then(r=>r.data||[]),
+    myBadges(sb, me.username).catch(()=>null),
+  ]);
+  render({me, ledger:ledger.slice().reverse(), owned:new Set(mine), shop, badges});
+}
+
+function message(text, html){ const p=document.createElement("p"); p.className="hint"; html ? p.innerHTML=html : p.textContent=text; $("locker").replaceChildren(p); }
+function signedOut(){
+  $("lrProfile").classList.add("hidden");
+  $("lrFace").replaceChildren(avatarEl(null, "", 84));
+  message("", 'Your locker holds your Chiclets, your gear and your badges. <a href="index.html#signin">Sign in</a> to open it.');
+}
+
+const card=(title, cls="")=>{ const s=document.createElement("section"); s.className="pf-card lr-card "+cls; const h=document.createElement("h2"); h.textContent=title; s.append(h); return s; };
+const more=(href, text)=>{ const a=document.createElement("a"); a.className="lr-more"; a.href=href; a.textContent=text+" ›"; return a; };
+const today=()=>new Date().toISOString().slice(0,10);
+
+// s = {me, ledger (newest first), owned (Set of item ids), shop (shop_items), badges (computeBadges result or null)}
+function render(s){
+  const av=avatarFromProfile(s.me), bal=s.ledger.length ? s.ledger[0].balance : 0;
+  $("lrFace").replaceChildren(avatarEl(av, s.me.username, 84));
+  $("lrName").textContent=s.me.username;
+  const b=$("lrBal"); b.replaceChildren(chicletIcon(30), Object.assign(document.createElement("b"),{textContent:bal.toLocaleString()}));
+  b.classList.remove("hidden");
+  const grid=document.createElement("div"); grid.className="lr-grid";
+
+  // ── Chiclets: the last few changes ──
+  const ch=card("Chiclets");
+  const list=document.createElement("ul"); list.className="lr-ledger";
+  s.ledger.slice(0,4).forEach(r=>{
+    const li=document.createElement("li");
+    const what=document.createElement("span");
+    what.textContent = r.kind==="badge" ? `${BADGE_BY_ID[r.note]?.name||"Badge"} badge` : r.kind==="spend" ? (s.shop.find(i=>i.id===r.note)?.name||"Shop item") : r.note.replace(/ \(picked on .*\)$/,"");
+    const d=document.createElement("b"); d.className=r.delta>0?"up":"down"; d.textContent=(r.delta>0?"+":"−")+Math.abs(r.delta);
+    li.append(what,d); list.append(li);
+  });
+  if(!s.ledger.length){ const li=document.createElement("li"); li.textContent="Nothing yet. Your first Chiclets arrive when a game you picked goes final."; list.append(li); }
+  ch.append(list, more("chiclets.html","Full statement"));
+  grid.append(ch);
+
+  // ── Shop: what you're saving for ──
+  const sh=card("Shop");
+  const forSale=s.shop.filter(i=>(!i.available_from || today()>=i.available_from) && (!i.available_to || today()<=i.available_to) && !s.owned.has(i.id));
+  const canBuy=forSale.filter(i=>i.price<=bal), next=forSale.filter(i=>i.price>bal).sort((a,c)=>a.price-c.price)[0];
+  const p=document.createElement("p"); p.className="lr-note";
+  p.textContent = canBuy.length ? `You can afford ${canBuy.length} item${canBuy.length===1?"":"s"} right now.` : next ? "Saving up for your next item." : "You own everything in the shop. Legend.";
+  sh.append(p);
+  if(next){
+    const row=document.createElement("div"); row.className="lr-next";
+    const pv=document.createElement("span"); pv.className="lr-next-pv"; pv.append(itemPreview(next, s.me, 54));
+    const info=document.createElement("div"); info.className="lr-next-info";
+    const nm=document.createElement("b"); nm.textContent=next.name;
+    const bar=document.createElement("span"); bar.className="bprog-bar shop-save"; const f=document.createElement("i"); f.style.width=Math.round(bal/next.price*100)+"%"; bar.append(f);
+    const sm=document.createElement("small"); sm.textContent=`${(next.price-bal).toLocaleString()} more to go · ${next.price.toLocaleString()} Chiclets`;
+    info.append(nm,bar,sm); row.append(pv,info); sh.append(row);
+  }
+  sh.append(more("shop.html","Visit the shop"));
+  grid.append(sh);
+
+  // ── Your gear: what you're wearing in each slot ──
+  const gear=card("Your gear","lr-gear");
+  const slots=document.createElement("div"); slots.className="lr-slots";
+  ["border","sweater","skater"].forEach(slot=>{
+    const worn=s.me[SLOT_FIELD[slot]], item=s.shop.find(i=>i.id===worn);
+    const a=document.createElement("a"); a.className="lr-slot"; a.href=`shop.html#${slot}`;
+    const pv=document.createElement("span"); pv.className="lr-slot-pv";
+    pv.append(item ? itemPreview(item, s.me, 56) : slot==="skater" ? houseSweater(56) : avatarEl({...av, border:slot==="border"?null:av.border, style:slot==="sweater"?null:av.style}, s.me.username, 56));
+    const k=document.createElement("small"); k.textContent=SLOT_NAMES[slot];
+    const nm=document.createElement("b"); nm.textContent=item ? item.name : SLOT_NONE[slot];
+    const owned=s.shop.filter(i=>i.slot===slot && s.owned.has(i.id)).length;
+    const c=document.createElement("span"); c.className="lr-slot-own"; c.textContent = owned ? `${owned} owned · Change` : "Get one in the shop";
+    a.append(pv,k,nm,c); slots.append(a);
+  });
+  gear.append(slots);
+  grid.append(gear);
+
+  // ── Badges: the rarest you have, and the closest to earning ──
+  const bd=card("Badges","lr-badges");
+  if(s.badges){
+    const r=s.badges, cnt=document.createElement("span"); cnt.className="badge-count"; cnt.textContent=`${r.earned.length} of ${BADGES.length}`; bd.querySelector("h2").append(" ",cnt);
+    const best=rarestBadges(r.earned,5);
+    if(best.length){ const row=document.createElement("div"); row.className="trophy-case lr-trophies";
+      best.forEach(id=>{ const a=document.createElement("a"); a.className="trophy"; a.href=`badges.html?badge=${id}`; a.title=BADGE_BY_ID[id].name; a.append(badgeEl(id,52)); row.append(a); }); bd.append(row); }
+    const next=badgesInReach(r,3);
+    if(next.length){ const h=document.createElement("h3"); h.className="pf-sub"; h.textContent="In reach"; const g=document.createElement("div"); g.className="reach-grid"; g.append(...next.map(id=>reachTile(id,r.meter[id]))); bd.append(h,g); }
+  }else{ const p2=document.createElement("p"); p2.className="lr-note"; p2.textContent="Couldn’t load badges right now."; bd.append(p2); }
+  bd.append(more("badges.html","All badges"));
+  grid.append(bd);
+
+  // ── Invite friends ──
+  const inv=card("Invite friends","lr-invite");
+  const ip=document.createElement("p"); ip.className="lr-note";
+  const joined=s.badges ? Math.min(s.badges.meter.talentscout?.[0]||0, 3) : 0;
+  ip.textContent = joined>=3 ? "Three friends joined from your invitations. Talent Scout earned!" :
+    `Picks are better with rivals. ${joined} of 3 friends joined from your invitations (Recruiter at 1, Talent Scout at 3).`;
+  inv.append(ip, shareButton("Invite friends", inviteSpec(s.me.username), "invite-patch"));
+  grid.append(inv);
+
+  $("locker").replaceChildren(grid);
+}
+
+// An item shown on you (same rules as the shop's previews)
+function itemPreview(item, me, px){
+  const mine=avatarFromProfile(me), team=(mine?.kind==="sweater" && mine.team) || me.fav_team || "SEA", number=mine?.kind==="sweater" ? mine.number : 0;
+  if(item.slot==="border") return avatarEl({...mine, border:item.id}, me.username, px);
+  if(item.slot==="sweater") return avatarEl({kind:"sweater", team, number, style:item.id}, "S", px);
+  if(item.id==="skater_fav") return avatarEl({kind:"sweater", team:me.fav_team||"SEA", number:""}, "S", px);
+  return avatarEl({kind:"sweater", team, number, style:mine?.style}, "S", px);
+}
+// The stickpicks house sweater (the Breakaway skater's default): navy with red stripes, no number
+function houseSweater(px){
+  const el=document.createElement("span"); el.className="avatar avatar-sweater"; el.style.setProperty("--av-size",px+"px"); el.setAttribute("aria-hidden","true");
+  el.innerHTML=`<svg viewBox="0 0 100 100">${jerseyMarkup(null,{j1:"#1C2B45",j2:"#E8463F",j3:"#FFFFFF"})}</svg>`;
+  return el;
+}
+load();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

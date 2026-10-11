@@ -883,7 +883,7 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .acct-reach .acct-label a{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--ink)}
 .reach-list{display:grid;gap:12px}
 /* Home: badges in reach as three tappable tiles (patch, name, progress); each opens that badge on the Badges page */
-#reachList{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#reachList,.reach-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .reach-tile{display:grid;justify-items:center;align-content:start;gap:6px;padding:10px 6px 9px;border:1px solid var(--line);border-radius:8px;
   background:var(--bg);color:var(--ink);text-decoration:none;text-align:center;transition:border-color .12s,transform .12s}
 .reach-tile:hover{border-color:var(--ink);transform:translateY(-1px)}
@@ -1196,6 +1196,57 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .shop-save{width:80%;height:7px}
 .shop-save i{background:var(--gold)}
 .shop-need{font:italic .8rem var(--serif);color:var(--muted)}
+/* ───── Locker Room: you, your Chiclets, the shop, your gear, your badges ───── */
+.lr-banner{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 18px;margin-top:4px;
+  padding:18px 20px 30px 44px;background:var(--navy);color:var(--wool);border-radius:8px;overflow:hidden}
+[data-scheme="dark"] .lr-banner{background:#14203A}
+.lr-banner::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
+  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+.lr-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;background:linear-gradient(to bottom,#E8463F 0 5px,transparent 5px 9px,var(--wool) 9px 14px)}
+.lr-face{display:flex}
+.lr-who{min-width:0}
+.lr-name{margin:0;font:clamp(2rem,6vw,2.8rem)/1.1 "Yellowtail",cursive;color:var(--wool);overflow-wrap:anywhere;padding-right:.25em}
+.lr-profile{display:inline-block;margin-top:4px;font:600 .74rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-decoration:none}
+.lr-profile:hover{text-decoration:underline}
+.lr-bal{display:inline-flex;align-items:center;gap:8px;padding:6px 16px 6px 10px;border-radius:999px;background:rgba(239,230,210,.08);border:1px solid rgba(239,230,210,.3);
+  color:var(--wool);text-decoration:none}
+.lr-bal b{font:700 1.9rem/1 var(--display);font-variant-numeric:tabular-nums}
+.lr-bal:hover{background:rgba(239,230,210,.16)}
+.lr-bal.hidden{display:none}
+@media (max-width:560px){
+  .lr-banner{grid-template-columns:auto minmax(0,1fr);padding:16px 14px 28px 38px;gap:6px 12px}
+  .lr-face .avatar{--av-size:62px !important}
+  .lr-name{font-size:clamp(1.5rem,7.4vw,2.1rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+  .lr-bal{grid-column:1 / -1;justify-self:start}
+}
+.lr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.lr-grid .lr-gear,.lr-grid .lr-badges{grid-column:1 / -1}
+@media (max-width:700px){ .lr-grid{grid-template-columns:1fr} }
+.lr-card{display:flex;flex-direction:column}
+.lr-card h2{display:flex;align-items:baseline;gap:8px}
+.lr-more{margin-top:auto;padding-top:12px;align-self:flex-start;font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none}
+.lr-more:hover{text-decoration:underline}
+.lr-note{margin:0 0 10px;font:italic .92rem/1.4 var(--serif);color:var(--muted)}
+.lr-ledger{list-style:none;margin:0;padding:0}
+.lr-ledger li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.lr-ledger li:last-child{border-bottom:0}
+.lr-ledger b{font:700 1rem var(--display);font-variant-numeric:tabular-nums}
+.lr-ledger .up{color:var(--win)} .lr-ledger .down{color:var(--loss)}
+.lr-next{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.lr-next-pv{display:flex}
+.lr-next-info{display:grid;gap:5px}
+.lr-next-info b{font:600 .95rem var(--display);letter-spacing:.06em;text-transform:uppercase}
+.lr-next-info .shop-save{width:100%}
+.lr-next-info small{font:italic .82rem var(--serif);color:var(--muted)}
+.lr-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.lr-slot{display:grid;justify-items:center;gap:3px;padding:12px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);text-decoration:none;text-align:center}
+.lr-slot:hover{border-color:var(--ink)}
+.lr-slot-pv{display:flex;margin-bottom:4px}
+.lr-slot small{font:600 .64rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.lr-slot b{font:600 .9rem var(--display);letter-spacing:.05em;text-transform:uppercase}
+.lr-slot-own{font:italic .78rem var(--serif);color:var(--muted)}
+.lr-trophies{margin-bottom:6px}
+.lr-invite .invite-patch{align-self:flex-start}
 .shop-card.is-soon{opacity:.75;border-style:dashed}
 .shop-soon{font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
 .buy-preview{display:grid;place-items:center;margin:4px 0 6px}
