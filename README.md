@@ -11,6 +11,7 @@ rules.html                                  the rules and scoring explained, wit
 privacy.html                                the Privacy Policy and Terms of Use
 badges.html                                 every badge, in groups (yours, or ?user=Name for another player's)
 compare.html                                your sheet and another player's, side by side
+locker.html                                 the Locker Room: your Chiclets, the shop, your gear and badges (the Me tab)
 chiclets.html                               your Chiclets balance and statement
 shop.html                                   the Chiclets shop (profile borders and more)
 intermission.html                           the Intermission page with the Breakaway game

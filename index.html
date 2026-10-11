@@ -466,7 +466,7 @@ function showChicletChip(){
   if(!who) return box.classList.add("hidden");
   chicletBalance(sb, who).then(n=>{
     if(n==null || currentUser?.id!==uid || panelNow!=="pSignedIn") return;
-    box.replaceChildren(chicletChip(n, "chiclets.html"));
+    box.replaceChildren(chicletChip(n, "locker.html"));
     box.classList.remove("hidden");
   }).catch(()=>{});
 }
@@ -676,16 +676,6 @@ async function loadMyStats(){
   }).catch(()=>{});
 }
 // One badge in reach: the patch, its name and a progress bar, as a button to that badge on the Badges page.
-function reachTile(id, meter){
-  const b=BADGE_BY_ID[id], [have,need]=meter||[0,1], pct=need?Math.round(Math.min(have,need)/need*100):0;
-  const a=document.createElement("a"); a.className="reach-tile bprog"; a.href=`badges.html?badge=${id}`; a.dataset.ring=b.ring;
-  a.setAttribute("aria-label", `${b.name}: ${Math.min(have,need)} of ${need}. Open it on the Badges page.`);
-  const nm=document.createElement("b"); nm.textContent=b.name;
-  const bar=document.createElement("span"); bar.className="bprog-bar"; bar.setAttribute("aria-hidden","true");
-  const fill=document.createElement("i"); fill.style.width=pct+"%"; bar.append(fill);
-  a.append(badgeEl(id,52,false), nm, bar);
-  return a;
-}
 // "Badges in reach": a few badges you're closest to (hidden when there's nothing left to earn).
 function showReach(r, ids){
   $("reachList").replaceChildren(...ids.map(id=>reachTile(id, r.meter[id])));

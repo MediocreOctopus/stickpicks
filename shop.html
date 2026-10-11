@@ -136,7 +136,7 @@ function render(){
   const root=$("shop"); root.innerHTML="";
   SLOTS.forEach(s=>{
     const list=items.filter(i=>i.slot===s.slot); if(!list.length) return;
-    const sec=document.createElement("section"); sec.className="bgroup shop-group";
+    const sec=document.createElement("section"); sec.className="bgroup shop-group"; sec.id=s.slot;   // shop.html#sweater etc.
     const head=document.createElement("h2"); head.className="bgroup-head";
     const nm=document.createElement("span"); nm.textContent=s.name;
     const ct=document.createElement("small"); ct.textContent=`${list.filter(i=>owned.has(i.id)).length} of ${list.length} owned`;
@@ -147,6 +147,7 @@ function render(){
     soon.filter(i=>i.slot===s.slot).forEach(i=>grid.append(card(i, true)));   // limited-time items coming later
     sec.append(head,note,grid); root.append(sec);
   });
+  if(!render.scrolled && location.hash){ render.scrolled=true; document.getElementById(location.hash.slice(1))?.scrollIntoView({block:"start"}); }
 }
 
 const dayName=d=>new Date(d+"T12:00:00").toLocaleDateString([], {month:"short",day:"numeric"});

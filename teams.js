@@ -140,7 +140,8 @@ function mountTabBar(){
     ["teams","Pick Team","teams.html",page==="teams.html"||page==="sheet.html"||page==="compare.html"],
     ["board","Leaders","leaderboard.html",page==="leaderboard.html"],
     ["play","Intermission","intermission.html",page==="intermission.html"],
-    ["me","Me","profile.html",page==="profile.html"]
+    // Me opens the Locker Room (your Chiclets, shop, gear and badges); your profile is one tap from there
+    ["me","Me","locker.html",["locker.html","profile.html","chiclets.html","shop.html","badges.html"].includes(page)]
   ];
   const nav=document.createElement("nav"); nav.className="tabbar"; nav.setAttribute("aria-label","Sections");
   items.forEach(([icon,label,href,current])=>{
@@ -281,7 +282,7 @@ function meBadge(){ const me=readMe(); const b=avatarEl(me?.avatar, me?.name, 24
 function refreshMe(){
   const me=readMe();
   document.querySelectorAll("a.navaccount[data-me]").forEach(a=>{
-    a.href = me?.name ? "profile.html" : "index.html#signin";
+    a.href = me?.name ? "locker.html" : "index.html#signin";
     if(me?.name){
       const nm=document.createElement("span"); nm.className="navaccount-name"; nm.textContent=me.name;
       a.replaceChildren(avatarEl(me.avatar, me.name, 22), nm); a.classList.add("has-avatar");
@@ -1058,6 +1059,18 @@ function badgesInReach(r, n=3){
     .sort((a,b)=>rank(a)-rank(b));
 }
 // A progress bar row: patch, name, bar, "3 of 5 ...". Bar colour follows the badge's ring.
+// One badge in reach as a tile: the patch, its name and a progress bar, linking to that badge on the Badges page
+// (home page and Locker Room).
+function reachTile(id, meter){
+  const b=BADGE_BY_ID[id], [have,need]=meter||[0,1], pct=need?Math.round(Math.min(have,need)/need*100):0;
+  const a=document.createElement("a"); a.className="reach-tile bprog"; a.href=`badges.html?badge=${id}`; a.dataset.ring=b.ring;
+  a.setAttribute("aria-label", `${b.name}: ${Math.min(have,need)} of ${need}. Open it on the Badges page.`);
+  const nm=document.createElement("b"); nm.textContent=b.name;
+  const bar=document.createElement("span"); bar.className="bprog-bar"; bar.setAttribute("aria-hidden","true");
+  const fill=document.createElement("i"); fill.style.width=pct+"%"; bar.append(fill);
+  a.append(badgeEl(id,52,false), nm, bar);
+  return a;
+}
 function badgeProgressEl(id, meter, compact=false){
   const b=BADGE_BY_ID[id], [have,need,what]=meter, pct=need?Math.round(Math.min(have,need)/need*100):0;
   const row=document.createElement("div"); row.className="bprog"+(compact?" compact":"");
@@ -1395,15 +1408,15 @@ function chicletIcon(px=16){
   return s;
 }
 const chicletsText=n=>`${Number(n||0).toLocaleString()} Chiclet${Number(n)===1?"":"s"}`;
-// The Chiclets counter (home top bar, profile banner): a pill with the tooth and the balance. With href it's a
-// button to the Chiclets page (balance and statement); without, just the count (another player's profile).
+// The Chiclets counter (top right, and on another player's profile): a pill with the tooth and the balance. With href
+// it's a button (to the Locker Room); without, just the count (another player's profile).
 function chicletChip(n, href, cls=""){
   const el=document.createElement(href?"a":"span"); el.className=("chiclet-chip "+cls).trim();
   if(href) el.href=href;
   const b=document.createElement("b"); b.textContent=Number(n||0).toLocaleString();
   el.append(chicletIcon(18), b);
   el.title=chicletsText(n);
-  el.setAttribute("aria-label", href ? `${chicletsText(n)}. See your Chiclets statement.` : chicletsText(n));
+  el.setAttribute("aria-label", href ? `${chicletsText(n)}. Open your Locker Room.` : chicletsText(n));
   return el;
 }
 // The top-bar counter (top-right corner, beside the account button) for whoever is signed in, on any page with
@@ -1420,7 +1433,7 @@ async function mountChicletNav(sb){
     if(!me?.username) return box.classList.add("hidden");
     const n=await chicletBalance(sb, me.username);
     if(n==null) return;
-    box.replaceChildren(chicletChip(n, "chiclets.html"));
+    box.replaceChildren(chicletChip(n, "locker.html"));
     box.classList.remove("hidden");
   }catch(e){}
 }
