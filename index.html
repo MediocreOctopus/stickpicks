@@ -27,7 +27,7 @@ function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.do
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
 window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
-<link rel="stylesheet" href="styles.css?v=2026-12-13">
+<link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
 
@@ -209,8 +209,8 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 <div class="hem" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2026-12-13"></script>
-<script src="teams.js?v=2026-12-13"></script>
+<script src="config.js?v=__V__"></script>
+<script src="teams.js?v=__V__"></script>
 <script>
 // Old links like index.html?team=SEA now live at sheet.html
 const oldTeam=new URL(location.href).searchParams.get("team");
@@ -270,7 +270,17 @@ const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,
 const GAME_COLS="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
 const strip=$("dayStrip");
 let days=[], dayIdx=0, noPrev=false, noNext=false, extending=false;   // days: [{day, data, el}]
-const gamesOn=day=>sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_date",day).order("start_utc");
+const gamesRange=(a,b)=>sb.from("games").select(GAME_COLS).eq("season",SEASON).gte("game_date",a).lte("game_date",b).order("start_utc");
+// The first three days (yesterday, today, tomorrow) arrive in one request and wait here until the strip reaches them.
+const dayCache=new Map();
+async function prefetchDays(a,b){
+  const {data,error}=await gamesRange(a,b);
+  if(!error) for(let d=a; d<=b; d=shiftDay(d,1)) dayCache.set(d,(data||[]).filter(g=>g.game_date===d));
+}
+const gamesOn=day=>{
+  if(dayCache.has(day)){ const data=dayCache.get(day); dayCache.delete(day); return Promise.resolve({data, error:null}); }
+  return sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_date",day).order("start_utc");
+};
 // Every calendar day, one at a time (no-game days included), within the season's schedule.
 let seasonFirst=null, seasonLast=null;
 async function seasonBounds(){
@@ -356,14 +366,16 @@ async function loadToday(){
   const empty=$("todayEmpty");
   if(!sb){ empty.textContent="Connect the database to see today’s games."; empty.classList.remove("hidden"); return; }
   if(days.length) return refreshDays();
-  await seasonBounds();
+  // the season's first and last days, and yesterday-to-tomorrow's games, all at once
+  const today=ymd(new Date());
+  await Promise.all([seasonBounds(), prefetchDays(shiftDay(today,-1), shiftDay(today,1))]);
   if(!seasonFirst){
     empty.textContent = navigator.onLine ? "No games are in the database yet. Run the “Update NHL games” workflow once (see README)." : "You’re offline. Today’s games will show up when you reconnect.";
     empty.classList.remove("hidden"); return;
   }
   // open on today (kept within the season's schedule, e.g. before opening night)
-  const today=ymd(new Date());
   const day = today<seasonFirst ? seasonFirst : today>seasonLast ? seasonLast : today;
+  if(day!==today){ dayCache.clear(); await prefetchDays(shiftDay(day,-1), shiftDay(day,1)); }
   const {data,error}=await gamesOn(day);
   if(error){ empty.textContent = navigator.onLine ? `Couldn’t load games: ${error.message}` : "You’re offline. Today’s games will show up when you reconnect."; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
@@ -372,10 +384,12 @@ async function loadToday(){
 }
 // Every few minutes: fresh scores for the days already loaded.
 async function refreshDays(){
-  for(const d of days){
-    const {data,error}=await gamesOn(d.day); if(error||!data) continue;
-    d.data=data; const box=d.el.querySelector(".games"); box.innerHTML=""; renderCards(box,data); noGamesNote(box,d.day);
-  }
+  if(!days.length) return;
+  const {data,error}=await gamesRange(days[0].day, days[days.length-1].day);   // one request for every day loaded
+  if(!error && data) days.forEach(d=>{
+    d.data=data.filter(g=>g.game_date===d.day);
+    const box=d.el.querySelector(".games"); box.innerHTML=""; renderCards(box,d.data); noGamesNote(box,d.day);
+  });
   showDay(dayIdx);
 }
 

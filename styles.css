@@ -46,7 +46,6 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 /* the header ends in sweater hem stripes in the team's colours */
 .board::after{content:"";display:block;height:24px;margin:14px -16px 0;
   background:linear-gradient(to bottom,var(--stripe) 0 7px,transparent 7px 11px,var(--brand) 11px 17px,transparent 17px 20px,var(--stripe) 20px 24px)}
-.board-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .board h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:1.25rem;letter-spacing:.02em;margin:0;color:var(--title)}
 .teamsel{font:500 .85rem var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--board-ink);background:color-mix(in srgb, var(--board-ink) 10%, transparent);border:2px solid color-mix(in srgb, var(--board-ink) 40%, transparent);border-radius:4px;padding:4px 8px;max-width:100%}
 .teamsel option,.teamsel optgroup{color:#000;background:#fff}
@@ -109,26 +108,12 @@ footer{margin-top:28px;font:italic .82rem/1.5 var(--serif);color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{.board{position:static}.controls,.account,.teamsel,.topbar,.tabbar,.sh-controls,.sh-strip,.sh-switch,.hem,.hem-top{display:none}.game{break-inside:avoid}}
 
-/* ───── Navigation + username ───── */
-.board-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.navlink{color:var(--board-ink);font:600 .82rem var(--display);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border:2px solid color-mix(in srgb, var(--board-ink) 40%, transparent);border-radius:4px;padding:4px 10px;white-space:nowrap}
-.navlink:hover{background:color-mix(in srgb, var(--board-ink) 12%, transparent)}
-.navlink:focus-visible{outline:3px solid var(--alarm);outline-offset:2px}
-.navlink.scriptlink{font:1.5rem/1 "Yellowtail",cursive;letter-spacing:0;text-transform:none;color:var(--title);border-color:transparent;padding:2px 8px 4px;transform:rotate(-6deg)}
-.navlink.scriptlink:hover{background:transparent;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}
-.userrow{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:10px;border-top:1px solid var(--line);font-size:.9rem}
-.userrow input{flex:0 1 220px;min-width:0;font:inherit;padding:7px 10px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
-.unameMsg{color:var(--muted);font-size:.85rem}
-
 /* ───── Leaderboard ───── */
 .lbpage .wrap{max-width:1040px}
 /* "All teams": plain cream wool page under the navy road-sweater header */
 .neutral{--bg:#EFE6D2;--panel:#F7F1E3;--home:#F7F1E3;--line:#D8CDB6;--ink:#1C2B45;--muted:#5B6475}
 .neutral[data-scheme="dark"]{--bg:#1C2B45;--panel:#22355A;--home:#22355A;--line:#3A4C6E;--ink:#EFE6D2;--muted:#B8C0CF}
-.lb-board{position:static}
-.lb-board .board-top{justify-content:space-between}
 .board .lb-headline{font:clamp(2.3rem,7vw,3.6rem)/1.1 "Yellowtail",cursive;letter-spacing:0;word-spacing:.15em;color:var(--title);margin:14px 0 0}
-.lb-sub{font:italic .85rem var(--serif);color:color-mix(in srgb, var(--board-ink) 75%, transparent);margin-top:8px}
 
 /* Table on the right, your standing in a sticky sidebar on the left */
 .lb-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;align-items:start;margin-top:20px}
@@ -186,8 +171,6 @@ html.lbpage.neutral{--lb-stripe:var(--red)} html.lbpage.neutral[data-scheme="dar
   .lb td.name{min-width:8.5rem;word-break:normal;overflow-wrap:anywhere}
   .board .lb-headline{transform:none}
 }
-.lb-board{overflow:hidden}
-.nowrap{white-space:nowrap}
 .muted{color:var(--muted);font-size:.85em}
 
 a.plain{display:inline-flex;align-items:center;text-decoration:none}
@@ -324,18 +307,12 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 }
 .intro h1{font:600 clamp(2.4rem,6.5vw,4rem)/1 "Oswald",sans-serif;text-transform:uppercase;margin:0;letter-spacing:.01em}
 .intro h1 em{font-style:normal;color:var(--goal)}
-.teambtn{background:var(--t-board);border-color:var(--t-board);box-shadow:inset -6px 0 0 var(--t-stripe);color:var(--t-ink,#fff);padding-right:24px}
-.btn.teambtn{background:var(--t-board);border-color:var(--t-board);color:var(--t-ink,#fff)}
-[data-scheme="dark"] .btn.teambtn{border-color:color-mix(in srgb, var(--t-board) 60%, #fff)}
-.lede{font:italic 1.1rem/1.5 var(--serif);color:var(--muted);max-width:34em;margin:16px 0 14px}
 .chips{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .chips li{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border:2px solid var(--ink);border-radius:4px;background:var(--panel);font:500 .85rem var(--display);letter-spacing:.08em;text-transform:uppercase}
 .chips b{font:700 1.05rem "Oswald",sans-serif;color:var(--goal)}
 .cta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 /* Home account box: "Current Picks" label, and Continue at the bottom */
 .acct-label{font:600 .75rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
-.acct-cta{margin-top:4px}
-.acct-cta .btn{width:100%;justify-content:center;box-sizing:border-box;text-align:center}
 .promo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:36px;padding:16px 20px;border-radius:8px;background:var(--navy);color:var(--wool);text-decoration:none;border-left:6px solid var(--goal);font:italic .95rem var(--serif)}
 [data-scheme="dark"] .promo{background:var(--board)}
 .promo b{font:600 1.3rem "Oswald",sans-serif;font-style:normal;letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
@@ -584,13 +561,10 @@ kbd{font:600 .8rem "Barlow",sans-serif;border:1px solid var(--line);border-botto
   .runbtns .btn{padding:8px}
   .runbar .run-touch{font-size:.72rem}
 }
-.lede a{color:inherit}
 
 /* ───── Rules page ───── */
 .note a,footer a{color:inherit}
 .rulespage .wrap{max-width:820px}
-.rules-hero{padding:20px 0 4px}
-.rules-hero h1{font:600 clamp(2.6rem,8vw,4rem)/1 "Oswald",sans-serif;text-transform:uppercase;margin:0}
 .points-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
 .points-strip div{display:flex;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:14px}
 .points-strip b{font:700 2.4rem "Oswald",sans-serif;line-height:1;color:var(--win)}
@@ -808,10 +782,6 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .pf-signedout .form-actions{justify-content:center}
 /* ───── Leaderboard header logo: the real logo on the coloured header ───── */
 /* script in the team's readable accent, light tape, outline in the header colour */
-.lb-brand{--logo-ink:var(--title);--logo-bg:var(--board);--logo-tape:#F3EEE2;--logo-wrap:var(--board);--logo-puck-rim:#EFE6D2;margin-right:6px}
-html.neutral .lb-brand{--logo-ink:#E8463F}
-.lb-board .lb-brand .logo-svg{height:46px}
-@media (max-width:560px){ .lb-board .lb-brand .logo-svg{height:38px} }
 
 /* Phones and the app: no account button in the top bar; the Me tab opens your profile (or sign-in) */
 @media (max-width:560px){ .topnav > a.navaccount{display:none} }
@@ -844,12 +814,6 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .badge.locked{filter:grayscale(1);opacity:.32}
 .badge-count{font:italic .85rem var(--serif);letter-spacing:0;text-transform:none;color:var(--muted);margin-left:6px}
 .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px}
-.badge-item{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:10px;align-items:start}
-.badge-item .badge{grid-row:1 / span 3}
-.badge-item .bprog{margin-top:6px}
-.badge-item b{font:600 .9rem var(--display);letter-spacing:.08em;text-transform:uppercase;line-height:1.2;margin-top:4px}
-.badge-item small{font:italic .76rem/1.35 var(--serif);color:var(--muted);margin-top:2px}
-.badge-item.is-locked b{color:var(--muted)}
 
 /* "New badge" pop-up (home page) */
 .badge-toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:12px;
@@ -882,7 +846,7 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 /* ───── Home account box: a navy sweater banner on top (sleeve stripes, hem), panels below ───── */
 .acct-card{padding:0 0 20px;overflow:hidden}
 .acct-card > :not(.acct-banner){margin-left:20px;margin-right:20px}
-.acct-card > :not(.acct-banner):not(.hidden):not(.acct-cta){margin-top:16px}
+.acct-card > :not(.acct-banner):not(.hidden){margin-top:16px}
 .acct-banner{position:relative;display:flex;align-items:center;gap:14px;min-height:92px;padding:16px 18px 26px 40px;background:var(--navy);color:var(--wool)}
 [data-scheme="dark"] .acct-banner{background:#14203A}
 .acct-banner::before{content:"";position:absolute;left:0;top:0;bottom:12px;width:24px;
@@ -896,7 +860,6 @@ html.neutral .lb-brand{--logo-ink:#E8463F}
 .acct-title{font:2.1rem/1.15 "Yellowtail",cursive;color:var(--wool);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 .35em 2px 0}   /* room for the script's last stroke */
 /* the panels' own headings now live in the banner; keep them for screen readers only */
 .acct-card h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.acct-card .acct-cta{margin-top:12px}
 
 /* Current Picks rows: a team-colour edge, team names in the display face */
 .mysheets a{box-shadow:inset 5px 0 0 var(--t-board,transparent);padding-left:14px}
@@ -973,7 +936,6 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .acct-invite p{margin:0;font:italic .9rem var(--serif);color:var(--muted)}
 .badge-toast-acts{display:flex;align-items:center;gap:14px;margin-top:2px}
 .badge-toast-acts .linkbtn{color:var(--ink)}
-.badge-item .badge-share{grid-column:2;justify-self:start;margin-top:4px}
 .pf-acts{margin-left:auto}
 .pf-acts:empty{display:none}
 /* Leaderboard "Your best sheet": rank beside team and points; Share (a felt pill in the board's title colour) and
@@ -1247,9 +1209,7 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .ch-rule span{font-size:.92rem}
 .ch-more{margin:0;padding:0 14px 14px;font:italic .9rem var(--serif);color:var(--muted)}
 .ch-more a{color:var(--ink)}
-.st-delta.up,.st-sum .up,.ch-rule .up{color:var(--win)} .st-delta.down,.st-sum .down,.ch-rule .down{color:var(--loss)}
-.st-sum{display:flex;flex-wrap:wrap;gap:6px 22px;padding:12px 14px;border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.st-sum b{font-size:1rem;letter-spacing:.04em}
+.st-delta.up,.ch-rule .up{color:var(--win)} .st-delta.down,.ch-rule .down{color:var(--loss)}
 .st-month{margin:0;padding:5px 14px;background:var(--bg);border-bottom:1px solid var(--line);font:600 .78rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .st-list{list-style:none;margin:0;padding:0}
 .st-row{display:grid;grid-template-columns:3.6em minmax(0,1fr) auto 3em;gap:10px;align-items:baseline;padding:6px 14px;border-bottom:1px solid var(--line)}

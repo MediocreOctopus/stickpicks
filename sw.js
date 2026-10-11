@@ -2,10 +2,11 @@
 //
 // Pages (HTML) are always fetched from the network first, so a new deploy shows up right away;
 // the saved copy is only used when the network is unavailable. Shared files are versioned with
-// ?v=YYYY-MM-DD, so they can be served straight from the cache. Live data (Supabase) is never cached.
+// ?v=<version>, so they can be served straight from the cache. Live data (Supabase) is never cached.
 //
-// When bumping the ?v= date in the pages, bump VERSION here too, so the old cache is cleared.
-const VERSION = "2026-12-13";
+// __V__ (here and in every page's ?v= links) is replaced with a fresh version on each deploy by
+// .github/workflows/deploy-site.yml, which also clears the old cache. Don't edit it by hand.
+const VERSION = "__V__";
 const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 

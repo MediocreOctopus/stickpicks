@@ -1,0 +1,46 @@
+# Publishes the site to GitHub Pages on every push to main.
+# Before publishing it stamps a fresh version into every page's ?v=__V__ links and sw.js's VERSION, so phones and the
+# installed app always pick up new styles.css / teams.js / game.js (no more bumping the date in every file by hand).
+# Needs Settings → Pages → Build and deployment → Source: "GitHub Actions".
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy the site and stamp the version
+        run: |
+          V="$(date -u +%Y%m%d%H%M)-${GITHUB_SHA::7}"
+          mkdir -p _site
+          # the public site only: leave out the database, scripts, workflows and notes
+          rsync -a ./ _site/ --exclude '.git' --exclude '.github' --exclude '_site' --exclude 'supabase' \
+            --exclude 'scripts' --exclude 'README.md' --exclude 'CLAUDE.md'
+          sed -i "s/__V__/$V/g" _site/*.html _site/sw.js
+          if grep -l "__V__" _site/*.html _site/sw.js; then echo "A version placeholder was left unstamped"; exit 1; fi
+          echo "Published version $V"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
