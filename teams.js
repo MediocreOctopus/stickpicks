@@ -1429,11 +1429,6 @@ async function chicletBalance(sb, username){
   const {data,error}=await sb.rpc("chiclets_balance",{p_username:username});
   return error ? null : Number(data)||0;
 }
-async function chicletLedger(sb, username){
-  if(!sb || !username) return [];
-  const {data,error}=await sb.rpc("chiclets_ledger",{p_username:username});
-  return error ? [] : data||[];
-}
 
 /* ───────── Shared helpers ───────── */
 function makeClient(){

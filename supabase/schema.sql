@@ -807,7 +807,11 @@ $$;
 grant execute on function public.badge_reward(text) to anon, authenticated;
 
 -- The badges a player has earned this season, worked out from the database alone (rewardable badges only).
-create or replace function public.badges_earned(p_uid uuid, p_season text default '20262027')
+-- p_hon: everyone's honours (badge_honours() as JSON), when the caller already has them. Working them out takes a pass
+-- over the whole league, so award_all_badge_chiclets() does it once per run instead of once per player.
+drop function if exists public.badges_earned(uuid, text);
+drop function if exists public.award_badge_chiclets(uuid);
+create or replace function public.badges_earned(p_uid uuid, p_season text default '20262027', p_hon jsonb default null)
 returns setof text
 language plpgsql stable security definer set search_path = '' as $$
 declare
@@ -880,7 +884,12 @@ begin
       else 'globalseries' end) as k
     from mp m where m.started
   ),
-  hon as (select h.badge, h.n from public.badge_honours(p_season) h where lower(h.username) = lower(uname)),
+  hon as (
+    select h.badge, h.n
+    from jsonb_to_recordset(coalesce(p_hon, (select jsonb_agg(to_jsonb(x)) from public.badge_honours(p_season) x), '[]'::jsonb))
+      as h(username text, badge text, team text, earned_on date, n int)
+    where lower(h.username) = lower(uname)
+  ),
   hn as (select h.badge, coalesce(max(h.n), 0) as n, count(*) as c from hon h group by h.badge),
   graded as (select count(*) as n, coalesce(sum(q.p), 0) as pts from pts q),
   season_done as (       -- every game of this player's sheets' teams is final (or postponed)
@@ -949,10 +958,10 @@ begin
   union all
   select r.id::text from riv r where exists (select 1 from sheets s where s.team = r.a) and exists (select 1 from sheets s where s.team = r.b);
 end $$;
-revoke all on function public.badges_earned(uuid, text) from public, anon, authenticated;
+revoke all on function public.badges_earned(uuid, text, jsonb) from public, anon, authenticated;
 
--- Pay any badge rewards a player hasn't had yet; returns the new ones.
-create or replace function public.award_badge_chiclets(p_uid uuid)
+-- Pay any badge rewards a player hasn't had yet; returns the new ones. (p_hon: as for badges_earned)
+create or replace function public.award_badge_chiclets(p_uid uuid, p_hon jsonb default null)
 returns table (badge text, amount int)
 language plpgsql volatile security definer set search_path = '' as $$
 #variable_conflict use_column
@@ -961,12 +970,12 @@ begin
   return query
   insert into public.chiclet_awards as a (user_id, badge, amount)
   select p_uid, e.b, public.badge_reward(e.b)
-  from public.badges_earned(p_uid) as e(b)
+  from public.badges_earned(p_uid, '20262027', p_hon) as e(b)
   where public.badge_reward(e.b) > 0
   on conflict (user_id, badge) do nothing
   returning a.badge, a.amount;
 end $$;
-revoke all on function public.award_badge_chiclets(uuid) from public, anon, authenticated;
+revoke all on function public.award_badge_chiclets(uuid, jsonb) from public, anon, authenticated;
 
 -- The signed-in player: called by the site when it loads their badges.
 create or replace function public.claim_badge_chiclets()
@@ -985,9 +994,10 @@ declare
   u record;
   total int := 0;
   c int;
+  hon jsonb := coalesce((select jsonb_agg(to_jsonb(x)) from public.badge_honours('20262027') x), '[]'::jsonb);   -- once for everyone
 begin
   for u in select p.user_id from public.profiles p loop
-    select count(*) into c from public.award_badge_chiclets(u.user_id);
+    select count(*) into c from public.award_badge_chiclets(u.user_id, hon);
     total := total + c;
   end loop;
   return total;

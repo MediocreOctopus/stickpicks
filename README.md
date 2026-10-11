@@ -63,7 +63,7 @@ Open `config.js` and replace the placeholders with your Project URL and publisha
 ### 3. Publish on GitHub Pages
 
 1. Create a **public** GitHub repository, for example `nhl-picks`, and upload everything in this folder. Keep the folder structure, and make sure the hidden `.github` folder is included.
-2. Go to **Settings → Pages**, choose **Deploy from a branch**, then select `main` and `/ (root)`, and click **Save**.
+2. Go to **Settings → Pages**, and under **Build and deployment → Source** choose **GitHub Actions**. The included `.github/workflows/deploy-site.yml` then publishes the site on every push to `main`, stamping a fresh version into each page's `?v=__V__` links and `sw.js` so phones always pick up changes (never edit `__V__` by hand).
 3. Your site will be live at `https://YOUR-GITHUB-NAME.github.io/nhl-picks/`. To use your own domain instead, see [Custom domain](#custom-domain) below.
 
 ### 4. Allow sign-in
