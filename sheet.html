@@ -36,10 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb" id="lblink">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html" id="lblink">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -100,7 +100,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <main id="sheet"></main>
     <div class="empty hidden" id="empty"></div>
 
-    <footer>Fan-made, not affiliated with the NHL. Picks lock at puck drop. Start times can change and are shown in your time zone. Home games have a team-colour edge. Standings points: W = 2, OTL = 1. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+    <footer>Fan-made, not affiliated with the NHL. Picks lock at puck drop. Start times can change and are shown in your time zone. Home games have a team-color edge. Standings points: W = 2, OTL = 1. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
   </div>
 </div>
 <div class="hem" aria-hidden="true"></div>
@@ -177,7 +177,7 @@ async function chooseTeam(code){
 async function loadGames(){
   const empty=document.getElementById("empty");
   if(!sb){
-    empty.textContent="Database not connected yet: add your Supabase URL and key to config.js (see README).";
+    empty.textContent="Can’t reach stickpicks right now. Check your connection and try again.";
     empty.classList.remove("hidden"); return;
   }
   const want=team;
@@ -190,14 +190,14 @@ async function loadGames(){
   const savedKey=`nhl-picks-games-${SEASON}-${team}`;
   if(error){
     let saved=null; try{ saved=JSON.parse(localStorage.getItem(savedKey)||"null"); }catch(e){}
-    if(!saved){ empty.textContent=`Couldn’t load the schedule: ${error.message}`; empty.classList.remove("hidden"); return; }
+    if(!saved){ empty.textContent="Couldn’t load the schedule. Please try again in a moment."; empty.classList.remove("hidden"); return; }
     games=saved;
   }else{
     games=data;
     try{ localStorage.setItem(savedKey, JSON.stringify(data)); }catch(e){}
   }
   if(!games.length){
-    empty.textContent="No schedule in the database yet. Run the “Update NHL games” workflow once from your repository’s Actions tab (see README).";
+    empty.textContent="The schedule isn’t posted yet. Check back soon.";
     empty.classList.remove("hidden");
   }else empty.classList.add("hidden");
   renderSheet(); refresh();
@@ -226,7 +226,7 @@ async function loadViewPicks(){
   const {data,error}=await sb.rpc("sheet_picks",{p_username:VIEW_USER, p_team:team, p_season:SEASON});
   if(want!==team) return;
   const msg=document.getElementById("viewMsg");
-  if(error){ msg.textContent=`Couldn’t load ${VIEW_USER}’s picks: ${error.message}`; return; }
+  if(error){ msg.textContent=`Couldn’t load ${VIEW_USER}’s picks. Please try again in a moment.`; return; }
   picks=Object.fromEntries(data.map(r=>[String(r.game_id), r.revealed?{o:r.pick||undefined,g:r.goals??undefined}:{hidden:true}]));
   hiddenCount=data.filter(r=>!r.revealed).length;
   msg.textContent="";
@@ -530,6 +530,7 @@ document.getElementById("dl").addEventListener("click",()=>{
 
 /* ───────── Start ───────── */
 mountTeamMenu(document.getElementById("teamMenu"));
+mountChicletNav(sb);
 buildTeamMenu();
 if(viewing){
   document.documentElement.classList.add("viewmode");
@@ -551,7 +552,7 @@ if(sb){
   setInterval(reload, 10*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) reload(); });
 }else{
-  strip(["Database not connected yet: add your Supabase URL and key to config.js."]);
+  strip(["Can’t reach stickpicks right now. Picks you make are saved on this device."]);
 }
 const start=new URL(location.href).searchParams.get("team")?.toUpperCase()
   || (()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } })();

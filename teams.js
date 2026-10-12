@@ -276,7 +276,7 @@ function rememberMe(name, avatar){
   try{ localStorage.setItem(ME_KEY, JSON.stringify({name, avatar:keep})); }catch(e){}
   refreshMe();
 }
-function forgetMe(){ try{ localStorage.removeItem(ME_KEY); }catch(e){} refreshMe(); }
+function forgetMe(){ try{ localStorage.removeItem(ME_KEY); localStorage.removeItem("stickpicks-chiclets"); }catch(e){} refreshMe(); }
 function meBadge(){ const me=readMe(); const b=avatarEl(me?.avatar, me?.name, 24); b.classList.add("me-badge"); return b; }
 // Top-bar account buttons marked data-me: your picture + username (to your profile), or "Sign in".
 function refreshMe(){
@@ -1040,7 +1040,7 @@ const BADGE_GROUPS=[
   {name:"Collector", ids:["numberonefan","mixedfeelings","original6","ocanada","barnstormer","divisionchamp","commissioner"]},
   {name:"Rivalry Night", ids:RIVALRIES.map(r=>r.id)},
   {name:"Big games", ids:["heritageclassic","winterclassic","stadiumseries","globalseries"]},
-  {name:"Leaderboard honours", ids:["playerweek","playermonth","dynasty","monthlydynasty","seasondynasty","captain","pt20","pt50","pt100","mvp"]},
+  {name:"Leaderboard", ids:["playerweek","playermonth","dynasty","monthlydynasty","seasondynasty","captain","pt20","pt50","pt100","mvp"]},
   {name:"Breakaway", ids:["firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"]},
   {name:"Social", ids:["recruiter","talentscout"]},
 ];
@@ -1439,6 +1439,19 @@ function chicletChip(n, href, cls=""){
 }
 // The top-bar counter (top-right corner, beside the account button) for whoever is signed in, on any page with
 // <span class="navchiclets hidden" id="navChiclets">. Stays hidden when signed out or without a username.
+// The last count is remembered on this device (with whose it is), so the counter shows straight away on every page,
+// including pages that don't load the database (Rules, Privacy); mountChicletNav() then brings it up to date.
+const CHICLETS_KEY="stickpicks-chiclets";
+function showChicletNav(n){
+  const box=document.getElementById("navChiclets"); if(!box) return;
+  box.replaceChildren(chicletChip(n, "locker.html")); box.classList.remove("hidden");
+}
+function showRememberedChiclets(){
+  try{
+    const c=JSON.parse(localStorage.getItem(CHICLETS_KEY)||"null"), me=readMe();
+    if(c && me?.name && c.name===me.name && Number.isFinite(c.n)) showChicletNav(c.n);
+  }catch(e){}
+}
 let chicletNavListening=false;
 async function mountChicletNav(sb){
   const box=document.getElementById("navChiclets");
@@ -1446,15 +1459,28 @@ async function mountChicletNav(sb){
   if(!chicletNavListening){ chicletNavListening=true; document.addEventListener("chiclets:changed",()=>mountChicletNav(sb)); }   // after badge rewards
   try{
     const {data:{session}}=await sb.auth.getSession();
-    if(!session) return box.classList.add("hidden");
+    if(!session){ try{ localStorage.removeItem(CHICLETS_KEY); }catch(e){} return box.classList.add("hidden"); }
     const {data:me}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
     if(!me?.username) return box.classList.add("hidden");
     const n=await chicletBalance(sb, me.username);
     if(n==null) return;
-    box.replaceChildren(chicletChip(n, "locker.html"));
-    box.classList.remove("hidden");
+    showChicletNav(n);
+    try{ localStorage.setItem(CHICLETS_KEY, JSON.stringify({name:me.username, n})); }catch(e){}
   }catch(e){}
 }
+// The top bar is the same on every page; this marks where you are: Leaderboard, Intermission or Rules; the Pick Team
+// button on the team pages; and your account button on your own pages (Locker Room, profile, shop, badges, statement).
+function markTopNav(){
+  const page=(location.pathname.split("/").pop()||"index.html").toLowerCase();
+  const own=["locker.html","chiclets.html","shop.html","badges.html"].includes(page) || (page==="profile.html" && !new URLSearchParams(location.search).get("user"));
+  const set=(sel,on)=>document.querySelectorAll(sel).forEach(el=> on ? el.setAttribute("aria-current","page") : el.removeAttribute("aria-current"));
+  set(".topnav .navlb", page==="leaderboard.html");
+  set(".topnav .navint", page==="intermission.html");
+  set(".topnav .navrules", page==="rules.html");
+  set(".topnav a.navaccount", own);
+  document.querySelector(".teammenu-btn")?.classList.toggle("is-current", ["teams.html","sheet.html","compare.html"].includes(page));
+}
+document.addEventListener("DOMContentLoaded",()=>{ showRememberedChiclets(); markTopNav(); });
 async function chicletBalance(sb, username){
   if(!sb || !username) return null;
   const {data,error}=await sb.rpc("chiclets_balance",{p_username:username});

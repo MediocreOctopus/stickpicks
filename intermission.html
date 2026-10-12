@@ -36,11 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html" aria-current="page">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
-      <span class="navchiclets hidden" id="navChiclets"></span>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -98,7 +97,7 @@ const BRK=BADGE_GROUPS.find(g=>g.name==="Breakaway").ids;
 let me=null, uid=null;
 
 async function init(){
-  if(!sb){ $("bkList").innerHTML='<li class="hint">Database not connected.</li>'; return; }
+  if(!sb){ $("bkList").innerHTML='<li class="hint">Can’t load scores right now.</li>'; return; }
   const {data:{session}}=await sb.auth.getSession();
   if(session){
     uid=session.user.id;

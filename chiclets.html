@@ -36,10 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -63,7 +63,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <div class="ch-rule"><b class="up">+5 to +25</b><span>Each badge you earn: navy +5, red +10, gold +25</span></div>
         <div class="ch-rule"><b class="down">−1</b><span>Each skipped game on a sheet you’ve started (at most −5 a week)</span></div>
       </div>
-      <p class="ch-more">A game picked on two sheets pays once, only if both picks are right. Never below 0. Free to earn, no cash value. <a href="rules.html#chiclets">Full rules</a></p>
+      <p class="ch-more">Pick the same game on two sheets and it pays once, for what both picks got right. Your balance never drops below 0. <a href="rules.html#chiclets">Full rules</a></p>
     </details>
 
     <!-- The statement: every change, newest first, grouped by month -->
@@ -73,7 +73,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </section>
   </main>
 
-  <footer>Chiclets are free, have no cash value, and never change your leaderboard score. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+  <footer>Chiclets are free to earn, can’t be bought with real money, and have no cash value. They never change your leaderboard score. <a href="rules.html#chiclets">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
 
@@ -84,6 +84,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 const sb = makeClient();
 const $ = id => document.getElementById(id);
 mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
 const PAGE=25;   // statement rows shown at first; "Show older" adds more
 let rows=[], shown=PAGE;
 const ITEM_NAMES={};
@@ -96,7 +97,7 @@ function setBalance(n){
 }
 
 async function start(){
-  if(!sb){ $("chBal").textContent=""; return note("Database not connected yet: add your Supabase URL and key to config.js (see README)."); }
+  if(!sb){ $("chBal").textContent=""; return note("Can’t reach stickpicks right now. Check your connection and try again."); }
   const {data:{session}}=await sb.auth.getSession();
   if(!session){
     $("chBal").textContent="Free points for picking well.";

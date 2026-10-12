@@ -784,7 +784,17 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 /* script in the team's readable accent, light tape, outline in the header colour */
 
 /* Phones and the app: no account button in the top bar; the Me tab opens your profile (or sign-in) */
-@media (max-width:560px){ .topnav > a.navaccount{display:none} }
+@media (max-width:560px){ .topnav .navaccount{display:none} }
+/* The top bar, the same on every page: Pick Team · Leaderboard · Intermission · Rules, then your Chiclets and
+   account button kept together on the right (they never wrap apart) */
+.navme{display:inline-flex;align-items:center;gap:10px;white-space:nowrap}
+.teammenu-btn.is-current{box-shadow:0 6px 0 -3px var(--goal)}   /* the same red underline as the other links, just below the button */
+/* tablets: the account button shows just your picture, so everything fits on one line */
+@media (max-width:900px){
+  .topnav{gap:12px}
+  .topnav .navaccount.has-avatar{padding:2px}
+  .topnav .navaccount.has-avatar .navaccount-name{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
 /* ───── Home: "Since your last visit" recap (in the account box) ───── */
 .recap{margin:12px 0 4px;padding:10px 12px 12px;border:2px solid var(--ink);border-left:6px solid var(--gold);border-radius:8px;background:var(--bg)}
 .recap .acct-label{margin:0 0 8px}

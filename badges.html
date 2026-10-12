@@ -7,11 +7,11 @@
 <meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
-<meta name="description" content="Every stickpicks badge: felt sweater patches for calling games, streaks, collecting sheets, big games and leaderboard honours.">
+<meta name="description" content="Every stickpicks badge: felt sweater patches for calling games, streaks, collecting sheets, big games and topping the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
 <meta property="og:title" content="Badges · stickpicks">
-<meta property="og:description" content="Felt sweater patches for calling NHL games, streaks, big games and leaderboard honours.">
+<meta property="og:description" content="Felt sweater patches for calling NHL games, streaks, big games and topping the leaderboard.">
 <meta property="og:image" content="https://stickpicks.hockey/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
@@ -36,10 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -58,7 +58,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 
   <main id="bGroups"><p class="hint" id="bMsg">Loading…</p></main>
 
-  <footer>Badges are just for fun and don’t change your score. Tap a patch for how to earn it. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+  <footer>Tap a patch to see how to earn it. Badges earn Chiclets but don’t change your score. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
 
@@ -75,6 +75,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 const sb = makeClient();
 const $ = id => document.getElementById(id);
 mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
 // badges.html = your badges; badges.html?user=Name = another player's; &badge=id opens that one
 const q=new URL(location.href).searchParams;
 const VIEW=(()=>{ const u=q.get("user"); return u && USERNAME_RULE.test(u) ? u : null; })();
@@ -83,7 +84,7 @@ let own=false, who=null, result=null, filter="all";
 function message(text){ $("bGroups").innerHTML=""; const p=document.createElement("p"); p.className="hint"; p.textContent=text; $("bGroups").append(p); }
 
 async function start(){
-  if(!sb){ $("bSummary").textContent="Database not connected"; return message("Add your Supabase URL and key to config.js (see README)."); }
+  if(!sb){ $("bSummary").textContent=""; return message("Can’t reach stickpicks right now. Check your connection and try again."); }
   const {data:{session}}=await sb.auth.getSession();
   let me=null;
   if(session){
