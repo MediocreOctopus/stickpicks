@@ -182,15 +182,12 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         <ul class="mysheets" id="mySheets"></ul>
         <!-- Never picked yet: one big button to the Pick Team page -->
         <a class="btn acct-picknow hidden" id="pickNow" href="teams.html">Pick Now</a>
-        <!-- Badges in reach: the three unearned badges you're closest to, easiest first -->
-        <section class="acct-reach hidden" id="reach" aria-label="Badges in reach">
-          <h3 class="acct-label">Badges in reach <a href="badges.html">All badges</a></h3>
-          <div class="reach-list" id="reachList"></div>
-        </section>
-        <!-- Invite friends: shares a link that says who invited them -->
-        <div class="acct-invite hidden" id="acctInvite">
-          <p>Picks are better with rivals.</p>
-        </div>
+        <!-- The Locker Room: Chiclets, the shop, your gear and badges (badges in reach and Invite live there now) -->
+        <a class="acct-locker hidden" id="acctLocker" href="locker.html">
+          <span class="acct-locker-ico" id="lockerIco" aria-hidden="true"></span>
+          <span class="acct-locker-text"><b>Locker Room</b><small>Your Chiclets, gear, badges, and the shop</small></span>
+          <span aria-hidden="true">›</span>
+        </a>
       </div>
 
       <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
@@ -458,6 +455,8 @@ function setBanner(){
   face.replaceChildren(...(panelNow==="pSignedIn" && currentUser ? [avatarEl(avatarFromProfile(profile), name||"", 58)] : []));
   face.classList.toggle("hidden", !face.children.length);
   if(!(panelNow==="pSignedIn" && name)) $("navChiclets").classList.add("hidden");
+  // signed in: no headline pitch, and your card leads the page (see .signedin .homegrid in styles.css)
+  document.documentElement.classList.toggle("signedin", panelNow==="pSignedIn");
 }
 // Chiclets counter in the top-right corner (signed in with a username): a button to the Chiclets page
 document.addEventListener("chiclets:changed",()=>showChicletChip());   // badge rewards just paid
@@ -611,13 +610,7 @@ async function renderSignedIn(session, note=""){
   showNameForm(!profile);
   $("welcome").textContent = profile ? `Welcome back, ${profile.username}` : "Welcome!";
   setBanner();
-  showInvite();
   await loadMyStats();
-}
-function showInvite(){
-  const box=$("acctInvite"); box.querySelector(".sharebtn")?.remove();
-  box.classList.toggle("hidden", !profile?.username);
-  if(profile?.username) box.append(shareButton("Invite friends", inviteSpec(profile.username), "invite-patch"));
 }
 
 // Only for players without a username yet; changing it lives on the profile page.
@@ -639,7 +632,7 @@ $("fName").addEventListener("submit", async e=>{
   busy(e.target,false);
   if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
   if(!profile) noteInvite(currentUser);   // first profile: credit an invitation, if they came from one
-  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner(); showInvite();
+  profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner();
   showNameForm(false); loadMyStats();
 });
 
@@ -649,15 +642,19 @@ async function loadMyStats(){
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const rows=sheets||[];
   list.innerHTML="";   // cleared again: two refreshes can overlap
-  // never picked: a Pick Now button instead of Current Picks, and Rookie and 2026–27 Season as the badges in reach
+  // never picked: a Pick Now button instead of Current Picks
   const none=!rows.length;
   $("curLabel").classList.toggle("hidden",none); list.classList.toggle("hidden",none); $("pickNow").classList.toggle("hidden",!none);
+  // the Locker Room link, once you have a username
+  $("acctLocker").classList.toggle("hidden", !profile?.username);
+  $("lockerIco").replaceChildren(lockerIcon(38, lockerLabel(profile)));
+  // up to 4 sheets here (most points first); every sheet is on your profile
+  const SHOW=4;
   if(none){
-    showReach({meter:{faceoff:[0,1,"pick made"], season2627:[0,1,"pick made this season"]}}, ["faceoff","season2627"]);
     if(profile?.username) announceBadges(currentUser.id, ["inaugural"], profile.username);   // earned by making a profile
     loadRecap([]); loadUpNext([lastTeam()]); return;
   }
-  rows.forEach(r=>{
+  [...rows].sort((a,b)=>Number(b.points)-Number(a.points)).slice(0,SHOW).forEach(r=>{
     const li=document.createElement("li"), a=document.createElement("a");
     a.href=`sheet.html?team=${r.team}`; teamStyle(a,r.team);   // team-colour edge on the row
     const name=document.createElement("span"); name.textContent=TEAMS[r.team]?.name||r.team;
@@ -671,15 +668,8 @@ async function loadMyStats(){
   const uid=currentUser.id;   // pop-up for badges earned since this device last showed them
   myBadges(sb, profile?.username||null).then(r=>{
     if(currentUser?.id!==uid) return;
-    announceBadges(uid, r.earned, profile?.username);
-    showReach(r, badgesInReach(r,3));
+    announceBadges(uid, r.earned, profile?.username);   // (badges in reach are in the Locker Room)
   }).catch(()=>{});
-}
-// One badge in reach: the patch, its name and a progress bar, as a button to that badge on the Badges page.
-// "Badges in reach": a few badges you're closest to (hidden when there's nothing left to earn).
-function showReach(r, ids){
-  $("reachList").replaceChildren(...ids.map(id=>reachTile(id, r.meter[id])));
-  $("reach").classList.toggle("hidden", !ids.length);
 }
 
 const lastTeam=()=>{ try{ return localStorage.getItem("nhl-picks-last-team"); }catch(e){ return null; } };

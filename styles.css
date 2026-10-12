@@ -879,11 +879,9 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 
 /* Home account box: Pick Now (never picked yet) and Badges in reach */
 .acct-picknow{display:flex;width:100%;box-sizing:border-box;margin-top:4px;padding:12px 18px;font-size:1.1rem}
-.acct-reach .acct-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.acct-reach .acct-label a{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--ink)}
 .reach-list{display:grid;gap:12px}
 /* Home: badges in reach as three tappable tiles (patch, name, progress); each opens that badge on the Badges page */
-#reachList,.reach-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.reach-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .reach-tile{display:grid;justify-items:center;align-content:start;gap:6px;padding:10px 6px 9px;border:1px solid var(--line);border-radius:8px;
   background:var(--bg);color:var(--ink);text-decoration:none;text-align:center;transition:border-color .12s,transform .12s}
 .reach-tile:hover{border-color:var(--ink);transform:translateY(-1px)}
@@ -932,9 +930,43 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .linkbtn.sharebtn span{text-decoration:underline;text-underline-offset:3px}
 .recap-share{margin-top:6px}
 .recap-share:empty{display:none}
-.acct-invite{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;padding-top:14px;border-top:1px dashed var(--line)}
-.acct-invite p{margin:0;font:italic .9rem var(--serif);color:var(--muted)}
-.badge-toast-acts{display:flex;align-items:center;gap:14px;margin-top:2px}
+/* Home account card, signed in: the Locker Room link row */
+.acct-locker{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg);color:var(--ink);text-decoration:none}
+.acct-locker:hover{border-color:var(--ink)}
+.acct-locker.hidden{display:none}
+.acct-locker-ico{display:flex}
+/* the Locker Room patch (lockerIcon() in teams.js) */
+.locker-ico{display:inline-flex;flex:none;width:var(--lk,36px);height:var(--lk,36px)}
+.locker-ico svg{width:100%;height:100%;display:block}
+.lr-kicker{display:inline-flex;align-items:center;gap:7px}
+.acct-locker-text{display:grid;line-height:1.25}
+.acct-locker-text b{font:600 .95rem var(--display);letter-spacing:.1em;text-transform:uppercase}
+.acct-locker-text small{font:italic .82rem var(--serif);color:var(--muted)}
+.acct-locker > span:last-child{font:600 1.3rem var(--display);color:var(--muted)}
+/* Signed in: no headline pitch. On computers your card is a column on the left with Upcoming Picks and today's games
+   beside it; on phones your card comes first, then Upcoming Picks and today's games. */
+.signedin .homegrid{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);grid-template-areas:"install install" "account upnext" "account today" "promo promo";
+  grid-template-rows:auto auto 1fr auto}
+.signedin .homegrid .intro{display:contents}
+.signedin .homegrid .intro h1{display:none}
+.signedin .homegrid .intro .installbar{grid-area:install}
+.signedin .homegrid #account{margin-top:0;position:sticky;top:16px}
+.signedin .homegrid #upnext{margin-top:0}
+.signedin .homegrid #upnext.hidden + #today{margin-top:0}
+/* in that narrower column, Upcoming Picks rows use the phone's two lines (opponent + time, then the picks) */
+.signedin #upnext .game{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:8px 12px}
+.signedin #upnext .picks,.signedin #upnext .goals,.signedin #upnext .ptsbadge{margin-top:7px}
+.signedin #upnext .opp{order:1;flex:1 1 0;min-width:0}
+.signedin #upnext .gdate{order:2;flex:none;text-align:right;align-self:flex-start;padding-top:3px}
+.signedin #upnext .game::after{content:"";order:3;flex-basis:100%;height:0}
+.signedin #upnext .picks{order:4} .signedin #upnext .goals{order:5} .signedin #upnext .ptsbadge{order:6;margin-left:auto}
+.signedin #upnext .gdate b,.signedin #upnext .gdate small{display:inline;font:italic .78rem var(--serif);color:var(--muted);letter-spacing:0}
+@media (max-width:760px){
+  .signedin .homegrid{grid-template-columns:1fr;grid-template-areas:"install" "account" "upnext" "today" "promo";grid-template-rows:none}
+  .signedin .homegrid #account{position:static;margin-top:6px}
+  .signedin .homegrid #upnext{margin-top:28px}
+}.badge-toast-acts{display:flex;align-items:center;gap:14px;margin-top:2px}
 .badge-toast-acts .linkbtn{color:var(--ink)}
 .pf-acts{margin-left:auto}
 .pf-acts:empty{display:none}
