@@ -1407,6 +1407,24 @@ function chicletIcon(px=16){
   s.innerHTML='<svg viewBox="0 0 20 22"><path d="M5 2.2C2.4 2.2 1.4 4.4 1.8 7.2C2.3 10.6 3.4 12.4 3.8 16.6C4.1 19.6 5.2 21 6.2 21C7.4 21 7.6 19.4 8 17.4C8.4 15.4 8.9 14.2 10 14.2S11.6 15.4 12 17.4C12.4 19.4 12.6 21 13.8 21C14.8 21 15.9 19.6 16.2 16.6C16.6 12.4 17.7 10.6 18.2 7.2C18.6 4.4 17.6 2.2 15 2.2C13.2 2.2 12 3.2 10 3.2S6.8 2.2 5 2.2Z" fill="#FBF7EE" stroke="#1C2B45" stroke-width="1.5" stroke-linejoin="round"/><path d="M4.6 5.4q.6-1.6 2.4-1.6" fill="none" stroke="#C9D3DE" stroke-width="1.3" stroke-linecap="round"/></svg>';
   return s;
 }
+// The Locker Room patch: a navy dressing-room locker edged in red, with vents, a handle and a nameplate showing the
+// player's sweater number (or their initial), on a stitched felt patch like the badges.
+function lockerLabel(profile){
+  const v = profile?.avatar_kind==="sweater" && profile.avatar_number!=null ? String(profile.avatar_number) : (profile?.username||"")[0]||"";
+  return /^[A-Za-z0-9]{1,3}$/.test(v) ? v.toUpperCase() : "";
+}
+function lockerIcon(px=36, label=""){
+  const s=document.createElement("span"); s.className="locker-ico"; s.setAttribute("aria-hidden","true"); s.style.setProperty("--lk",px+"px");
+  const t=/^[A-Za-z0-9]{1,3}$/.test(label) ? label : "";
+  const vents=ys=>ys.map(y=>`<path d="M25.5 ${y}h13" stroke="#F4EDDC" stroke-width="1.2" stroke-linecap="round" opacity=".85"/>`).join("");
+  s.innerHTML=`<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="#1C2B45"/>`+
+    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="#F4EDDC"/>`+
+    `<rect x="20.5" y="11.5" width="23" height="41" rx="2" fill="#1C2B45" stroke="#9B1C1F" stroke-width="1.6"/>`+vents([16,18.6,21.2])+
+    `<rect x="24.5" y="25" width="15" height="6.4" rx="1" fill="#F4EDDC"/>`+
+    (t ? `<text x="32" y="30.2" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="${t.length>2?4.4:5.4}" fill="#9B1C1F">${t}</text>` : "")+
+    `<rect x="37.4" y="35" width="2.4" height="7" rx="1" fill="#F4EDDC"/>`+vents([44.5,47.1])+`</svg>`;
+  return s;
+}
 const chicletsText=n=>`${Number(n||0).toLocaleString()} Chiclet${Number(n)===1?"":"s"}`;
 // The Chiclets counter (top right, and on another player's profile): a pill with the tooth and the balance. With href
 // it's a button (to the Locker Room); without, just the count (another player's profile).
