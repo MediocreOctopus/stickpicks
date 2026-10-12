@@ -36,11 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
-      <span class="navchiclets hidden" id="navChiclets"></span>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -96,7 +95,7 @@ function setBalance(n){
 const friendly=e=>{ const m=e?.message||String(e||""); return /function|does not exist/i.test(m) ? "The shop isn’t open yet. Please try again later." : m || "Something went wrong. Please try again."; };
 
 async function start(){
-  if(!sb) return $("shop").replaceChildren(Object.assign(document.createElement("p"),{className:"hint",textContent:"Database not connected yet."}));
+  if(!sb) return $("shop").replaceChildren(Object.assign(document.createElement("p"),{className:"hint",textContent:"Can’t reach stickpicks right now. Check your connection and try again."}));
   const {data:{session}}=await sb.auth.getSession();
   signedIn=!!session;
   if(session){

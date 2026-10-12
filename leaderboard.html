@@ -36,11 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html" aria-current="page">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
-      <span class="navchiclets hidden" id="navChiclets"></span>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -196,7 +195,7 @@ function showEmpty(msg){ emptyEl.textContent=msg; emptyEl.classList.remove("hidd
 
 let loading=0;
 async function load(){
-  if(!sb){ showEmpty("Database not connected yet: add your Supabase URL and key to config.js (see README)."); document.getElementById("updated").textContent="Not connected"; return; }
+  if(!sb){ showEmpty("Can’t reach stickpicks right now. Check your connection and try again."); document.getElementById("updated").textContent="Offline"; return; }
   const ticket=++loading, want=team;
   const args={p_season:SEASON, p_team:team};
   if(period!=="season"){ args.p_from=ymdOf(pStart); args.p_to=ymdOf(endOf(period,pStart)); }

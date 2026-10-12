@@ -36,10 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb" id="lbLink">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html" id="lbLink">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -85,7 +85,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <main id="sheet"></main>
   <div class="empty hidden" id="empty"></div>
 
-  <footer>Each game is worth up to 2 points per sheet: 1 for the right result and 1 for the exact combined goals. The highlighted side won that game head to head. Their picks for games that haven’t started stay hidden until puck drop. Combined goals use the official final score, which counts a shootout win as one goal. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+  <footer>1 point for the right result, 1 for the exact goals. The highlighted side won that game. Picks for games that haven’t started stay hidden until puck drop. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
 
@@ -106,6 +106,7 @@ if(!TEAMS[team] || !other) location.replace(TEAMS[team]?`sheet.html?team=${team}
 let games=[], mine={}, theirs={}, myName="You", filter="all";
 
 mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
 applyTheme(team);
 document.title=`You vs ${other} · ${TEAMS[team]?.name} · stickpicks`;
 $("kicker").textContent=`${TEAMS[team]?.name} · 2026–27 head to head`;
@@ -124,7 +125,7 @@ function localPicks(){
 function face(id, av, name){ $(id).replaceChildren(avatarEl(av, name, 30)); }
 
 async function load(){
-  if(!sb){ $("empty").textContent="Database not connected yet: add your Supabase URL and key to config.js."; $("empty").classList.remove("hidden"); return; }
+  if(!sb){ $("empty").textContent="Can’t reach stickpicks right now. Check your connection and try again."; $("empty").classList.remove("hidden"); return; }
   const {data:{session}}=await sb.auth.getSession();
   const jobs=[
     sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type")
@@ -137,7 +138,7 @@ async function load(){
     jobs.push(sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle());
   }
   const [g,t,them,m,prof]=await Promise.all(jobs);
-  if(g.error||t.error){ $("empty").textContent=`Couldn’t load the comparison: ${(g.error||t.error).message}`; $("empty").classList.remove("hidden"); return; }
+  if(g.error||t.error){ $("empty").textContent="Couldn’t load the comparison. Please try again in a moment."; $("empty").classList.remove("hidden"); return; }
   if(prof?.data?.username){
     myName=prof.data.username;
     if(myName.toLowerCase()===other.toLowerCase()){ location.replace(`sheet.html?team=${team}`); return; }
@@ -159,7 +160,7 @@ async function load(){
     const a=document.createElement("a"); a.href="index.html#signin"; a.textContent="Sign in"; strip.append(a," to compare your saved sheet.");
   }
   strip.classList.toggle("hidden", !!session);
-  if(!games.length){ $("empty").textContent="No schedule in the database yet."; $("empty").classList.remove("hidden"); }
+  if(!games.length){ $("empty").textContent="The schedule isn’t posted yet. Check back soon."; $("empty").classList.remove("hidden"); }
   render();
 }
 

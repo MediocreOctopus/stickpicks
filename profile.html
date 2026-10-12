@@ -36,11 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="profile.html" class="navaccount" data-me aria-current="page">Sign in</a>
-      <span class="navchiclets hidden" id="navChiclets"></span>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -646,7 +645,7 @@ if(VIEW_USER) document.addEventListener("DOMContentLoaded",()=>{
 });
 
 /* ───────── Start ───────── */
-if(!sb) showOut("Database not connected yet: add your Supabase URL and key to config.js (see README).");
+if(!sb) showOut("Can’t reach stickpicks right now. Check your connection and try again.");
 else if(VIEW_USER){
   sb.auth.getSession().then(async ({data:{session}})=>{
     if(session){

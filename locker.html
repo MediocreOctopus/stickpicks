@@ -36,11 +36,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="index.html#signin" class="navaccount" data-me>Sign in</a>
-      <span class="navchiclets hidden" id="navChiclets"></span>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -75,7 +74,7 @@ const SLOT_NONE={border:"No border", sweater:"Plain sweater", skater:"House swea
 
 // Everything the page shows, loaded at once: your profile, Chiclets, what you own, the shop, and your badges
 async function load(){
-  if(!sb) return message("Database not connected yet.");
+  if(!sb) return message("Can’t reach stickpicks right now. Check your connection and try again.");
   const {data:{session}}=await sb.auth.getSession();
   if(!session) return signedOut();
   const {data:me}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();

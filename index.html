@@ -43,11 +43,10 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
     <div class="topnav">
       <div class="teammenu" id="teamMenu"></div>
-      <a href="intermission.html">Intermission</a>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
       <a href="rules.html" class="navrules">Rules</a>
-      <a href="leaderboard.html">Leaderboard</a>
-      <a href="#account" class="navaccount" id="navAccount" data-me>Sign in</a>
-      <span class="navchiclets hidden" id="navChiclets"></span>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="#account" class="navaccount" id="navAccount" data-me>Sign in</a></span>
     </div>
   </nav>
 
@@ -190,7 +189,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
         </a>
       </div>
 
-      <div id="pOffline" class="hidden"><p class="hint">Database not connected yet: add your Supabase URL and key to config.js (see README).</p></div>
+      <div id="pOffline" class="hidden"><p class="hint">Can’t reach stickpicks right now. Check your connection and try again.</p></div>
     </aside>
 
     <a class="promo" href="intermission.html">
@@ -367,7 +366,7 @@ async function loadToday(){
   const today=ymd(new Date());
   await Promise.all([seasonBounds(), prefetchDays(shiftDay(today,-1), shiftDay(today,1))]);
   if(!seasonFirst){
-    empty.textContent = navigator.onLine ? "No games are in the database yet. Run the “Update NHL games” workflow once (see README)." : "You’re offline. Today’s games will show up when you reconnect.";
+    empty.textContent = navigator.onLine ? "The schedule isn’t posted yet. Check back soon." : "You’re offline. Today’s games will show up when you reconnect.";
     empty.classList.remove("hidden"); return;
   }
   // open on today (kept within the season's schedule, e.g. before opening night)
@@ -467,6 +466,7 @@ function showChicletChip(){
     if(n==null || currentUser?.id!==uid || panelNow!=="pSignedIn") return;
     box.replaceChildren(chicletChip(n, "locker.html"));
     box.classList.remove("hidden");
+    try{ localStorage.setItem("stickpicks-chiclets", JSON.stringify({name:who, n})); }catch(e){}   // remembered for every page
   }).catch(()=>{});
 }
 function show(id){
