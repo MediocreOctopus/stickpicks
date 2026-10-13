@@ -18,6 +18,20 @@ const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const SECRET = process.env.SUPABASE_SECRET_KEY || "";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// How many overtime periods a final game went to (0 if it ended in regulation). Playoff games can go to double or
+// triple overtime and beyond. The feed's periodDescriptor gives the last period's number (4 = first OT, 5 = second...)
+// and, for multiple overtimes, otPeriods directly.
+export function otPeriods(g) {
+  const pd = g.periodDescriptor || {};
+  const last = pd.periodType || g.gameOutcome?.lastPeriodType;
+  if (last === "REG") return 0;
+  if (Number.isInteger(pd.otPeriods) && pd.otPeriods > 0) return pd.otPeriods;
+  if (Number.isInteger(g.gameOutcome?.otPeriods) && g.gameOutcome.otPeriods > 0) return g.gameOutcome.otPeriods;
+  const reg = pd.maxRegulationPeriods || 3;
+  if (last === "OT" && pd.number > reg) return pd.number - reg;
+  return last === "OT" || last === "SO" ? 1 : 0;   // a shootout comes after one overtime
+}
+
 // Turn one team's feed into game rows. Games appear in both teams' feeds;
 // the caller dedupes by game_id.
 export function toGameRows(feed, season = SEASON) {
@@ -40,6 +54,7 @@ export function toGameRows(feed, season = SEASON) {
       venue: g.venue?.default || null,
       neutral_site: typeof g.neutralSite === "boolean" ? g.neutralSite : null,
       game_type: g.gameType,
+      ot_periods: final ? otPeriods(g) : null,
       updated_at: new Date().toISOString(),
     });
   }
