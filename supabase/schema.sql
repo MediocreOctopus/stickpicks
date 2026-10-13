@@ -39,9 +39,11 @@ create table if not exists public.games (
   venue           text,
   neutral_site    boolean,
   game_type       smallint not null default 2,  -- NHL game type: 2 regular season, 3 playoffs
+  ot_periods      smallint,                     -- once final: overtime periods played (0 in regulation; 2 = double OT)
   updated_at      timestamptz not null default now()
 );
 alter table public.games add column if not exists game_type smallint not null default 2;
+alter table public.games add column if not exists ot_periods smallint;
 
 create index if not exists games_home_idx on public.games (season, home);
 create index if not exists games_away_idx on public.games (season, away);
