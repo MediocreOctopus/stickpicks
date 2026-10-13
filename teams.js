@@ -554,21 +554,22 @@ BADGES.push(
    art:`<path d="M16 17.5L26.5 40.5" stroke="${BI.w}" stroke-width="3.2" stroke-linecap="round"/><path d="M48 17.5L37.5 40.5" stroke="${BI.w}" stroke-width="3.2" stroke-linecap="round"/>`+
        `<path d="M26 41.5h5.5M38 41.5h-5.5" stroke="${BI.n}" stroke-width="4" stroke-linecap="round"/>`+bPuck(32,27.5,4.6)+
        `<path d="M32 17v3.4M28.6 18.4l1 2.6M35.4 18.4l-1 2.6" stroke="${BI.r}" stroke-width="1.5" stroke-linecap="round"/><circle cx="32" cy="46" r="1.8" fill="${BI.r}"/>`},
-  {id:"winterclassic", name:"Winter Classic", ring:"navy", how:"Make a pick on the NHL Winter Classic.",
+  // (Big-game badges use plain names, not the NHL's event names, which are its trademarks; ids unchanged)
+  {id:"winterclassic", name:"New Year’s Outdoor Game", ring:"navy", how:"Make a pick on the outdoor game played around New Year’s Day.",
    // a snowflake
    art:`<g stroke="${BI.n}" stroke-width="2.2" stroke-linecap="round">`+[0,60,120].map(a=>`<path d="M32 18.5v27" transform="rotate(${a} 32 32)"/>`).join("")+`</g>`+
        `<g stroke="${BI.r}" stroke-width="1.6" stroke-linecap="round" fill="none">`+[0,60,120,180,240,300].map(a=>`<path d="M28.6 20.8L32 24.2L35.4 20.8" transform="rotate(${a} 32 32)"/>`).join("")+`</g><circle cx="32" cy="32" r="2.6" fill="${BI.r}"/>`},
-  {id:"heritageclassic", name:"Heritage Classic", ring:"red", how:"Make a pick on the NHL Heritage Classic, the outdoor game in Canada.",
+  {id:"heritageclassic", name:"Canadian Outdoor Game", ring:"red", how:"Make a pick on the fall outdoor game played in Canada.",
    // a knit toque with a pom-pom, in heritage-sweater stripes
    art:`<circle cx="32" cy="16.8" r="3.8" fill="${BI.c}" stroke="${BI.n}" stroke-width="1.3"/><path d="M19 36q0-16 13-16t13 16Z" fill="${BI.r}"/>`+
        `<path d="M20.2 29.5h23.6" stroke="${BI.c}" stroke-width="2.4"/><path d="M19.6 33.4h24.8" stroke="${BI.n}" stroke-width="1.6"/>`+
        `<rect x="17" y="35.5" width="30" height="9" rx="2.2" fill="${BI.n}"/>`+[21,25,29,33,37,41].map(x=>`<path d="M${x} 37.2v5.6" stroke="${BI.c}" stroke-width="1.1" opacity=".55"/>`).join("")},
-  {id:"stadiumseries", name:"Stadium Series", ring:"navy", how:"Make a pick on an NHL Stadium Series game.",
+  {id:"stadiumseries", name:"Stadium Game", ring:"navy", how:"Make a pick on an outdoor stadium game played later in the winter.",
    // a stadium bowl under the lights
    art:`<path d="M17 42V18M47 42V18" stroke="${BI.s}" stroke-width="1.6"/><rect x="13.5" y="15" width="7" height="4.6" rx=".8" fill="#C08A2A"/><rect x="43.5" y="15" width="7" height="4.6" rx=".8" fill="#C08A2A"/>`+
        `<path d="M14 30q18 7 36 0l-2.4 12.5q-15.6 5.6-31.2 0Z" fill="${BI.r}"/><path d="M14 30q18-6 36 0q-18 7-36 0Z" fill="${BI.n}"/><ellipse cx="32" cy="30.5" rx="11" ry="2.4" fill="${BI.p}"/>`+
        `<path d="M19 36.5q13 4.2 26 0" stroke="${BI.c}" stroke-width="1" fill="none" opacity=".7"/>`},
-  {id:"globalseries", name:"Global Series", ring:"navy", how:"Make a pick on an NHL Global Series game played overseas.",
+  {id:"globalseries", name:"Overseas Game", ring:"navy", how:"Make a pick on a regular-season game played outside North America.",
    // a globe
    art:`<circle cx="32" cy="31" r="13.5" fill="${BI.p}" stroke="${BI.n}" stroke-width="2.2"/><ellipse cx="32" cy="31" rx="6" ry="13.5" fill="none" stroke="${BI.n}" stroke-width="1.5"/>`+
        `<path d="M18.5 31h27M20.4 24.2h23.2M20.4 37.8h23.2" stroke="${BI.n}" stroke-width="1.3"/><path d="M32 17.5v27" stroke="${BI.n}" stroke-width="1.5"/>`+
@@ -985,10 +986,10 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     fullslate:[slateTop.ok,slateTop.n,"games fully picked in your best week"],
     halfseason:[Math.min(fill,half),half,"games picked on your fullest sheet"],
     openingnight:[earned.openingnight?1:0,1,"pick on opening night"],
-    winterclassic:[0,1,"pick on the Winter Classic"],
-    heritageclassic:[0,1,"pick on the Heritage Classic"],
-    stadiumseries:[0,1,"pick on a Stadium Series game"],
-    globalseries:[0,1,"pick on a Global Series game"],
+    winterclassic:[0,1,"pick on the New Year’s outdoor game"],
+    heritageclassic:[0,1,"pick on the Canadian outdoor game"],
+    stadiumseries:[0,1,"pick on a stadium game"],
+    globalseries:[0,1,"pick on an overseas game"],
     numberonefan:[prof.fav && sheets.includes(prof.fav)?1:0,1, prof.fav ? `${TEAMS[prof.fav]?.name||prof.fav} sheet started` : "favorite team chosen and its sheet started"],
     mixedfeelings:[prof.least && sheets.includes(prof.least)?1:0,1, prof.least ? `${TEAMS[prof.least]?.name||prof.least} sheet started` : "least favorite team chosen and its sheet started"],
     talentscout:[Math.min(hN("recruiter"),3),3,"friends who joined from your invitations"],
@@ -1112,12 +1113,12 @@ async function gamesForTeams(sb, teams){
   if(!teams.length) return [];
   const list=teams.join(",");
   return fetchAllRows(()=>sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,period_type,schedule_state,venue,neutral_site")
-    .eq("season",SEASON).or(`home.in.(${list}),away.in.(${list})`).order("game_id"));
+    .eq("season",SEASON).eq("game_type",2).or(`home.in.(${list}),away.in.(${list})`).order("game_id"));
 }
 // The season's first day of games (Opening Night). Fetched once per page.
 let firstDayReq=null;
 function seasonFirstDay(sb){
-  return firstDayReq ||= sb.from("games").select("game_date").eq("season",SEASON).order("game_date").limit(1)
+  return firstDayReq ||= sb.from("games").select("game_date").eq("season",SEASON).eq("game_type",2).order("game_date").limit(1)
     .then(({data})=>data?.[0]?.game_date||null).catch(()=>null);
 }
 // Your own badges (signed in): all your picks + those teams' games + the leaderboard.
@@ -1232,8 +1233,8 @@ const BADGE_BRAG={
   playerweek:"finished a week #1 on the All-Teams leaderboard", playermonth:"finished a month #1 on the All-Teams leaderboard",
   dynasty:"was Player of the Week 3 times", ironman:"made picks 4 weeks in a row", earlybird:"made 10 picks a day or more before puck drop",
   buzzer:"called a result right with a pick made in the last 5 minutes before puck drop", fullslate:"picked every game on all my sheets for a whole week",
-  halfseason:"picked half a team’s season on one sheet", openingnight:"made a pick on Opening Night", winterclassic:"made a pick on the Winter Classic", heritageclassic:"made a pick on the Heritage Classic",
-  stadiumseries:"made a pick on a Stadium Series game", globalseries:"made a pick on a Global Series game", numberonefan:"started a sheet for my favorite team", mixedfeelings:"started a sheet for my least favorite team",
+  halfseason:"picked half a team’s season on one sheet", openingnight:"made a pick on Opening Night", winterclassic:"made a pick on the New Year’s outdoor game", heritageclassic:"made a pick on the Canadian outdoor game",
+  stadiumseries:"made a pick on a stadium game", globalseries:"made a pick on an overseas game", numberonefan:"started a sheet for my favorite team", mixedfeelings:"started a sheet for my least favorite team",
   naturalhattrick:"nailed the result and the exact goals 3 games in a row", roadwarrior:"called 5 road wins right",
   goalfest:"nailed the exact goals in a 9+ goal game", goalieduel:"nailed the exact goals in a game with 3 or fewer goals",
   perfectweek:"got every result right for a whole week", ocanada:"started sheets for all 7 Canadian teams",

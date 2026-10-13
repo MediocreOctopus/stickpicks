@@ -102,6 +102,7 @@ as $$
   select exists (
     select 1 from public.games g
     where g.game_id = p_game_id
+      and g.game_type = 2                       -- team sheets are regular season only (playoffs: section 15b)
       and (g.home = p_team or g.away = p_team)
       and g.period_type is null
       and coalesce(g.start_utc > now(), g.game_date >= current_date)
@@ -182,7 +183,7 @@ as $$
       end as result,
       case when g.period_type is null then null else g.home_score + g.away_score end as total_goals
     from public.team_picks tp
-    join public.games g on g.game_id = tp.game_id and g.season = p_season
+    join public.games g on g.game_id = tp.game_id and g.season = p_season and g.game_type = 2
     where (p_team is null or tp.team = p_team)
       and (p_from is null or g.game_date >= p_from)
       and (p_to is null or g.game_date <= p_to)
@@ -255,7 +256,7 @@ as $$
       end as result,
       case when g.period_type is null then null else g.home_score + g.away_score end as total_goals
     from public.team_picks tp
-    join public.games g on g.game_id = tp.game_id and g.season = p_season
+    join public.games g on g.game_id = tp.game_id and g.season = p_season and g.game_type = 2
     where tp.user_id = (select auth.uid())
   )
   select s.team,
@@ -282,7 +283,7 @@ as $$
          r.revealed
   from public.profiles p
   join public.team_picks tp on tp.user_id = p.user_id and tp.team = p_team
-  join public.games g on g.game_id = tp.game_id and g.season = p_season
+  join public.games g on g.game_id = tp.game_id and g.season = p_season and g.game_type = 2
   cross join lateral (
     select coalesce(g.period_type is not null or g.start_utc <= now(), false) as revealed
   ) r
@@ -457,7 +458,7 @@ language sql stable security definer set search_path = '' as $$
   soon as (
     select g.game_id, g.start_utc, g.home, g.away from public.games g
     where g.start_utc > now() and g.start_utc <= now() + make_interval(mins => p_minutes)
-      and coalesce(g.schedule_state, 'OK') <> 'PPD'
+      and g.game_type = 2 and coalesce(g.schedule_state, 'OK') <> 'PPD'
   )
   select sh.user_id, sh.team, s.game_id, s.start_utc, s.home, s.away
   from sheets sh
@@ -564,6 +565,253 @@ language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.breakaway_board(text, int) from public;
 grant execute on function public.breakaway_board(text, int) to anon, authenticated;
+-- 15b) Playoffs. Playoff games are rows in games with game_type = 3 (same season string as the regular season),
+--      tagged with their round, series letter and game number. Every regular-season function filters
+--      game_type = 2, so the two never mix.
+--      playoff_series: the bracket, copied from the NHL's bracket feed by the GitHub Action. Letters: A–H first
+--        round, I–L second round, M–N conference finals, O the Final. top_* is the higher seed.
+--      playoff_picks: one playoff sheet per player: the winner (a team abbreviation) and/or the combined goals for
+--        any playoff game, until puck drop. 1 point for the winner, 1 for the exact goals (no OTL in the playoffs).
+--      brackets: one per player per season. picks = {"A": {"w": "BUF", "g": 6}, ...}: each series' winner and how
+--        many games (4–7). Locked from the first playoff puck drop. 1/2/4/8 points for the right winner by round,
+--        +1 more for the right number of games.
+--      playoff_state(): none (first-round matchups not set) | countdown (set, no puck drop yet: the home page
+--        shows the Regular season | Playoffs switch) | live (playoff mode everywhere) | done (the Final is decided).
+alter table public.games add column if not exists playoff_round smallint;
+alter table public.games add column if not exists series_letter text;
+alter table public.games add column if not exists series_game smallint;
+create index if not exists games_type_idx on public.games (season, game_type, game_date);
+
+create table if not exists public.playoff_series (
+  season             text not null,
+  letter             text not null,
+  round              smallint not null,
+  top_team           text,              -- team abbreviations; null until that matchup is known
+  top_rank           smallint,
+  top_rank_abbrev    text,              -- e.g. D1, WC2
+  top_wins           smallint not null default 0,
+  bottom_team        text,
+  bottom_rank        smallint,
+  bottom_rank_abbrev text,
+  bottom_wins        smallint not null default 0,
+  winner             text,              -- once decided
+  updated_at         timestamptz not null default now(),
+  primary key (season, letter)
+);
+alter table public.playoff_series enable row level security;
+drop policy if exists "Anyone can read playoff series" on public.playoff_series;
+create policy "Anyone can read playoff series" on public.playoff_series for select using (true);
+grant select on public.playoff_series to anon, authenticated;
+grant select, insert, update on public.playoff_series to service_role;
+grant update on public.games to service_role;
+
+-- The first playoff puck drop of a season (null until the schedule has one). Brackets lock then.
+create or replace function public.playoff_first_start(p_season text default null)
+returns timestamptz language sql stable security definer set search_path = '' as $$
+  select min(g.start_utc) from public.games g
+  where g.season = coalesce(p_season, public.current_season()) and g.game_type = 3;
+$$;
+grant execute on function public.playoff_first_start(text) to anon, authenticated;
+
+create or replace function public.playoff_state(p_season text default null)
+returns table (phase text, first_start timestamptz, current_round smallint, champion text)
+language sql stable security definer set search_path = '' as $$
+  with ss as (select coalesce(p_season, public.current_season()) as season),
+  r1 as (select count(*) as n from public.playoff_series x, ss
+         where x.season = ss.season and x.round = 1 and x.top_team is not null and x.bottom_team is not null),
+  fs as (select public.playoff_first_start((select season from ss)) as t),
+  fin as (select x.winner from public.playoff_series x, ss where x.season = ss.season and x.letter = 'O'),
+  cur as (select max(x.round) as r from public.playoff_series x, ss
+          where x.season = ss.season and x.top_team is not null and x.bottom_team is not null)
+  select (case when (select winner from fin) is not null then 'done'
+               when (select n from r1) < 8 then 'none'
+               when (select t from fs) is null or (select t from fs) > now() then 'countdown'
+               else 'live' end)::text,
+         (select t from fs), (select r from cur)::smallint, (select winner from fin);
+$$;
+grant execute on function public.playoff_state(text) to anon, authenticated;
+
+-- The playoff sheet
+create table if not exists public.playoff_picks (
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  game_id     bigint not null references public.games(game_id) on delete cascade,
+  winner      text,
+  goals       smallint check (goals between 0 and 30),
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, game_id),
+  constraint playoff_picks_has_a_pick check (winner is not null or goals is not null)
+);
+alter table public.playoff_picks enable row level security;
+
+-- A playoff game can be picked until puck drop, once it has a start time, and only for one of its two teams.
+create or replace function public.playoff_pick_is_open(p_game_id bigint, p_winner text)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.games g
+    where g.game_id = p_game_id and g.game_type = 3
+      and g.period_type is null and coalesce(g.schedule_state, 'OK') = 'OK'
+      and g.start_utc is not null and g.start_utc > now()
+      and (p_winner is null or p_winner in (g.home, g.away))
+  );
+$$;
+revoke all on function public.playoff_pick_is_open(bigint, text) from public;
+grant execute on function public.playoff_pick_is_open(bigint, text) to authenticated;
+
+drop policy if exists "Read own playoff picks" on public.playoff_picks;
+create policy "Read own playoff picks" on public.playoff_picks
+  for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "Add own playoff picks" on public.playoff_picks;
+create policy "Add own playoff picks" on public.playoff_picks
+  for insert to authenticated with check ((select auth.uid()) = user_id and public.playoff_pick_is_open(game_id, winner));
+drop policy if exists "Change own playoff picks" on public.playoff_picks;
+create policy "Change own playoff picks" on public.playoff_picks
+  for update to authenticated
+  using ((select auth.uid()) = user_id and public.playoff_pick_is_open(game_id, null))
+  with check ((select auth.uid()) = user_id and public.playoff_pick_is_open(game_id, winner));
+drop policy if exists "Remove own playoff picks" on public.playoff_picks;
+create policy "Remove own playoff picks" on public.playoff_picks
+  for delete to authenticated using ((select auth.uid()) = user_id and public.playoff_pick_is_open(game_id, null));
+grant select, insert, update, delete on public.playoff_picks to authenticated;
+
+-- updated_at is always the real time of the last change (the browser can't backdate it)
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  new.updated_at := now();
+  return new;
+end $$;
+drop trigger if exists playoff_picks_touch on public.playoff_picks;
+create trigger playoff_picks_touch before insert or update on public.playoff_picks
+  for each row execute function public.touch_updated_at();
+
+-- Another player's playoff sheet: picks for games that haven't started stay hidden (revealed = false).
+create or replace function public.playoff_sheet_picks(p_username text, p_season text default null)
+returns table (game_id bigint, winner text, goals smallint, revealed boolean)
+language sql stable security definer set search_path = '' as $$
+  select pp.game_id,
+         case when r.revealed then pp.winner end,
+         case when r.revealed then pp.goals end,
+         r.revealed
+  from public.profiles p
+  join public.playoff_picks pp on pp.user_id = p.user_id
+  join public.games g on g.game_id = pp.game_id and g.game_type = 3 and g.season = coalesce(p_season, public.current_season())
+  cross join lateral (select coalesce(g.period_type is not null or g.start_utc <= now(), false) as revealed) r
+  where lower(p.username) = lower(p_username);
+$$;
+revoke all on function public.playoff_sheet_picks(text, text) from public;
+grant execute on function public.playoff_sheet_picks(text, text) to anon, authenticated;
+
+-- The playoff leaderboard: one row per player (everyone picks the same games).
+drop function if exists public.playoff_leaderboard(text);
+create function public.playoff_leaderboard(p_season text default null)
+returns table (username text, points bigint, winner_points bigint, goals_points bigint, graded bigint, total_picks bigint)
+language sql stable security definer set search_path = '' as $$
+  with s as (
+    select pp.user_id, pp.winner, pp.goals, g.home, g.away, g.home_score, g.away_score,
+      (g.period_type is not null and g.home_score is not null and g.away_score is not null) as fin
+    from public.playoff_picks pp
+    join public.games g on g.game_id = pp.game_id and g.game_type = 3 and g.season = coalesce(p_season, public.current_season())
+  ),
+  t as (
+    select s.user_id,
+      count(*) filter (where s.fin and s.winner = (case when s.home_score > s.away_score then s.home else s.away end)) as wp,
+      count(*) filter (where s.fin and s.goals = s.home_score + s.away_score) as gp,
+      count(*) filter (where s.fin and s.winner is not null) + count(*) filter (where s.fin and s.goals is not null) as graded,
+      count(*) as total
+    from s group by s.user_id
+  )
+  select p.username, t.wp + t.gp, t.wp, t.gp, t.graded, t.total
+  from t join public.profiles p on p.user_id = t.user_id
+  order by 2 desc, 5 asc, lower(p.username);
+$$;
+revoke all on function public.playoff_leaderboard(text) from public;
+grant execute on function public.playoff_leaderboard(text) to anon, authenticated;
+
+-- Brackets. Nobody touches the table directly: save_bracket() checks it's still open and the picks make sense.
+create table if not exists public.brackets (
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  season      text not null,
+  picks       jsonb not null default '{}'::jsonb,
+  updated_at  timestamptz not null default now(),
+  primary key (user_id, season)
+);
+alter table public.brackets enable row level security;
+revoke all on public.brackets from anon, authenticated;
+
+-- Open from the moment all eight first-round matchups are set until the first playoff puck drop.
+create or replace function public.bracket_is_open(p_season text default null)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select (select count(*) from public.playoff_series x
+          where x.season = coalesce(p_season, public.current_season()) and x.round = 1
+            and x.top_team is not null and x.bottom_team is not null) = 8
+     and coalesce(public.playoff_first_start(p_season) > now(), true);
+$$;
+grant execute on function public.bracket_is_open(text) to anon, authenticated;
+
+create or replace function public.save_bracket(p_picks jsonb)
+returns void language plpgsql volatile security definer set search_path = '' as $$
+declare
+  uid uuid := auth.uid();
+  s text := public.current_season();
+  k text;
+  v jsonb;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  if not exists (select 1 from public.profiles p where p.user_id = uid) then raise exception 'Choose a username first.'; end if;
+  if not public.bracket_is_open(s) then raise exception 'The bracket is locked.'; end if;
+  if jsonb_typeof(p_picks) <> 'object' then raise exception 'That bracket doesn''t add up.'; end if;
+  for k, v in select * from jsonb_each(p_picks) loop
+    if k !~ '^[A-O]$' or jsonb_typeof(v) <> 'object'
+       or not exists (select 1 from public.playoff_series x
+                      where x.season = s and x.round = 1 and v->>'w' in (x.top_team, x.bottom_team))
+       or coalesce(v->>'g', '') !~ '^[4-7]$' then
+      raise exception 'That bracket doesn''t add up.';
+    end if;
+  end loop;
+  insert into public.brackets (user_id, season, picks, updated_at) values (uid, s, p_picks, now())
+  on conflict (user_id, season) do update set picks = excluded.picks, updated_at = now();
+end $$;
+revoke all on function public.save_bracket(jsonb) from public, anon;
+grant execute on function public.save_bracket(jsonb) to authenticated;
+
+-- A bracket: your own any time; anyone's once brackets lock.
+create or replace function public.bracket_view(p_username text default null, p_season text default null)
+returns table (username text, picks jsonb, updated_at timestamptz)
+language sql stable security definer set search_path = '' as $$
+  select p.username, b.picks, b.updated_at
+  from public.brackets b join public.profiles p on p.user_id = b.user_id
+  where b.season = coalesce(p_season, public.current_season())
+    and (case when p_username is null then b.user_id = auth.uid() else lower(p.username) = lower(p_username) end)
+    and (b.user_id = auth.uid() or not public.bracket_is_open(b.season));
+$$;
+revoke all on function public.bracket_view(text, text) from public;
+grant execute on function public.bracket_view(text, text) to anon, authenticated;
+
+-- The bracket leaderboard. Champion picks stay hidden until brackets lock.
+drop function if exists public.bracket_leaderboard(text);
+create function public.bracket_leaderboard(p_season text default null)
+returns table (username text, points bigint, series_right bigint, lengths_right bigint, champion text, picked bigint)
+language sql stable security definer set search_path = '' as $$
+  with ss as (select coalesce(p_season, public.current_season()) as season),
+  b as (select br.user_id, br.picks from public.brackets br, ss where br.season = ss.season),
+  e as (select b.user_id, x.key as letter, x.value->>'w' as w, (x.value->>'g')::int as g from b, jsonb_each(b.picks) x),
+  sc as (
+    select e.user_id, s.round, (e.w = s.winner) as hit, (e.w = s.winner and e.g = s.top_wins + s.bottom_wins) as len
+    from e join public.playoff_series s on s.season = (select season from ss) and s.letter = e.letter
+    where s.winner is not null
+  )
+  select p.username,
+    coalesce((select sum((array[1,2,4,8])[sc.round] + (case when sc.len then 1 else 0 end)) from sc where sc.user_id = b.user_id and sc.hit), 0)::bigint,
+    (select count(*) from sc where sc.user_id = b.user_id and sc.hit),
+    (select count(*) from sc where sc.user_id = b.user_id and sc.len),
+    case when public.bracket_is_open((select season from ss)) then null else b.picks->'O'->>'w' end,
+    (select count(*) from jsonb_object_keys(b.picks))
+  from b join public.profiles p on p.user_id = b.user_id
+  order by 2 desc, lower(p.username);
+$$;
+revoke all on function public.bracket_leaderboard(text) from public;
+grant execute on function public.bracket_leaderboard(text) to anon, authenticated;
+
 -- 16) Honours: badges that depend on everyone's results over time, or on when picks were made,
 --     worked out here. One row per player and honour; n is a count where one is useful.
 --     captain:     a sheet that was #1 (with points) on its team's leaderboard at the end of any
@@ -591,7 +839,7 @@ as $$
       (tp.goals is not null and tp.goals = g.home_score + g.away_score) as goals_hit
     from public.team_picks tp
     join public.profiles p on p.user_id = tp.user_id
-    join public.games g on g.game_id = tp.game_id and g.season = p_season
+    join public.games g on g.game_id = tp.game_id and g.season = p_season and g.game_type = 2
     where g.period_type is not null and g.home_score is not null and g.away_score is not null
   ),
   daily as (             -- points each sheet earned on each game day
@@ -618,11 +866,11 @@ as $$
   periods as (
     select 'week' as kind, date_trunc('week', g.game_date)::date as start, max(g.game_date) as last_day,
       count(*) filter (where g.period_type is null and coalesce(g.schedule_state, 'OK') = 'OK') as open
-    from public.games g where g.season = p_season group by 2
+    from public.games g where g.season = p_season and g.game_type = 2 group by 2
     union all
     select 'month', date_trunc('month', g.game_date)::date, max(g.game_date),
       count(*) filter (where g.period_type is null and coalesce(g.schedule_state, 'OK') = 'OK')
-    from public.games g where g.season = p_season group by 2
+    from public.games g where g.season = p_season and g.game_type = 2 group by 2
   ),
   period_pts as (        -- each sheet's points in each week and month
     select 'week' as kind, date_trunc('week', d.game_date)::date as start, d.user_id, d.team, sum(d.pts) as pts
@@ -638,7 +886,7 @@ as $$
   period_wins as (select distinct t.kind, t.start, t.user_id from period_top t where t.pts > 0 and t.pts = t.top),
   season_over as (       -- every regular-season game final (cancelled games don't count)
     select max(g.game_date) as last_day from public.games g
-    where g.season = p_season
+    where g.season = p_season and g.game_type = 2
     having count(*) > 0
        and count(*) filter (where g.period_type is null and coalesce(g.schedule_state, 'OK') not in ('CNCL', 'CANCELLED')) = 0
   ),
@@ -654,7 +902,7 @@ as $$
     select tp.user_id, count(*)::int as n
     from public.team_picks tp
     join public.profiles p on p.user_id = tp.user_id
-    join public.games g on g.game_id = tp.game_id and g.season = p_season
+    join public.games g on g.game_id = tp.game_id and g.season = p_season and g.game_type = 2
     where g.start_utc <= now() and tp.updated_at <= g.start_utc - interval '24 hours'
     group by tp.user_id
   ),
@@ -668,7 +916,16 @@ as $$
     from public.invites i join public.profiles p on p.user_id = i.user_id
     group by i.invited_by
   ),
-  brk as (select b.user_id, b.best, b.runs, b.held_top from public.breakaway_scores b where b.season = p_season)
+  brk as (select b.user_id, b.best, b.runs, b.held_top from public.breakaway_scores b where b.season = p_season),
+  -- Playoff MVP: once the Final is decided, the player(s) #1 on the playoff sheet leaderboard (section 15b)
+  po_mvp as (
+    select l.username, (select max(g.game_date) from public.games g where g.season = p_season and g.game_type = 3 and g.period_type is not null) as earned_on
+    from public.playoff_leaderboard(p_season) l
+    where exists (select 1 from public.playoff_series s where s.season = p_season and s.letter = 'O' and s.winner is not null)
+      and l.points > 0 and l.points = (select max(x.points) from public.playoff_leaderboard(p_season) x)
+  )
+  select m.username, 'playoffmvp', null, m.earned_on, null::int from po_mvp m
+  union all
   select p.username, 'captain', c.team, c.earned_on, null::int from captains c join public.profiles p on p.user_id = c.user_id
   union all
   select p.username, 'mvp', null, m.earned_on, null from mvps m join public.profiles p on p.user_id = m.user_id
@@ -743,6 +1000,19 @@ begin
           || (case when f.sheets > 1 then ' (picked on ' || f.sheets || ' sheets, counted once)' else '' end) as note
       from per_game f where f.rh or f.gh
     ),
+    -- playoff sheet picks (section 15b): +1 right winner, +2 exact goals (one sheet, so no hedging to guard against)
+    pf as (
+      select g.start_utc, g.home, g.away,
+        (pp.winner is not null and pp.winner = (case when g.home_score > g.away_score then g.home else g.away end)) as rh,
+        (pp.goals is not null and pp.goals = g.home_score + g.away_score) as gh
+      from public.playoff_picks pp join public.games g on g.game_id = pp.game_id and g.game_type = 3
+      where pp.user_id = uid and g.period_type is not null and g.home_score is not null and g.away_score is not null
+    ),
+    earn_po as (
+      select f.start_utc, (case when f.rh then 1 else 0 end) + (case when f.gh then 2 else 0 end), 'pick'::text, null::text, f.home, f.away,
+        'Playoffs: ' || (case when f.rh and f.gh then 'right winner and exact goals' when f.rh then 'right winner' else 'exact goals' end)
+      from pf f where f.rh or f.gh
+    ),
     nights as (
       select max(f.start_utc) + interval '1 second', 5, 'night'::text, null::text, null::text, null::text,
         'Perfect night: every result right (' || count(*) || ' games)'
@@ -761,16 +1031,17 @@ begin
       select s.bought_at, -s.price, 'spend'::text, null::text, null::text, null::text, s.item_id
       from public.chiclet_spends s where s.user_id = uid
     ),
-    sheets as (select m.team, min(g.start_utc) as first_at from my m join public.games g on g.game_id = m.game_id group by m.team),
+    -- a sheet is a team in one season: misses only count that season's regular-season games
+    sheets as (select m.team, g.season, min(g.start_utc) as first_at from my m join public.games g on g.game_id = m.game_id group by m.team, g.season),
     missed as (
       select g.start_utc, g.game_date, s.team, g.home, g.away
-      from sheets s join public.games g on (g.home = s.team or g.away = s.team)
+      from sheets s join public.games g on (g.home = s.team or g.away = s.team) and g.season = s.season and g.game_type = 2
       where g.start_utc > s.first_at and g.start_utc <= now() and coalesce(g.schedule_state, 'OK') = 'OK'
         and not exists (select 1 from my m where m.team = s.team and m.game_id = g.game_id)
     ),
     capped as (select x.*, row_number() over (partition by date_trunc('week', x.game_date) order by x.start_utc) as k from missed x),
     loss as (select c.start_utc, -1, 'miss'::text, c.team, c.home, c.away, 'Missed pick on a started sheet' from capped c where c.k <= 5)
-    select * from earn union all select * from nights union all select * from badges union all select * from spends union all select * from loss
+    select * from earn union all select * from earn_po union all select * from nights union all select * from badges union all select * from spends union all select * from loss
     order by 1, 2 desc
   loop
     nb := greatest(0, bal + r.delta);
@@ -837,6 +1108,10 @@ returns int language sql immutable set search_path = '' as $$
   select case
     when p_badge like 'riv\_%' then 5
     when p_badge ~ '^season[0-9]{4}$' then 10   -- each season's ticket badge (season2627, season2728, ...)
+    -- playoff badges (section 15b)
+    when p_badge in ('po_ot3','po_mvp') then 25
+    when p_badge in ('po_sweep','po_game7','po_ot2','po_buster') then 10
+    when p_badge in ('po_ot1','po_final') then 5
     when p_badge in ('star1','shutout','fullsheet','pointstreak','captain','mvp','playermonth','dynasty','monthlydynasty',
                      'naturalhattrick','perfectweek','commissioner','pt100','highlightreel','breakawaychamp') then 25
     when p_badge in ('hattrick','star2','topshelf','lamp','playerweek','buzzer','openingnight','heritageclassic',
@@ -874,7 +1149,21 @@ begin
     ('riv_newyork','NYR','NYI'),('riv_hudson','NYR','NJD'),('riv_habsleafs','MTL','TOR'),('riv_bruinshabs','BOS','MTL'),
     ('riv_hawkswings','CHI','DET'),('riv_avswings','COL','DET'),('riv_freeway','LAK','ANA'),('riv_capspens','WSH','PIT'),
     ('riv_bluehawks','STL','CHI'),('riv_cascadia','SEA','VAN'),('riv_cryptids','SEA','NJD'),('riv_whalersnords','CAR','COL')),
-  sg as (select g.* from public.games g where g.season = p_season),
+  sg as (select g.* from public.games g where g.season = p_season and g.game_type = 2),
+  -- playoffs (section 15b): this player's playoff sheet picks, and their bracket against the decided series
+  ppr as (
+    select g.series_game, g.playoff_round, g.ot_periods, (g.period_type is not null or g.start_utc <= now()) as started,
+      (g.period_type is not null and g.home_score is not null and pp.winner is not null
+       and pp.winner = (case when g.home_score > g.away_score then g.home else g.away end)) as hit
+    from public.playoff_picks pp join public.games g on g.game_id = pp.game_id and g.season = p_season and g.game_type = 3
+    where pp.user_id = p_uid
+  ),
+  bks as (
+    select x.value->>'w' as w, (x.value->>'g')::int as g, s.winner, s.bottom_team, s.top_wins + s.bottom_wins as played
+    from public.brackets b cross join lateral jsonb_each(b.picks) x
+    join public.playoff_series s on s.season = p_season and s.letter = x.key
+    where b.user_id = p_uid and b.season = p_season and s.winner is not null
+  ),
   mp as (                -- this player's picks on this season's games
     select tp.team, tp.game_id, tp.pick, tp.goals, g.game_date, g.start_utc, g.home, g.away, g.home_score, g.away_score,
       g.period_type, g.schedule_state, g.venue, g.neutral_site, (g.period_type is not null or g.start_utc <= now()) as started
@@ -1005,7 +1294,16 @@ begin
     ('dekemaster',      coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 500),
     ('coasttocoast',    coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 1000),
     ('highlightreel',   coalesce((select n from hn where hn.badge = 'breakaway'), 0) >= 2000),
-    ('breakawaychamp',  exists (select 1 from hn where hn.badge = 'breakawaychamp'))
+    ('breakawaychamp',  exists (select 1 from hn where hn.badge = 'breakawaychamp')),
+    -- playoff badges: each overtime a game reaches counts, so a 4OT game earns all three Free Hockey badges
+    ('po_game7',        exists (select 1 from ppr where ppr.series_game = 7 and ppr.started)),
+    ('po_final',        exists (select 1 from ppr where ppr.playoff_round = 4 and ppr.started)),
+    ('po_ot1',          exists (select 1 from ppr where ppr.hit and coalesce(ppr.ot_periods, 0) >= 1)),
+    ('po_ot2',          exists (select 1 from ppr where ppr.hit and coalesce(ppr.ot_periods, 0) >= 2)),
+    ('po_ot3',          exists (select 1 from ppr where ppr.hit and coalesce(ppr.ot_periods, 0) >= 3)),
+    ('po_sweep',        exists (select 1 from bks where bks.w = bks.winner and bks.g = 4 and bks.played = 4)),
+    ('po_buster',       exists (select 1 from bks where bks.w = bks.winner and bks.winner = bks.bottom_team)),
+    ('po_mvp',          exists (select 1 from hn where hn.badge = 'playoffmvp'))
   ) as v(b, ok) where v.ok
   union all
   select r.id::text from riv r where exists (select 1 from sheets s where s.team = r.a) and exists (select 1 from sheets s where s.team = r.b);
@@ -1015,7 +1313,7 @@ revoke all on function public.badges_earned(uuid, text, jsonb) from public, anon
 -- Badges that are won again each season (season titles); see the note at the top of this section.
 create or replace function public.badge_per_season(p_badge text)
 returns boolean language sql immutable set search_path = '' as $$
-  select p_badge in ('captain','mvp','playerweek','playermonth','pt20','pt50','pt100');
+  select p_badge like 'po\_%' or p_badge in ('captain','mvp','playerweek','playermonth','pt20','pt50','pt100');   -- po_: playoff badges
 $$;
 grant execute on function public.badge_per_season(text) to anon, authenticated;
 
@@ -1144,6 +1442,14 @@ insert into public.shop_items (id, slot, name, blurb, tier, price, sort) values
 on conflict (id) do update set slot = excluded.slot, name = excluded.name, blurb = excluded.blurb, tier = excluded.tier,
   price = excluded.price, sort = excluded.sort, available_from = excluded.available_from,
   available_to = excluded.available_to, active = excluded.active;
+-- playoffs_only: on sale only from countdown week until the Final is decided (playoff_state(), section 15b)
+alter table public.shop_items add column if not exists playoffs_only boolean not null default false;
+-- Playoffs only: the Playoff Black sweater. Kept out of the shop (active = false) until the playoff pages ship,
+-- so it won't show to players before then; switch active on with them.
+insert into public.shop_items (id, slot, name, blurb, tier, price, sort, playoffs_only, active) values
+  ('sweater_playoff', 'sweater', 'Playoff Black', 'Black, with silver and gold stripes and your team colour between them. Playoffs only.', 'classic', 400, 160, true, false)
+on conflict (id) do update set slot = excluded.slot, name = excluded.name, blurb = excluded.blurb, tier = excluded.tier,
+  price = excluded.price, sort = excluded.sort, playoffs_only = excluded.playoffs_only;
 -- Limited-time: the Frozen Pond sweater, on sale around the New Year's outdoor game
 insert into public.shop_items (id, slot, name, blurb, tier, price, sort, available_from, available_to) values
   ('sweater_winter', 'sweater', 'Frozen Pond', 'An outdoor-game throwback: cream wool, a team band, a laced collar.', 'classic', 400, 150, '2026-12-26', '2027-01-06')
@@ -1209,7 +1515,8 @@ begin
   select * into it from public.shop_items s
    where s.id = p_item and s.active
      and (s.available_from is null or current_date >= s.available_from)
-     and (s.available_to is null or current_date <= s.available_to);
+     and (s.available_to is null or current_date <= s.available_to)
+     and (not s.playoffs_only or (select ps.phase from public.playoff_state() ps) in ('countdown','live'));
   if not found then raise exception 'That item isn''t for sale right now.'; end if;
   if exists (select 1 from public.chiclet_spends s where s.user_id = uid and s.item_id = p_item) then
     raise exception 'You already own that.';
