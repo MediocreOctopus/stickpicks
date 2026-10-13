@@ -44,7 +44,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 
 ## Data model (Supabase)
 
-- `games` (PK `game_id`): season, game_date, start_utc, home, away, home_score, away_score, game_state, schedule_state (`PPD` = postponed), period_type (`REG`/`OT`/`SO`, set only when final), venue, neutral_site. Public read; only `service_role` writes.
+- `games` (PK `game_id`): season, game_type (2 regular season, 3 playoffs), game_date, start_utc, home, away, home_score, away_score, game_state, schedule_state (`PPD` = postponed), period_type (`REG`/`OT`/`SO`, set only when final), venue, neutral_site. Public read; only `service_role` writes.
 - `team_picks` (PK user_id, team, game_id): `pick` (W/L/OTL, nullable), `goals` (0–30, nullable); at least one must be set. RLS: owner only, and only while `pick_is_open(game_id, team)` is true (before puck drop, team actually plays in that game).
 - `profiles` (PK user_id): `username`, 3–20 of `[A-Za-z0-9_]`, unique case-insensitively; `avatar_kind` (null/`sweater`/`photo`), `avatar_team`, `avatar_number` (0–99), `avatar_url` (checked by `profiles_avatar_valid`: photos must be in `avatars/<user_id>/`). Public read. Query it with `select("*")` so pages don't break before a schema update.
 - Storage bucket `avatars` (public read, 2 MB, webp/jpeg/png): one file per player at `<user_id>/avatar`; players can only write their own folder. The profile page crops photos square to 256 px and saves WebP (JPEG fallback) before upload; the stored URL ends `?v=<timestamp>` to bust caches.
@@ -85,6 +85,9 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - Fonts: Oswald (`--display`: headings, buttons, labels, uppercase + letter-spaced), Barlow (body and form text), Libre Caslon Text italic (`--serif`: small notes, times, footers), Yellowtail (logo and script accents only). Colors come from CSS variables; don't hard-code team colors outside `teams.js`.
 - Cache busting: pages link shared files as `styles.css?v=__V__` (also `teams.js`, `config.js`, `game.js`), and `sw.js` has `VERSION = "__V__"`. **Never replace `__V__` by hand**: the deploy workflow stamps a fresh version into all of them on every push, which also clears the service worker's old cache. New pages must use `?v=__V__` too. `mountLogo()` fetches `logo.svg` with the same version (read from `teams.js`'s own URL). Locally, `__V__` is just a literal string, so unregister the service worker when testing.
 - Accessibility: keep `aria-pressed`, labels, focus outlines, and the `prefers-reduced-motion` handling.
+- Seasons: `SEASON` in `config.js` is the **one** place the season is set. `teams.js` derives `SEASON_LABEL` ("2026–27", filled into any `[data-season]` element) and `SEASON_BADGE` (this season's ticket badge id, e.g. `season2627`); `scripts/update-games.mjs` reads `config.js` and copies the season into `site_settings` (`current_season()` in SQL, used by badge rewards). Never hard-code a season in pages; titles and meta descriptions don't carry one. `games.game_type` is the NHL game type (2 regular season, 3 playoffs; only 2 is loaded so far).
+- Trophy case: `badge_case` (user, badge, season) keeps every badge the database checks, so past seasons' badges survive a season change; `trophy_case(username)` reads it and `withTrophyCase()` in `teams.js` merges it into `myBadges()`/`playerBadges()` results (`r.seasons[id]` = seasons earned; Season Dynasty counts MVP seasons from it). Bad habits badges aren't kept (they reset each season). Chiclets: `badge_per_season()` badges (Captain, MVP, Player of the Week/Month, 20/50/100pt) pay again each season; every other badge pays once ever (`chiclet_awards` PK user, badge, season).
+- **New-season checklist** (July, once the NHL posts the schedule): set `SEASON` in `config.js`; add the new ticket badge (e.g. `season2728`) to `BADGES` with its own art, `BADGE_ORDER`, the "Getting started" group and the share phrases (the SQL handles any `seasonNNNN` id already); move dated shop items (Frozen Pond's dates); push, then run the "Update NHL games" workflow once. Last season's games, picks and trophy case stay in the database.
 
 ## Known gotchas
 
@@ -92,7 +95,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - New tables need explicit grants. `service_role` needs `select, insert, update` (and `delete` where the job deletes) or the Action fails with `42501 permission denied`.
 - PostgREST returns at most 1000 rows by default. Use aggregate functions instead of pulling raw picks.
 - Supabase's built-in email sender allows only a few emails per hour (confirmations + password resets).
-- GitHub pauses scheduled workflows after 60 days without repository activity.
+- GitHub pauses scheduled workflows after 60 days without repository activity. `keepalive.yml` re-enables them on the 1st of each month; if GitHub emails that a workflow was disabled, re-enable it in the Actions tab.
 
 ## Testing
 

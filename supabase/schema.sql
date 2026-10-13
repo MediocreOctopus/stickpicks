@@ -1,6 +1,26 @@
--- NHL 2026-27 prediction sheets: database setup
+-- stickpicks (NHL prediction sheets): database setup
 -- Paste this whole file into Supabase > SQL Editor > New query, then click Run.
 -- Safe to run again: re-running it applies updates without deleting any data.
+
+-- 0) The current season, e.g. 20262027. config.js is the one place to change it: the GitHub Action copies
+--    it here on every run, and the database functions that run on their own (badge rewards) read it.
+create table if not exists public.site_settings (
+  key         text primary key,
+  value       text not null,
+  updated_at  timestamptz not null default now()
+);
+alter table public.site_settings enable row level security;
+drop policy if exists "Anyone can read site settings" on public.site_settings;
+create policy "Anyone can read site settings" on public.site_settings for select using (true);
+grant select on public.site_settings to anon, authenticated;
+grant select, insert, update on public.site_settings to service_role;
+insert into public.site_settings (key, value) values ('season', '20262027') on conflict (key) do nothing;
+
+create or replace function public.current_season()
+returns text language sql stable security definer set search_path = '' as $$
+  select coalesce((select s.value from public.site_settings s where s.key = 'season'), '20262027');
+$$;
+grant execute on function public.current_season() to anon, authenticated, service_role;
 
 -- 1) Every regular-season game in the league, one row per game.
 --    Filled and kept current by the GitHub Action; readable by anyone.
@@ -18,8 +38,10 @@ create table if not exists public.games (
   period_type     text,                     -- REG, OT or SO once final
   venue           text,
   neutral_site    boolean,
+  game_type       smallint not null default 2,  -- NHL game type: 2 regular season, 3 playoffs
   updated_at      timestamptz not null default now()
 );
+alter table public.games add column if not exists game_type smallint not null default 2;
 
 create index if not exists games_home_idx on public.games (season, home);
 create index if not exists games_away_idx on public.games (season, away);
@@ -722,7 +744,12 @@ begin
     nights as (
       select max(f.start_utc) + interval '1 second', 5, 'night'::text, null::text, null::text, null::text,
         'Perfect night: every result right (' || count(*) || ' games)'
-      from per_game f where f.picked group by f.game_date having count(*) >= 3 and bool_and(f.rh)
+      from per_game f
+      where f.picked and f.game_date < current_date   -- only once the night is over (no picked game still to finish)
+        and not exists (select 1 from my m join public.games g on g.game_id = m.game_id
+                        where g.game_date = f.game_date and m.pick is not null and g.period_type is null
+                          and coalesce(g.schedule_state, 'OK') <> 'PPD')
+      group by f.game_date having count(*) >= 3 and bool_and(f.rh)
     ),
     badges as (
       select a.awarded_at, a.amount, 'badge'::text, null::text, null::text, null::text, a.badge
@@ -779,13 +806,26 @@ grant execute on function public.chiclets_balance(text) to anon, authenticated;
 --     navy +5, red +10, gold +25, rivalry badges +5; Bad habits and Season Dynasty pay nothing.
 --     Awards are made by claim_badge_chiclets() (the signed-in player, when the site loads their badges) and
 --     award_all_badge_chiclets() (everyone; the GitHub Action runs it after each score update).
+--     Season titles (badge_per_season: Captain, MVP, Player of the Week / Month, the points milestones) pay again
+--     in each season they're earned; every other badge pays once, ever.
 create table if not exists public.chiclet_awards (
   user_id     uuid not null references auth.users(id) on delete cascade,
   badge       text not null,
+  season      text not null default '20262027',
   amount      int not null check (amount between 0 and 100),
   awarded_at  timestamptz not null default now(),
-  primary key (user_id, badge)
+  primary key (user_id, badge, season)
 );
+-- Upgrade: databases made before awards had a season (all of those are 2026-27 awards)
+alter table public.chiclet_awards add column if not exists season text not null default '20262027';
+do $$
+begin
+  if (select array_length(c.conkey, 1) from pg_constraint c
+      where c.conrelid = 'public.chiclet_awards'::regclass and c.contype = 'p') = 2 then
+    alter table public.chiclet_awards drop constraint chiclet_awards_pkey;
+    alter table public.chiclet_awards add primary key (user_id, badge, season);
+  end if;
+end $$;
 alter table public.chiclet_awards enable row level security;
 -- No policies: nobody reads or writes this table directly; only the functions below and the ledger do.
 revoke all on public.chiclet_awards from anon, authenticated;
@@ -794,9 +834,10 @@ create or replace function public.badge_reward(p_badge text)
 returns int language sql immutable set search_path = '' as $$
   select case
     when p_badge like 'riv\_%' then 5
+    when p_badge ~ '^season[0-9]{4}$' then 10   -- each season's ticket badge (season2627, season2728, ...)
     when p_badge in ('star1','shutout','fullsheet','pointstreak','captain','mvp','playermonth','dynasty','monthlydynasty',
                      'naturalhattrick','perfectweek','commissioner','pt100','highlightreel','breakawaychamp') then 25
-    when p_badge in ('season2627','hattrick','star2','topshelf','lamp','playerweek','buzzer','openingnight','heritageclassic',
+    when p_badge in ('hattrick','star2','topshelf','lamp','playerweek','buzzer','openingnight','heritageclassic',
                      'numberonefan','roadwarrior','goalfest','goalieduel','ocanada','divisionchamp','pt50','ppg','talentscout',
                      'dekemaster','coasttocoast') then 10
     when p_badge in ('inaugural','faceoff','star3','overtime','shootout','original6','barnstormer','ironman','earlybird',
@@ -834,10 +875,14 @@ begin
   sg as (select g.* from public.games g where g.season = p_season),
   mp as (                -- this player's picks on this season's games
     select tp.team, tp.game_id, tp.pick, tp.goals, g.game_date, g.start_utc, g.home, g.away, g.home_score, g.away_score,
-      g.period_type, g.venue, g.neutral_site, (g.period_type is not null or g.start_utc <= now()) as started
+      g.period_type, g.schedule_state, g.venue, g.neutral_site, (g.period_type is not null or g.start_utc <= now()) as started
     from public.team_picks tp join sg g on g.game_id = tp.game_id where tp.user_id = p_uid
   ),
   sheets as (select distinct m.team from mp m),
+  -- days with a picked result still waiting for a final score: a perfect night or week only counts once it's
+  -- over (its last day is before today and none of its picked games is still to be decided)
+  pending as (select distinct m.game_date as d from mp m
+              where m.pick is not null and m.period_type is null and coalesce(m.schedule_state, 'OK') <> 'PPD'),
   sc as (                -- picks on finished games: rh / gh are null when that part wasn't picked
     select m.*, m.home_score + m.away_score as tot,
       (case when m.pick is null then null else m.pick =
@@ -899,14 +944,16 @@ begin
   select v.b::text from (values
     ('inaugural',       true),
     ('faceoff',         exists (select 1 from mp)),
-    ('season2627',      exists (select 1 from mp)),
+    ('season' || substr(p_season, 3, 2) || substr(p_season, 7, 2), exists (select 1 from mp)),   -- this season's ticket, e.g. season2627
     ('hattrick',        exists (select 1 from res r where r.rh group by r.team having count(distinct r.pick) = 3)),
     ('star3',           (select n from star) >= 3),
     ('star2',           (select n from star) >= 5),
     ('star1',           (select n from star) >= 10),
     ('topshelf',        exists (select 1 from sc s where s.rh and s.gh)),
     ('lamp',            (select count(*) from sc s where s.gh) >= 5),
-    ('shutout',         exists (select 1 from res r group by r.game_date having count(*) >= 3 and bool_and(r.rh))),
+    ('shutout',         exists (select 1 from res r where r.game_date < current_date
+                                  and not exists (select 1 from pending x where x.d = r.game_date)
+                                group by r.game_date having count(*) >= 3 and bool_and(r.rh))),
     ('overtime',        exists (select 1 from res r where r.pick = 'OTL' and r.rh)),
     ('shootout',        exists (select 1 from res r where r.period_type = 'SO' and r.rh)),
     ('fullsheet',       exists (select 1 from fill f where f.n > 0 and f.k = f.n)),
@@ -936,7 +983,10 @@ begin
     ('roadwarrior',     (select count(*) from res r where r.pick = 'W' and r.rh and r.away = r.team) >= 5),
     ('goalfest',        exists (select 1 from sc s where s.gh and s.tot >= 9)),
     ('goalieduel',      exists (select 1 from sc s where s.gh and s.tot <= 3)),
-    ('perfectweek',     exists (select 1 from res r group by date_trunc('week', r.game_date) having count(*) >= 5 and bool_and(r.rh))),
+    ('perfectweek',     exists (select 1 from res r
+                                where date_trunc('week', r.game_date)::date + 6 < current_date
+                                  and not exists (select 1 from pending x where date_trunc('week', x.d) = date_trunc('week', r.game_date))
+                                group by date_trunc('week', r.game_date) having count(*) >= 5 and bool_and(r.rh))),
     ('ocanada',         (select count(*) from sheets s where s.team in ('CGY','EDM','MTL','OTT','TOR','VAN','WPG')) = 7),
     ('divisionchamp',   exists (select 1 from sheets s join tm t on t.team = s.team group by t.div having count(*) = 8)),
     ('commissioner',    (select count(*) from sheets) >= 32),
@@ -960,19 +1010,65 @@ begin
 end $$;
 revoke all on function public.badges_earned(uuid, text, jsonb) from public, anon, authenticated;
 
--- Pay any badge rewards a player hasn't had yet; returns the new ones. (p_hon: as for badges_earned)
+-- Badges that are won again each season (season titles); see the note at the top of this section.
+create or replace function public.badge_per_season(p_badge text)
+returns boolean language sql immutable set search_path = '' as $$
+  select p_badge in ('captain','mvp','playerweek','playermonth','pt20','pt50','pt100');
+$$;
+grant execute on function public.badge_per_season(text) to anon, authenticated;
+
+-- The trophy case: every badge a player has earned, and the season they earned it in. The site works most
+-- badges out from the current season's picks, so this is what keeps last season's badges on profiles after
+-- the season changes. Filled by award_badge_chiclets() below (only badges the database checks itself; the
+-- Bad habits badges aren't kept, so they start fresh each season). Badges are public, like on profiles.
+create table if not exists public.badge_case (
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  badge      text not null,
+  season     text not null,
+  earned_at  timestamptz not null default now(),
+  primary key (user_id, badge, season)
+);
+alter table public.badge_case enable row level security;
+-- No policies: only award_badge_chiclets() writes it; trophy_case() reads it.
+revoke all on public.badge_case from anon, authenticated;
+-- Every badge already paid for is in the case (fills it the first time this runs)
+insert into public.badge_case (user_id, badge, season, earned_at)
+select a.user_id, a.badge, a.season, a.awarded_at from public.chiclet_awards a
+on conflict do nothing;
+
+create or replace function public.trophy_case(p_username text)
+returns table (badge text, season text, earned_at timestamptz)
+language sql stable security definer set search_path = '' as $$
+  select c.badge, c.season, c.earned_at
+  from public.badge_case c join public.profiles p on p.user_id = c.user_id
+  where lower(p.username) = lower(p_username)
+  order by c.season, c.earned_at;
+$$;
+revoke all on function public.trophy_case(text) from public;
+grant execute on function public.trophy_case(text) to anon, authenticated;
+
+-- Record this season's badges in the trophy case, then pay any rewards not paid yet; returns the new
+-- payments. (p_hon: as for badges_earned)
 create or replace function public.award_badge_chiclets(p_uid uuid, p_hon jsonb default null)
 returns table (badge text, amount int)
 language plpgsql volatile security definer set search_path = '' as $$
 #variable_conflict use_column
+declare
+  s text := public.current_season();
 begin
   if p_uid is null then return; end if;
+  insert into public.badge_case (user_id, badge, season)
+  select p_uid, e.b, s from public.badges_earned(p_uid, s, p_hon) as e(b)
+  on conflict do nothing;
   return query
-  insert into public.chiclet_awards as a (user_id, badge, amount)
-  select p_uid, e.b, public.badge_reward(e.b)
-  from public.badges_earned(p_uid, '20262027', p_hon) as e(b)
-  where public.badge_reward(e.b) > 0
-  on conflict (user_id, badge) do nothing
+  insert into public.chiclet_awards as a (user_id, badge, season, amount)
+  select p_uid, c.badge, s, public.badge_reward(c.badge)
+  from public.badge_case c
+  where c.user_id = p_uid and c.season = s and public.badge_reward(c.badge) > 0
+    and not exists (select 1 from public.chiclet_awards x
+                    where x.user_id = p_uid and x.badge = c.badge
+                      and (x.season = s or not public.badge_per_season(c.badge)))
+  on conflict do nothing
   returning a.badge, a.amount;
 end $$;
 revoke all on function public.award_badge_chiclets(uuid, jsonb) from public, anon, authenticated;
@@ -994,7 +1090,7 @@ declare
   u record;
   total int := 0;
   c int;
-  hon jsonb := coalesce((select jsonb_agg(to_jsonb(x)) from public.badge_honours('20262027') x), '[]'::jsonb);   -- once for everyone
+  hon jsonb := coalesce((select jsonb_agg(to_jsonb(x)) from public.badge_honours(public.current_season()) x), '[]'::jsonb);   -- once for everyone
 begin
   for u in select p.user_id from public.profiles p loop
     select count(*) into c from public.award_badge_chiclets(u.user_id, hon);

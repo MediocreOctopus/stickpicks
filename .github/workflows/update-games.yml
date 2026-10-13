@@ -4,6 +4,7 @@ on:
   schedule:
     # Every 15 minutes, offset from :00 when GitHub's scheduler is busiest.
     # Scores usually land within about 15–30 minutes of the final horn.
+    # keepalive.yml stops GitHub switching this off over a quiet summer.
     - cron: "7,22,37,52 * * * *"
   workflow_dispatch: # adds a "Run workflow" button for manual updates
 

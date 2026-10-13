@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pick Sheet · stickpicks 2026–27</title>
+<title>Pick Sheet · stickpicks</title>
 <meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
-<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta name="description" content="Free NHL prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
-<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
+<meta property="og:title" content="stickpicks · NHL Predictions">
 <meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
 <meta property="og:image" content="https://stickpicks.hockey/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -49,7 +49,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     <header class="sheethead" aria-live="polite">
       <div class="sh-in">
         <div class="sh-main">
-          <div class="sh-kicker" id="kicker">2026–27 pick sheet</div>
+          <div class="sh-kicker" id="kicker">Pick sheet</div>
           <h1 class="sh-team" id="title">Pick sheet</h1>
           <div class="sh-chips">
             <span class="sh-chip" id="picked">0 of 84 picked</span>
@@ -157,9 +157,9 @@ async function chooseTeam(code){
   if(!viewing){ try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){} }
   const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
   applyTheme(code);
-  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} pick sheet · stickpicks`:`${TEAMS[code].name} pick sheet · stickpicks 2026–27`;
+  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} pick sheet · stickpicks`:`${TEAMS[code].name} pick sheet · stickpicks`;
   document.getElementById("title").textContent=TEAMS[code].name;
-  document.getElementById("kicker").textContent=viewing?`${VIEW_USER}’s 2026–27 pick sheet`:"2026–27 pick sheet";
+  document.getElementById("kicker").textContent=viewing?`${VIEW_USER}’s ${SEASON_LABEL} pick sheet`:`${SEASON_LABEL} pick sheet`;
   if(viewing){
     document.getElementById("backLb").href=`leaderboard.html?team=${code}`;
     document.getElementById("mySheet").href=`sheet.html?team=${code}`;
@@ -523,7 +523,7 @@ document.getElementById("dl").addEventListener("click",()=>{
   });
   const blob=new Blob([rows.map(r=>r.map(esc).join(",")).join("\n")],{type:"text/csv"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=`${viewing?VIEW_USER.toLowerCase()+"-":""}${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-2026-27-stickpicks.csv`;
+  a.download=`${viewing?VIEW_USER.toLowerCase()+"-":""}${TEAMS[team].name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}-${SEASON_LABEL.replace("–","-")}-stickpicks.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   setMenu(false);
 });
