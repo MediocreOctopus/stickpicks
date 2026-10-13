@@ -37,8 +37,9 @@ export function otPeriods(g) {
 export function toGameRows(feed, season = SEASON) {
   const rows = [];
   for (const g of feed.games || []) {
-    if (g.gameType !== 2) continue; // regular season only
+    if (g.gameType !== 2 && g.gameType !== 3) continue; // regular season and playoffs (not preseason)
     const final = ["FINAL", "OFF"].includes(g.gameState);
+    const ser = g.gameType === 3 ? g.seriesStatus || {} : {};
     rows.push({
       game_id: g.id,
       season,
@@ -55,10 +56,64 @@ export function toGameRows(feed, season = SEASON) {
       neutral_site: typeof g.neutralSite === "boolean" ? g.neutralSite : null,
       game_type: g.gameType,
       ot_periods: final ? otPeriods(g) : null,
+      // playoffs only: which round, which series (A–O) and which game of the series (Game 7 ...)
+      playoff_round: Number.isInteger(ser.round) ? ser.round : null,
+      series_letter: ser.seriesLetter || null,
+      series_game: Number.isInteger(ser.gameNumberOfSeries) ? ser.gameNumberOfSeries : null,
       updated_at: new Date().toISOString(),
     });
   }
   return rows.filter((r) => r.game_id && r.home && r.away && r.game_date);
+}
+
+// The NHL's playoff bracket → playoff_series rows (one per series that has at least one team set).
+// Letters: A–H first round, I–L second, M–N conference finals, O the Final. top = the higher seed.
+export function toSeriesRows(bracket, season = SEASON) {
+  return (bracket.series || [])
+    .filter((s) => s.seriesLetter && (s.topSeedTeam?.abbrev || s.bottomSeedTeam?.abbrev))
+    .map((s) => {
+      const top = s.topSeedTeam || {}, bottom = s.bottomSeedTeam || {};
+      const winner = s.winningTeamId == null ? null
+        : s.winningTeamId === top.id ? top.abbrev : s.winningTeamId === bottom.id ? bottom.abbrev : null;
+      return {
+        season,
+        letter: s.seriesLetter,
+        round: s.playoffRound,
+        top_team: top.abbrev || null,
+        top_rank: Number.isInteger(s.topSeedRank) ? s.topSeedRank : null,
+        top_rank_abbrev: s.topSeedRankAbbrev || null,
+        top_wins: s.topSeedWins ?? 0,
+        bottom_team: bottom.abbrev || null,
+        bottom_rank: Number.isInteger(s.bottomSeedRank) ? s.bottomSeedRank : null,
+        bottom_rank_abbrev: s.bottomSeedRankAbbrev || null,
+        bottom_wins: s.bottomSeedWins ?? 0,
+        winner,
+        updated_at: new Date().toISOString(),
+      };
+    });
+}
+
+// Copies the bracket into playoff_series, then marks "if needed" games of finished series as not needed
+// (the NHL drops them from its schedule, so they'd otherwise sit unplayed forever).
+async function updateBracket() {
+  const year = SEASON.slice(4); // 20262027 → the 2027 playoffs
+  const res = await fetch(`https://api-web.nhle.com/v1/playoff-bracket/${year}`, { headers: { "User-Agent": "nhl-prediction-sheets" } });
+  if (res.status === 404) return console.log("No playoff bracket yet.");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const rows = toSeriesRows(await res.json());
+  if (!rows.length) return console.log("No playoff matchups set yet.");
+  await upsert(rows, "playoff_series", "season,letter");
+  const decided = rows.filter((r) => r.winner).map((r) => r.letter);
+  if (decided.length) {
+    const q = `season=eq.${SEASON}&game_type=eq.3&period_type=is.null&series_letter=in.(${decided.join(",")})`;
+    const done = await fetch(`${SUPABASE_URL}/rest/v1/games?${q}`, {
+      method: "PATCH",
+      headers: dbHeaders({ Prefer: "return=minimal" }),
+      body: JSON.stringify({ schedule_state: "NOTNEEDED", updated_at: new Date().toISOString() }),
+    });
+    if (!done.ok) throw new Error(`Supabase returned ${done.status}: ${await done.text()}`);
+  }
+  console.log(`Saved ${rows.length} playoff series (${decided.length} decided).`);
 }
 
 async function fetchTeam(team) {
@@ -127,6 +182,17 @@ async function main() {
   await upsert(rows);
   const finals = rows.filter((r) => r.period_type).length;
   console.log(`Saved ${rows.length} games (${finals} final).`);
+
+  // Playoffs: the bracket, March to July (matchups get set before any playoff game is scheduled) or whenever
+  // playoff games are in the feed. A problem here never stops the rest.
+  const month = new Date().getMonth() + 1;
+  if (rows.some((r) => r.game_type === 3) || (month >= 3 && month <= 7)) {
+    try {
+      await updateBracket();
+    } catch (err) {
+      console.warn(`Playoff bracket not updated this run: ${err.message}`);
+    }
+  }
 
   try {
     await updateNews();

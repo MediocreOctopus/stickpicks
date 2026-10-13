@@ -266,7 +266,8 @@ const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,
 const GAME_COLS="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
 const strip=$("dayStrip");
 let days=[], dayIdx=0, noPrev=false, noNext=false, extending=false;   // days: [{day, data, el}]
-const gamesRange=(a,b)=>sb.from("games").select(GAME_COLS).eq("season",SEASON).gte("game_date",a).lte("game_date",b).order("start_utc");
+// (regular-season games only: game_type 2. Playoff games, type 3, get their own playoff pages.)
+const gamesRange=(a,b)=>sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_type",2).gte("game_date",a).lte("game_date",b).order("start_utc");
 // The first three days (yesterday, today, tomorrow) arrive in one request and wait here until the strip reaches them.
 const dayCache=new Map();
 async function prefetchDays(a,b){
@@ -275,12 +276,12 @@ async function prefetchDays(a,b){
 }
 const gamesOn=day=>{
   if(dayCache.has(day)){ const data=dayCache.get(day); dayCache.delete(day); return Promise.resolve({data, error:null}); }
-  return sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_date",day).order("start_utc");
+  return sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_type",2).eq("game_date",day).order("start_utc");
 };
 // Every calendar day, one at a time (no-game days included), within the season's schedule.
 let seasonFirst=null, seasonLast=null;
 async function seasonBounds(){
-  const q=asc=>sb.from("games").select("game_date").eq("season",SEASON).order("game_date",{ascending:asc}).limit(1);
+  const q=asc=>sb.from("games").select("game_date").eq("season",SEASON).eq("game_type",2).order("game_date",{ascending:asc}).limit(1);
   const [a,b]=await Promise.all([q(true),q(false)]);
   seasonFirst=a.data?.[0]?.game_date||null; seasonLast=b.data?.[0]?.game_date||null;
 }
@@ -719,7 +720,7 @@ async function loadRecap(teams){
   // games on your sheets that went final since then (games already under way at your last visit count too)
   const since=new Date(base.at-3*60*60*1000).toISOString(), list=teams.join(",");
   const {data:games}=await sb.from("games").select("game_id,home,away,home_score,away_score,period_type,start_utc")
-    .eq("season",SEASON).not("period_type","is",null).gt("start_utc",since).or(`home.in.(${list}),away.in.(${list})`);
+    .eq("season",SEASON).eq("game_type",2).not("period_type","is",null).gt("start_utc",since).or(`home.in.(${list}),away.in.(${list})`);
   const ids=(games||[]).map(g=>g.game_id);
   const {data:tp}= ids.length ? await sb.from("team_picks").select("team,game_id,pick,goals").in("game_id",ids) : {data:[]};
   let pts=0, oHit=0, oOf=0, gHit=0, gOf=0, finals=0;
@@ -767,7 +768,7 @@ async function loadUpNext(teams){
   if(!sb || !teams.length || Object.keys(upPending).length){ if(!teams.length) sec.classList.add("hidden"); return; }
   const now=new Date(), until=new Date(now.getTime()+UP_DAYS*24*60*60*1000), list=teams.join(",");
   const {data,error}=await sb.from("games").select("game_id,game_date,start_utc,home,away,schedule_state,period_type")
-    .eq("season",SEASON).gt("start_utc",now.toISOString()).lt("start_utc",until.toISOString())
+    .eq("season",SEASON).eq("game_type",2).gt("start_utc",now.toISOString()).lt("start_utc",until.toISOString())
     .or(`home.in.(${list}),away.in.(${list})`).order("start_utc");
   if(error){ sec.classList.add("hidden"); return; }
   upPicks={}; teams.forEach(t=>upPicks[t]=readLocal(t));

@@ -183,7 +183,7 @@ async function loadGames(){
   const want=team;
   const {data,error}=await sb.from("games")
     .select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,venue,neutral_site")
-    .eq("season",SEASON).or(`home.eq.${team},away.eq.${team}`)
+    .eq("season",SEASON).eq("game_type",2).or(`home.eq.${team},away.eq.${team}`)
     .order("game_date").order("start_utc");
   if(want!==team) return; // user switched teams mid-request
   // Keep the last schedule on this device so the sheet still opens (and takes picks) offline.

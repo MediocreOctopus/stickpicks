@@ -129,7 +129,7 @@ async function load(){
   const {data:{session}}=await sb.auth.getSession();
   const jobs=[
     sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type")
-      .eq("season",SEASON).or(`home.eq.${team},away.eq.${team}`).order("game_date").order("start_utc"),
+      .eq("season",SEASON).eq("game_type",2).or(`home.eq.${team},away.eq.${team}`).order("game_date").order("start_utc"),
     sb.rpc("sheet_picks",{p_username:other, p_team:team, p_season:SEASON}),
     sb.from("profiles").select("*").ilike("username", other.replace(/[\\%_]/g,"\\$&")).maybeSingle(),
   ];

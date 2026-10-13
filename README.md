@@ -179,7 +179,7 @@ Profiles show a **Hot streak** (results right in a row across all sheets, plus t
 | Full Slate | Every game on all your sheets fully picked for a whole week (3+ games) |
 | Half Season | Half of a team's games picked on one sheet |
 | Opening Night | A pick on the season's first night of games |
-| Winter Classic / Heritage Classic / Stadium Series / Global Series | A pick on that game (found from neutral-site games: outdoor stadiums around New Year's, the fall outdoor game in Canada, other outdoor games Jan–Mar, and games overseas) |
+| New Year’s Outdoor Game / Canadian Outdoor Game / Stadium Game / Overseas Game | A pick on that game (plain names on purpose: the NHL's event names are its trademarks) (found from neutral-site games: outdoor stadiums around New Year's, the fall outdoor game in Canada, other outdoor games Jan–Mar, and games overseas) |
 | Rivalry Night (a group of 16) | One badge per rivalry, for starting sheets for both teams: Battle of Alberta, Battle of Ontario, Battle of Pennsylvania, Battle of Florida, Battle of New York, Hudson River Rivalry, Habs vs. Leafs, Bruins vs. Habs, Hawks vs. Wings, Avs vs. Wings, Freeway Faceoff, Caps vs. Pens, Blues vs. Hawks, Cascadia Clash, Battle of the Cryptids (SEA vs. NJD), Whalers vs. Nordiques (CAR vs. COL) (`RIVALRIES` in `teams.js`; add a line there to add one) |
 | #1 Fan / Mixed Feelings | Start a sheet for your favorite / least favorite team (set in profile Settings) |
 | Talent Scout | 3 friends you invited create accounts |
