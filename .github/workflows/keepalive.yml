@@ -1,0 +1,25 @@
+name: Keep scheduled jobs on
+
+# GitHub turns off scheduled workflows in a public repository after 60 days without a commit,
+# which could happen over the summer. Once a month this switches them back on, which restarts
+# that 60-day clock (no commit needed). The 15-minute update job also keeps Supabase from
+# pausing the database, so it matters that it keeps running in the off-season.
+on:
+  schedule:
+    - cron: "17 12 1 * *"   # the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Keep the update and keep-alive jobs switched on
+        run: |
+          gh workflow enable update-games.yml --repo "$GITHUB_REPOSITORY"
+          gh workflow enable keepalive.yml --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}

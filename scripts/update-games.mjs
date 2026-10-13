@@ -1,11 +1,14 @@
-// 1) Pulls every team's 2026-27 regular-season schedule from the NHL's public
-//    feed and upserts one row per game into the Supabase `games` table:
-//    dates, start times, reschedules, and final scores.
+// 1) Pulls every team's regular-season schedule for the current season from the
+//    NHL's public feed and upserts one row per game into the Supabase `games`
+//    table: dates, start times, reschedules, and final scores.
 // 2) Pulls the latest NHL headlines from ESPN's public news feed into the
 //    `news` table for the home page ticker (failures here never stop step 1).
 // Node 18+, no dependencies. Safe to run repeatedly.
+import { readFileSync } from "node:fs";
 
-export const SEASON = "20262027";
+// The season comes from config.js, the one place it's set (e.g. "20262027").
+export const SEASON = readFileSync(new URL("../config.js", import.meta.url), "utf8").match(/SEASON:\s*"(\d{8})"/)?.[1];
+if (!SEASON) throw new Error('config.js needs a SEASON like "20262027".');
 export const TEAMS = [
   "ANA","BOS","BUF","CGY","CAR","CHI","COL","CBJ","DAL","DET","EDM","FLA","LAK","MIN","MTL","NSH",
   "NJD","NYI","NYR","OTT","PHI","PIT","SJS","SEA","STL","TBL","TOR","UTA","VAN","VGK","WSH","WPG",
@@ -36,6 +39,7 @@ export function toGameRows(feed, season = SEASON) {
       period_type: final ? g.gameOutcome?.lastPeriodType || "REG" : null,
       venue: g.venue?.default || null,
       neutral_site: typeof g.neutralSite === "boolean" ? g.neutralSite : null,
+      game_type: g.gameType,
       updated_at: new Date().toISOString(),
     });
   }
@@ -80,6 +84,12 @@ async function upsert(rows, table = "games", key = "game_id") {
 async function main() {
   if (!SUPABASE_URL || !SECRET) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SECRET_KEY environment variable.");
+  }
+  // Tell the database which season it is (badge rewards use it)
+  try {
+    await upsert([{ key: "season", value: SEASON, updated_at: new Date().toISOString() }], "site_settings", "key");
+  } catch (err) {
+    console.warn(`Season setting not saved this run: ${err.message}`);
   }
   const games = new Map();
   const failed = [];

@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Rules · stickpicks 2026–27</title>
+<title>Rules · stickpicks</title>
 <meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
-<meta name="description" content="Free NHL 2026–27 prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<meta name="description" content="Free NHL prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
-<meta property="og:title" content="stickpicks · NHL 2026–27 Predictions">
+<meta property="og:title" content="stickpicks · NHL Predictions">
 <meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
 <meta property="og:image" content="https://stickpicks.hockey/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -44,7 +44,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 
   <!-- Sweater banner, like the Pick Teams and leaderboard banners -->
   <header class="teams-banner rules-banner">
-    <small class="tb-kicker">2026–27 season</small>
+    <small class="tb-kicker"><span data-season></span> season</small>
     <h1>The Rules</h1>
     <p>Two predictions per game, up to two points per game, and every team sheet competes on its own.</p>
   </header>
@@ -141,7 +141,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <ul class="bullets">
         <li><b>+1</b> for each right result (W, L or OTL).</li>
         <li><b>+2</b> for each exact combined-goals pick.</li>
-        <li><b>+5</b> for a perfect night: at least 3 games on one day, with every result right.</li>
+        <li><b>+5</b> for a perfect night: at least 3 games on one day, with every result right. It’s added the day after, once all of that night’s games are final.</li>
         <li><b>+5, +10 or +25</b> for each badge you earn: navy badges +5, red +10, gold +25 (Rivalry Night badges +5). Each badge pays once. Bad habits badges pay nothing.</li>
         <li><b>One payout per game:</b> if you pick the same game on two sheets (both teams), it pays once, and only for what both picks got right.</li>
         <li><b>−1</b> for each game you skip on a sheet you’ve started, from your first pick onward, but never more than −5 in one week (Monday to Sunday). Your balance never drops below 0.</li>
@@ -173,6 +173,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="privacy.html">Privacy &amp; Terms</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
+<script src="config.js?v=__V__"></script>
 <script src="teams.js?v=__V__"></script>
 <script>
 mountTeamMenu(document.getElementById("teamMenu"));

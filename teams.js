@@ -97,7 +97,7 @@ function mountTeamMenu(root){
   const panel=document.createElement("div");
   panel.className="teammenu-panel"; panel.id="teamMenuPanel"; panel.hidden=true;
   const head=document.createElement("div"); head.className="tm-head";
-  head.innerHTML='<small>2026–27 season</small><b>Pick Teams</b>';
+  head.innerHTML=`<small>${SEASON_LABEL} season</small><b>Pick Teams</b>`;
   const grid=document.createElement("div"); grid.className="tm-grid";
   DIVISIONS.forEach(div=>{
     const col=document.createElement("div"); col.className="teammenu-div";
@@ -468,7 +468,7 @@ const BADGES=[
    art:`<path d="M24 22v20M30 22v20M36 22v20M42 22v20M19 28h26M19 34h26" stroke="${BI.n}" stroke-width=".9" opacity=".55"/><path d="M18 44V24q0-4 4-4h20q4 0 4 4v20" fill="none" stroke="${BI.r}" stroke-width="3"/><path d="M13 44h38" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="39.5" cy="25.5" rx="4.6" ry="2.4" fill="${BI.n}"/><rect x="34.9" y="25.5" width="9.2" height="2.2" fill="${BI.n}"/>`},
   {id:"lamp", name:"Lamp Lighter", ring:"red", how:"Nail the exact combined goals 5 times.",
    art:`<path d="M23 31Q23 18 32 18Q41 18 41 31Z" fill="${BI.r}"/><path d="M27 24q1-3 4-3.6" stroke="${BI.c}" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/><rect x="21" y="31" width="22" height="5" rx="1" fill="${BI.n}"/><rect x="30.3" y="36" width="3.4" height="9" fill="${BI.n}"/><rect x="25" y="45" width="14" height="3" rx="1" fill="${BI.n}"/><path d="M32 10.5v3.5M18.5 16l2.6 2.6M45.5 16l-2.6 2.6M14.5 27h3.5M46 27h3.5" stroke="${BI.r}" stroke-width="2.2" stroke-linecap="round"/>`},
-  {id:"shutout", name:"Shutout", ring:"gold", how:"Get every result right on a night with 3 or more of your games.",
+  {id:"shutout", name:"Shutout", ring:"gold", how:"Get every result right on a night with 3 or more of your games. Counted once the night is over.",
    art:`<path d="M32 13C22 13 19 21 19 30.5C19 42 25 50.5 32 50.5S45 42 45 30.5C45 21 42 13 32 13Z" fill="${BI.n}"/><path d="M32 14v11" stroke="${BI.r}" stroke-width="2.6"/><ellipse cx="26.6" cy="30.5" rx="3.6" ry="2.3" fill="${BI.c}"/><ellipse cx="37.4" cy="30.5" rx="3.6" ry="2.3" fill="${BI.c}"/><g fill="${BI.c}"><circle cx="32" cy="37.5" r="1.3"/><circle cx="28.6" cy="41.5" r="1.2"/><circle cx="35.4" cy="41.5" r="1.2"/><circle cx="32" cy="45.2" r="1.2"/></g>`},
   {id:"overtime", name:"Overtime Hero", ring:"navy", how:"Call an overtime or shootout loss (OTL) correctly.",
    art:`<rect x="28.5" y="13" width="7" height="4.2" rx="1" fill="${BI.n}"/><rect x="30.8" y="16.5" width="2.4" height="3" fill="${BI.n}"/><circle cx="32" cy="34" r="13" fill="${BI.p}" stroke="${BI.n}" stroke-width="3"/><path d="M32 23.5v2.4M42.5 34h-2.4M32 44.5v-2.4M21.5 34h2.4" stroke="${BI.n}" stroke-width="1.6"/><path d="M32 34V26.5M32 34l5 3" stroke="${BI.r}" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="34" r="1.8" fill="${BI.n}"/>`},
@@ -606,7 +606,7 @@ BADGES.push(
    art:`<g fill="${BI.r}">`+[[19,[17,26.6,36.2]],[25.4,[17,21.8,31.4,41]],[31.8,[17,26.6,36.2]],[38.2,[17,21.8,31.4,41]]].map(([y,xs])=>xs.map((x,i)=>{
          const w = (y===25.4||y===38.2) && (i===0||i===xs.length-1) ? 4.2 : 9; return `<rect x="${x}" y="${y}" width="${Math.min(w,47-x)}" height="5.4" rx=".6"/>`; }).join("")).join("")+`</g>`+
        `<path d="M15 45h34" stroke="${BI.n}" stroke-width="2.4" stroke-linecap="round"/>`},
-  {id:"perfectweek", name:"Perfect Week", ring:"gold", how:"Get every result right in a week with 5 or more of your games.",
+  {id:"perfectweek", name:"Perfect Week", ring:"gold", how:"Get every result right in a week (Monday to Sunday) with 5 or more of your games. Counted once the week is over.",
    art:[0,1,2,3,4,5,6].map(i=>`<rect x="${16.6+i*4.4}" y="37" width="3.4" height="6" rx=".7" fill="${BI.r}"/>`).join("")+
        `<path d="M19.5 25.5l7.5 7 17.5-17" fill="none" stroke="${BI.n}" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>`},
   // ── Collection ──
@@ -776,9 +776,18 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   let ptRun=0, ptBest=0;
   scored.filter(x=>x.sc.outcomeHit!==null || x.sc.goalsHit!==null).forEach(x=>{ ptRun = x.sc.points>0 ? ptRun+1 : 0; ptBest=Math.max(ptBest,ptRun); });
   const exact=scored.filter(x=>x.sc.goalsHit).length;
+  // A night or week only counts once it's over: its last day is before today and none of your picked games
+  // in it is still waiting for a final score (so a perfect night can't be awarded before its last game ends).
+  const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const today=ymd(new Date());
+  const pendingDays=new Set(picks.map(p=>({p, g:G.get(Number(p.game_id))}))
+    .filter(x=>x.g && x.p.pick && !x.g.period_type && x.g.schedule_state!=="PPD").map(x=>x.g.game_date));
+  const nightOver=d=>d<today && !pendingDays.has(d);
+  const weekOver=w=>{ const d=new Date(w+"T12:00:00"), days=[...Array(7)].map((_,i)=>{ const x=new Date(d); x.setDate(d.getDate()+i); return ymd(x); });
+    return days[6]<today && !days.some(x=>pendingDays.has(x)); };
   // nights: every result right with 3+ results graded that day
   const nights={}; results.forEach(x=>{ const d=x.g.game_date; (nights[d]=nights[d]||[]).push(x.sc.outcomeHit); });
-  const shutout=Object.values(nights).some(a=>a.length>=3 && a.every(Boolean));
+  const shutout=Object.entries(nights).some(([d,a])=>a.length>=3 && a.every(Boolean) && nightOver(d));
   // full sheet: every game of a team's season has both a result and goals picked (or a hidden pick)
   const fullSheet=sheets.some(t=>{
     const tg=games.filter(g=>g.home===t||g.away===t); if(!tg.length) return false;
@@ -798,7 +807,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   captain = captain || honoured("captain");
   // for progress bars
   const maxPts=scored.reduce((m,x)=>Math.max(m,x.sc.points),0);
-  const nightBest=Object.values(nights).reduce((m,a)=>a.every(Boolean)?Math.max(m,a.length):m,0);
+  const nightBest=Object.entries(nights).reduce((m,[d,a])=>a.every(Boolean) && nightOver(d)?Math.max(m,a.length):m,0);
   let fill=0, fillOf=84;
   sheets.forEach(t=>{
     const tg=games.filter(g=>g.home===t||g.away===t);
@@ -818,7 +827,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
     const mine=board.filter(r=>r.username.toLowerCase()===who.toLowerCase()).map(r=>Number(r.points));
     if(mine.length){ const best=Math.max(...mine); overall={rank:1+board.filter(r=>Number(r.points)>best).length, pts:best}; }
   }
-  const thisSeason=picks.some(p=>G.has(Number(p.game_id)));   // a pick on a 2026–27 game
+  const thisSeason=picks.some(p=>G.has(Number(p.game_id)));   // a pick on this season's games (its ticket badge)
   // ── the newer badges ──
   const H=id=>(honours||[]).filter(h=>h.badge===id && who && h.username.toLowerCase()===who.toLowerCase());
   const hN=id=>H(id).reduce((m,h)=>Math.max(m,Number(h.n)||0),0);
@@ -852,7 +861,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const fest=scored.some(x=>x.sc.goalsHit && x.sc.goals>=9), duel=scored.some(x=>x.sc.goalsHit && x.sc.goals<=3);
   // Perfect Week: every result right in a week with 5+ graded results
   const wkRes={}; results.forEach(x=>{ const w=weekOf(x.g.game_date); (wkRes[w]=wkRes[w]||[]).push(x.sc.outcomeHit); });
-  const perfBest=Object.values(wkRes).reduce((m,a)=>a.every(Boolean)?Math.max(m,a.length):m,0);
+  const perfBest=Object.entries(wkRes).reduce((m,[w,a])=>a.every(Boolean) && weekOver(w)?Math.max(m,a.length):m,0);
   const CANADA=["CGY","EDM","MTL","OTT","TOR","VAN","WPG"], can=CANADA.filter(t=>sheets.includes(t)).length;
   const rivalSides=r=>[r.a,r.b].filter(t=>sheets.includes(t)).length;   // Rivalry Night: sheets started for each side
   const divBest=DIVISIONS.reduce((m,d)=>Math.max(m,sheets.filter(t=>TEAMS[t]?.div===d).length),0);
@@ -881,7 +890,7 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const earned={
     inaugural: !!(who && joined),
     faceoff: picks.length>0,
-    season2627: thisSeason,
+    [SEASON_BADGE]: thisSeason,
     hattrick: hatBest>=3,
     star3: sheetBest>=3,
     star2: sheetBest>=5,
@@ -950,7 +959,8 @@ function computeBadges(picks, games, board, who, joined, honours, firstDay){
   const meter={
     inaugural:[who && joined ? 1 : 0,1,"profile created"],
     faceoff:[Math.min(picks.length,1),1,"pick made"],
-    season2627:[thisSeason?1:0,1,"pick made this season"],
+    ...Object.fromEntries(BADGES.filter(b=>/^season\d{4}$/.test(b.id)).map(b=>[b.id,[0,1,"pick made that season"]])),   // past seasons' tickets
+    [SEASON_BADGE]:[thisSeason?1:0,1,"pick made this season"],
     hattrick:[hatBest,3,"kinds (W, L, OTL) right on one sheet"],
     star3:[Math.min(sheetBest,3),3,"right in a row on one sheet"],
     star2:[Math.min(sheetBest,5),5,"right in a row on one sheet"],
@@ -1053,7 +1063,8 @@ function rarestBadges(ids, n){
 function badgesInReach(r, n=3){
   const rank=id=>BADGE_ORDER.indexOf(id), share=id=>{ const [h,need]=r.meter[id]; return need ? h/need : 0; };
   // never nudge anyone toward missing games, and skip the ones only settled at season's end
-  const bad=[...(BADGE_GROUPS.find(g=>g.name==="Bad habits")?.ids||[]), "ppg", "mvp", "seasondynasty"];
+  const bad=[...(BADGE_GROUPS.find(g=>g.name==="Bad habits")?.ids||[]), "ppg", "mvp", "seasondynasty",
+    ...BADGES.filter(b=>/^season\d{4}$/.test(b.id) && b.id!==SEASON_BADGE).map(b=>b.id)];   // past seasons' tickets can't be won now
   return BADGE_ORDER.filter(id=>!r.earned.includes(id) && !bad.includes(id))
     .sort((a,b)=>share(b)-share(a) || rank(a)-rank(b)).slice(0,n)
     .sort((a,b)=>rank(a)-rank(b));
@@ -1100,7 +1111,7 @@ async function fetchAllRows(make){
 async function gamesForTeams(sb, teams){
   if(!teams.length) return [];
   const list=teams.join(",");
-  return fetchAllRows(()=>sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,period_type,venue,neutral_site")
+  return fetchAllRows(()=>sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,period_type,schedule_state,venue,neutral_site")
     .eq("season",SEASON).or(`home.in.(${list}),away.in.(${list})`).order("game_id"));
 }
 // The season's first day of games (Opening Night). Fetched once per page.
@@ -1113,10 +1124,30 @@ function seasonFirstDay(sb){
 async function myBadges(sb, username){
   const picks=await fetchAllRows(()=>sb.from("team_picks").select("team,game_id,pick,goals").order("game_id"));
   const teams=[...new Set(picks.map(p=>p.team))];
-  const [games, board, joined, honours] = await Promise.all([gamesForTeams(sb,teams),
-    username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : [], profileJoined(sb, username), seasonHonours(sb)]);
+  const [games, board, joined, honours, kept] = await Promise.all([gamesForTeams(sb,teams),
+    username ? sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]) : [], profileJoined(sb, username), seasonHonours(sb), trophyCase(sb, username)]);
   if(username) claimBadgeChiclets(sb);   // pay any badge rewards not paid yet (the database checks each badge itself)
-  return computeBadges(picks, games, board, username, joined, honours, await seasonFirstDay(sb));
+  return withTrophyCase(computeBadges(picks, games, board, username, joined, honours, await seasonFirstDay(sb)), kept);
+}
+// The trophy case: every badge a player has earned and the season they earned it in, kept by the database
+// (badge_case in schema.sql), so badges from past seasons stay after the season changes.
+function trophyCase(sb, username){
+  if(!username) return Promise.resolve([]);
+  return sb.rpc("trophy_case",{p_username:username}).then(({data,error})=>error ? [] : data||[]).catch(()=>[]);
+}
+// Adds the trophy case to a computeBadges result: kept badges count as earned, r.seasons lists the
+// seasons each badge was earned in, and Season Dynasty counts MVPs from every season.
+function withTrophyCase(r, kept){
+  const seasons={};
+  (kept||[]).forEach(k=>{ if(!BADGE_BY_ID[k.badge]) return; const s=(seasons[k.badge]||=[]); if(!s.includes(k.season)) s.push(k.season); });
+  r.earned.forEach(id=>{ const s=(seasons[id]||=[]); if(!s.includes(SEASON)) s.push(SEASON); });
+  const mvps=(seasons.mvp||[]).length;
+  if(r.meter.seasondynasty) r.meter.seasondynasty=[Math.min(mvps,3),3,"seasons as MVP"];
+  const has=id=>!!seasons[id]?.length || (id==="seasondynasty" && mvps>=3);
+  r.earned=BADGES.filter(b=>has(b.id)).map(b=>b.id);
+  r.earned.forEach(id=>{ if(r.meter[id]) r.meter[id][0]=r.meter[id][1]; });
+  r.seasons=seasons;
+  return r;
 }
 // Badge rewards in Chiclets (the database pays them: badge_reward() in schema.sql, section 18)
 function badgeReward(id){
@@ -1152,8 +1183,8 @@ async function playerBadges(sb, username, board){
   const sets=await Promise.all(teams.map(t=>sb.rpc("sheet_picks",{p_username:username,p_team:t,p_season:SEASON})
     .then(({data})=>(data||[]).map(r=>({team:t, game_id:r.game_id, pick:r.pick, goals:r.goals, hidden:!r.revealed})))));
   const picks=sets.flat();
-  const [games, joined, honours, firstDay]=await Promise.all([gamesForTeams(sb,teams), profileJoined(sb, username), seasonHonours(sb), seasonFirstDay(sb)]);
-  return computeBadges(picks, games, board, username, joined, honours, firstDay);
+  const [games, joined, honours, firstDay, kept]=await Promise.all([gamesForTeams(sb,teams), profileJoined(sb, username), seasonHonours(sb), seasonFirstDay(sb), trophyCase(sb, username)]);
+  return withTrophyCase(computeBadges(picks, games, board, username, joined, honours, firstDay), kept);
 }
 
 // "New badge" pop-up: compares with the badges this device has already shown you.
@@ -1494,6 +1525,11 @@ function makeClient(){
   return ok ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY) : null;
 }
 const SEASON=(window.PICKS_CONFIG||{}).SEASON||"20262027";
+// "20262027" → "2026–27", shown in banners; elements marked data-season get it filled in
+const SEASON_LABEL=`${SEASON.slice(0,4)}–${SEASON.slice(6,8)}`;
+// This season's ticket badge (season2627, season2728, ...)
+const SEASON_BADGE=`season${SEASON.slice(2,4)}${SEASON.slice(6,8)}`;
+document.querySelectorAll("[data-season]").forEach(el=>{ el.textContent=SEASON_LABEL; });
 const USERNAME_RULE=/^[A-Za-z0-9_]{3,20}$/;
 
 // A game's outcome from one team's side: "W", "L", "OTL", or null if not final.
