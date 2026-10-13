@@ -120,7 +120,7 @@ async function start(){
 
 function render(){
   const body=$("stBody");
-  if(!rows.length) return note("Nothing yet. Your first Chiclets arrive when a game you picked goes final.");
+  if(!rows.length) return note("Nothing yet. Your first Chiclets arrive when a game you picked is final.");
   const out=[];
   const head=document.createElement("div"); head.className="st-row st-head"; head.setAttribute("aria-hidden","true");
   head.innerHTML="<span>Date</span><span>What</span><span>Change</span><span>Total</span>";

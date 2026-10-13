@@ -121,7 +121,7 @@ function render(s){
     const d=document.createElement("b"); d.className=r.delta>0?"up":"down"; d.textContent=(r.delta>0?"+":"−")+Math.abs(r.delta);
     li.append(what,d); list.append(li);
   });
-  if(!s.ledger.length){ const li=document.createElement("li"); li.textContent="Nothing yet. Your first Chiclets arrive when a game you picked goes final."; list.append(li); }
+  if(!s.ledger.length){ const li=document.createElement("li"); li.textContent="Nothing yet. Your first Chiclets arrive when a game you picked is final."; list.append(li); }
   ch.append(list, more("chiclets.html","Full statement"));
   grid.append(ch);
 
