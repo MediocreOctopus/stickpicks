@@ -25,7 +25,9 @@
 function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
-window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
@@ -71,6 +73,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <ul class="bullets">
         <li><b>Your account:</b> your email address and password (stored scrambled, so nobody, including us, can read it) and the username you choose.</li>
         <li><b>Your picks:</b> each result and goals prediction you make, with the team sheet and game it belongs to and when you last changed it.</li>
+        <li><b>Your playoff picks and bracket:</b> each playoff winner and goals prediction, and your bracket (series winners and lengths), with when you last changed them. Other players see your bracket only once brackets lock at the first playoff puck drop.</li>
         <li><b>Your profile picture,</b> if you choose one: either a team sweater with a number, or a photo you upload. Photos are cropped and shrunk on your device before they’re uploaded.</li>
         <li><b>Your settings:</b> the Look you pick (Auto, Home sweater or Road sweater), so it follows you to other devices.</li>
         <li><b>Who invited you,</b> if you joined from a friend&rsquo;s invitation link (see Sharing and invitations below).</li>

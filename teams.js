@@ -65,6 +65,8 @@ function teamStyle(el, code){
 
 // Neutral league-wide look, used by the leaderboard's "All teams" view: the navy road sweater.
 const NEUTRAL_THEME = {board:"#1C2B45", accent:"#EFE6D2", brand:"#9B1C1F"};
+// ...and in playoff mode: black, with silver stripes and gold headings
+const PLAYOFF_THEME = {board:"#10151F", accent:"#D9A33A", brand:"#C9CED4", stripe:"#C9CED4"};
 
 // Accepts a team code ("SEA") or a theme object like NEUTRAL_THEME.
 function applyTheme(code){
@@ -88,6 +90,13 @@ function applyTheme(code){
 // all 32 teams grouped by division. Returns {open, close} so pages can open it.
 function mountTeamMenu(root){
   if(!root) return null;
+  // Playoff mode: one Playoff Sheet button instead (and swap back and forth if the mode changes on this page)
+  if(!root.dataset.poWatch){ root.dataset.poWatch="1"; document.addEventListener("playoffs:changed",()=>{ root.replaceChildren(); mountTeamMenu(root); markTopNav(); }); }
+  if(playoffOn()){
+    const a=document.createElement("a"); a.className="teammenu-btn po-sheetbtn"; a.href="playoffs.html"; a.textContent="Playoff Sheet";
+    root.append(a);
+    return {open(){ location.href="playoffs.html"; }, close(){}};
+  }
   const btn=document.createElement("button");
   btn.type="button"; btn.className="teammenu-btn"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","teamMenuPanel");
   btn.textContent="Pick Team";
@@ -137,7 +146,8 @@ function mountTabBar(){
   const page=(location.pathname.split("/").pop()||"index.html").toLowerCase();
   const items=[
     ["home","Home","index.html",page==="index.html"],
-    ["teams","Pick Team","teams.html",page==="teams.html"||page==="sheet.html"||page==="compare.html"],
+    playoffOn() ? ["teams","Playoffs","playoffs.html",page==="playoffs.html"||page==="bracket.html"]
+                : ["teams","Pick Team","teams.html",page==="teams.html"||page==="sheet.html"||page==="compare.html"],
     ["board","Leaders","leaderboard.html",page==="leaderboard.html"],
     ["play","Intermission","intermission.html",page==="intermission.html"],
     // Me opens the Locker Room (your Chiclets, shop, gear and badges); your profile is one tap from there
@@ -155,6 +165,7 @@ function mountTabBar(){
   document.body.appendChild(nav);
 }
 document.addEventListener("DOMContentLoaded", mountTabBar);
+document.addEventListener("playoffs:changed", ()=>{ document.querySelector(".tabbar")?.remove(); if(document.readyState!=="loading") mountTabBar(); });
 
 /* ───────── Avatars: sweater (team + number), photo, or initial ───────── */
 // The sweater, drawn flat like a hockey sweater laid out: a wide, boxy body; long sleeves angled down to square cuffs at
@@ -167,12 +178,15 @@ const JERSEY_SLEEVE="77,14 95.2,46.05 81.65,54.5 72,36";   // the right sleeve (
 const SLEEVE_FRAME="translate(74.5 25) rotate(61)";
 // Sweater styles from the Chiclets shop (worn one: profiles.sweater_style). Alternate swaps the team's two colours;
 // the others are throwback designs in the team's colours.
-const SWEATER_STYLES=["sweater_alt","sweater_barber","sweater_chest","sweater_yoke","sweater_winter"];
+const SWEATER_STYLES=["sweater_alt","sweater_barber","sweater_chest","sweater_yoke","sweater_winter","sweater_playoff"];
 const WINTER_CREAM="#E8D8B2";
+const PLAYOFF_BLACK="#14181F", PLAYOFF_SILVER="#C3C9CF", PLAYOFF_GOLD="#D9A33A";
 // The colours a sweater is drawn in: [body, stripes, edge] (edge: a third team colour, for the '80s yoke's trim)
 function sweaterColours(team, style){
   const t=TEAMS[team]; if(!t) return null;
   const stripe=t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2);
+  // Playoff Black: black, silver and gold, with whichever team colour shows up on black between them
+  if(style==="sweater_playoff") return [PLAYOFF_BLACK, PLAYOFF_SILVER, firstReadable(PLAYOFF_BLACK,[t.board,stripe,"#FFFFFF"],2)];
   const [j1,j2] = style==="sweater_alt" ? [stripe, t.board] : style==="sweater_winter" ? [WINTER_CREAM, t.board] : [t.board, stripe];
   const same=(a,b)=>String(a).toLowerCase()===String(b).toLowerCase();
   const j3=firstReadable(j2, [t.accent,t.brand,"#FFFFFF","#111111"].filter(c=>c && !same(c,j1) && !same(c,j2)), 1.6);
@@ -199,6 +213,8 @@ function jerseyMarkup(style, c){
       sleeves(armBand(-10,11)+armBand(11,13.2,c.j3), 13.2);   // the yoke colour underneath already covers the top of the arm
   else if(style==="sweater_winter")   // outdoor-game throwback: cream wool, a team band across the chest and around the arms
     art=body(bodyBand(30,38)+bodyBand(40.5,42.5))+sleeves(armBand(14,18.5)+armBand(20,21.4));
+  else if(style==="sweater_playoff")  // Playoff Black: silver, the team colour (j3) and gold at the hem and around each forearm
+    art=body(bodyBand(74,77)+bodyBand(78,82.5,c.j3)+bodyBand(83.5,85.5,PLAYOFF_GOLD))+sleeves(armBand(14,17)+armBand(18,22.5,c.j3)+armBand(23.5,25.5,PLAYOFF_GOLD));
   else                                // plain (and Alternate): two stripes around each forearm and two at the hem
     art=body(bodyBand(78,81.5)+bodyBand(84,87.5))+sleeves(armBand(17,20.5)+armBand(22.5,26));
   // the collar: the inside of the back showing through the V, the back collar band, then the V trim edged in the body
@@ -206,7 +222,7 @@ function jerseyMarkup(style, c){
   const collar=`<path d="M39 8 Q50 13 61 8 L50 21 Z" style="fill:${c.j1}"/><path d="M39 8 Q50 13 61 8 L50 21 Z" fill="#000" opacity=".28"/>`+
     `<path d="M39.5 8.6 Q50 13.4 60.5 8.6" fill="none" style="stroke:${c.j2}" stroke-width="2.2"/>`+
     `<path d="M38.2 7.6 L50 21.8 L61.8 7.6" fill="none" style="stroke:${c.j1}" stroke-width="5.6" stroke-linejoin="round"/>`+
-    `<path d="M38.2 7.6 L50 21.8 L61.8 7.6" fill="none" style="stroke:${c.j2}" stroke-width="3" stroke-linejoin="round"/>`+
+    `<path d="M38.2 7.6 L50 21.8 L61.8 7.6" fill="none" style="stroke:${style==="sweater_playoff"?PLAYOFF_GOLD:c.j2}" stroke-width="3" stroke-linejoin="round"/>`+
     (style==="sweater_winter"   // laces across the V
       ? `<path d="M43.6 12.4L54.9 15.6M56.4 12.4L45.1 15.6M45.6 15.4L52.6 18.4M54.4 15.4L47.4 18.4" fill="none" stroke="#F4EDDC" stroke-width="1.3" stroke-linecap="round"/>` : "");
   // a fine outline so pale sweaters (cream, white, ice) still read on the cream circle
@@ -254,8 +270,9 @@ function avatarEl(av, name, px){
     el.classList.add("avatar-sweater");
     el.style.setProperty("--av-ring",firstReadable("#F4EDDC",[j2,j1],1.5));   // white stripes would vanish on the cream ring
     // on striped styles the number gets an outline in the body colour so it reads across the stripes
-    const edge = style==="sweater_barber" || style==="sweater_chest" ? ` stroke="${j1}" stroke-width="4" paint-order="stroke"` : "";
-    const numText = av.number==="" ? "" : `<text x="50" y="73" text-anchor="middle" fill="${inkOn(j1)}"${edge}>${num}</text>`;   // "" = no number (the shop's skater preview)
+    const edge = style==="sweater_barber" || style==="sweater_chest" ? ` stroke="${j1}" stroke-width="4" paint-order="stroke"`
+      : style==="sweater_playoff" ? ` stroke="${PLAYOFF_GOLD}" stroke-width="2" paint-order="stroke"` : "";   // Playoff Black: silver number edged in gold
+    const numText = av.number==="" ? "" : `<text x="50" y="73" text-anchor="middle" fill="${style==="sweater_playoff"?PLAYOFF_SILVER:inkOn(j1)}"${edge}>${num}</text>`;   // "" = no number (the shop's skater preview)
     el.innerHTML=`<svg viewBox="0 0 100 100">${jerseyMarkup(style,{j1,j2,j3})}${numText}</svg>`;
   }else if(name){
     el.textContent=name[0].toUpperCase();
@@ -726,22 +743,65 @@ function rivalryArt(a,b){
     `<circle cx="32" cy="32" r="6.8" fill="${BI.n}" stroke="${BI.c}" stroke-width="1.1"/>`+bText("VS",32,34.7,7,BI.c,'letter-spacing=".3"');
 }
 RIVALRIES.forEach(r=>BADGES.push({id:r.id, name:r.name, ring:"red", how:`Start sheets for the ${TEAMS[r.a].name} and the ${TEAMS[r.b].name}.`, art:rivalryArt(r.a,r.b)}));
+
+// ── Playoff badges (po: drawn as a playoff patch: silver ring, gold stitching, black felt). The database checks them
+// (badges_earned() in schema.sql) and keeps them per season in the trophy case, so they show from there; each can be
+// won again every spring. ring is only the progress-bar colour; rewards are in badgeReward().
+const PO={felt:"#161B24", silver:"#C9CED4", gold:"#D9A33A", red:"#E8463F", wood:"#B98245"};
+const poText=(x,y,s,fill,txt,ls=0)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="700" font-size="${s}" letter-spacing="${ls}" fill="${fill}">${txt}</text>`;
+// the net with the puck in it, and how many overtimes above (OT, 2x OT, 3x OT)
+const poOtArt=label=>poText(32,22.5,label.length>2?7.6:9,PO.gold,label,.4)+
+  `<path d="M23 31v13M28 31v13M33 31v13M38 31v13M20 36h24M20 40.5h24" stroke="${PO.silver}" stroke-width=".8" opacity=".55"/>`+
+  `<path d="M19 46V31q0-3 3-3h20q3 0 3 3v15" fill="none" stroke="${PO.red}" stroke-width="2.6"/><path d="M15 46h34" stroke="${PO.silver}" stroke-width="2.2" stroke-linecap="round"/>`+
+  `<ellipse cx="36.5" cy="41.6" rx="4.2" ry="1.9" fill="#05070B" stroke="${PO.silver}" stroke-width=".7"/>`;
+BADGES.push(
+  {id:"po_sweep", name:"Clean Sweep", ring:"red", po:true, how:"In a playoff bracket, correctly pick a team to win a series in 4 games.",
+   // a straw broom, leaning, with the 4–0 beside it
+   art:`<g transform="rotate(-28 32 32)"><path d="M32 11V34" stroke="${PO.wood}" stroke-width="3.2" stroke-linecap="round"/><circle cx="32" cy="11" r="1.6" fill="${PO.red}"/>`+
+       `<path d="M28.6 37h6.8l6.8 13.6q-10.2 3-20.4 0Z" fill="${PO.gold}"/>`+
+       `<path d="M30.6 38.5L27 50.8M32 38.5V51.8M33.4 38.5L37 50.8M29.3 38.5L24.6 50M34.7 38.5L39.4 50" stroke="#8A6516" stroke-width=".75"/>`+
+       `<rect x="28.2" y="33.4" width="7.6" height="4" rx=".8" fill="${PO.red}"/><path d="M28.2 35.4h7.6" stroke="${BI.c}" stroke-width=".7"/></g>`+poText(45.5,32.5,9.5,PO.silver,"4–0")},
+  {id:"po_game7", name:"Game 7", ring:"red", po:true, how:"Make a pick on a Game 7.",
+   art:poText(32,22,6.4,PO.silver,"GAME",1.6)+poText(32,47,26,PO.gold,"7")+`<path d="M21 49.5h22" stroke="${PO.red}" stroke-width="2.2" stroke-linecap="round"/>`},
+  {id:"po_ot1", name:"Free Hockey", ring:"navy", po:true, how:"Correctly pick the winner of a playoff game that goes to overtime.", art:poOtArt("OT")},
+  {id:"po_ot2", name:"More Free Hockey", ring:"red", po:true, how:"Correctly pick the winner of a playoff game that goes to double overtime.", art:poOtArt("2x OT")},
+  {id:"po_ot3", name:"Even More Free Hockey", ring:"gold", po:true, how:"Correctly pick the winner of a playoff game that goes to triple overtime.", art:poOtArt("3x OT")},
+  {id:"po_final", name:"The Final", ring:"navy", po:true, how:"Make a pick on a game in the Stanley Cup Final.",
+   art:()=>`<g transform="translate(17.6 13) scale(.48)">${trophySvg("bdg"+Math.random().toString(36).slice(2,7), true)}</g>`},
+  {id:"po_buster", name:"Bracket Buster", ring:"red", po:true, how:"In a playoff bracket, correctly pick a lower seed to win a series.",
+   // a bracket, split by a gold lightning bolt
+   art:`<path d="M16 21h9v8h-9M16 37h9v8h-9M25 25h8v16h-8M33 33h12" fill="none" stroke="${PO.silver}" stroke-width="2.2" stroke-linejoin="round"/>`+
+       `<path d="M40 15L31.5 31.5h6.2L33 49L45.5 28.4h-6.4L44.2 15Z" fill="${PO.gold}" stroke="${PO.felt}" stroke-width="1.2" stroke-linejoin="round"/>`},
+  {id:"po_mvp", name:"Playoff MVP", ring:"gold", po:true, how:"Finish the playoffs #1 on the playoff sheet leaderboard.",
+   // a gold star with MVP across a silver banner
+   art:`<path d="M32 12.5L36.9 24.3L49.6 25.2L39.9 33.4L43 45.8L32 39L21 45.8L24.1 33.4L14.4 25.2L27.1 24.3Z" fill="${PO.gold}" stroke="#8A6516" stroke-width="1" stroke-linejoin="round"/>`+
+       `<path d="M15 37.5H49L46.5 42.3L49 47H15L17.5 42.3Z" fill="${PO.silver}" stroke="#6E7780" stroke-width=".8" stroke-linejoin="round"/>`+poText(32,45.2,7.4,PO.felt,"MVP",1)}
+);
+const PLAYOFF_BADGES=BADGES.filter(b=>b.po).map(b=>b.id);
 // The order badges are listed on profiles: joining, everyday, scoring, habit, collecting, events, then the big ones.
 const BADGE_SHOW=["inaugural","faceoff","season2627","openingnight","hattrick","naturalhattrick","star3","star2","star1","topshelf","lamp","goalfest","goalieduel",
   "overtime","shootout","roadwarrior","shutout","perfectweek","earlybird","buzzer","ironman","fullslate","halfseason","fullsheet","original6","ocanada","numberonefan","mixedfeelings",
   "barnstormer","divisionchamp","commissioner",...RIVALRIES.map(r=>r.id),"winterclassic","heritageclassic","stadiumseries","globalseries","pointstreak","pt100","playerweek","playermonth","dynasty","captain","mvp","recruiter","talentscout",
   "firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp",
-  "pt20","pt50","monthlydynasty","seasondynasty","ppg","minor","doubleminor","major","misconduct","ejection"];
+  "pt20","pt50","monthlydynasty","seasondynasty","ppg","minor","doubleminor","major","misconduct","ejection",
+  "po_final","po_game7","po_ot1","po_ot2","po_ot3","po_sweep","po_buster","po_mvp"];
 BADGES.sort((a,b)=>BADGE_SHOW.indexOf(a.id)-BADGE_SHOW.indexOf(b.id));
 const badgeArt=b=>typeof b.art==="function" ? b.art() : b.art;
 const BADGE_BY_ID=Object.fromEntries(BADGES.map(b=>[b.id,b]));
 // A round felt patch: ring with stitching, cream felt, pictogram.
+// The patch behind the art: a playoff patch is a silver ring, gold stitching and black felt.
+let patchSeq=0;
+function patchBase(b){
+  if(!b.po) return `<circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
+    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>`;
+  const id="poring"+(++patchSeq);
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E4E8EC"/><stop offset=".5" stop-color="#9AA3AB"/><stop offset="1" stop-color="#C9CED4"/></linearGradient></defs>`+
+    `<circle cx="32" cy="32" r="31" fill="url(#${id})"/><circle cx="32" cy="32" r="28.2" fill="none" stroke="${PO.gold}" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="${PO.felt}"/>`;
+}
 function badgeEl(id, px=56, earned=true){
   const b=BADGE_BY_ID[id], el=document.createElement("span");
   el.className="badge"+(earned?"":" locked"); el.style.setProperty("--bd-size",px+"px");
-  el.innerHTML=`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
-    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/>`+
-    `<circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${badgeArt(b)}</svg>`;
+  el.innerHTML=`<svg viewBox="0 0 64 64" aria-hidden="true">${patchBase(b)}${badgeArt(b)}</svg>`;
   return el;
 }
 
@@ -1054,6 +1114,7 @@ const BADGE_GROUPS=[
   {name:"Leaderboard", ids:["playerweek","playermonth","dynasty","monthlydynasty","seasondynasty","captain","pt20","pt50","pt100","mvp"]},
   {name:"Breakaway", ids:["firstshift","dangler","dekemaster","coasttocoast","highlightreel","rinkrat","breakawaychamp"]},
   {name:"Social", ids:["recruiter","talentscout"]},
+  {name:"Playoffs", ids:["po_final","po_game7","po_ot1","po_ot2","po_ot3","po_sweep","po_buster","po_mvp"]},
 ];
 // Rarest first: gold rings, then red, then navy; within a ring, hardest first (BADGE_ORDER, reversed).
 function rarestBadges(ids, n){
@@ -1064,7 +1125,7 @@ function rarestBadges(ids, n){
 function badgesInReach(r, n=3){
   const rank=id=>BADGE_ORDER.indexOf(id), share=id=>{ const [h,need]=r.meter[id]; return need ? h/need : 0; };
   // never nudge anyone toward missing games, and skip the ones only settled at season's end
-  const bad=[...(BADGE_GROUPS.find(g=>g.name==="Bad habits")?.ids||[]), "ppg", "mvp", "seasondynasty",
+  const bad=[...(BADGE_GROUPS.find(g=>g.name==="Bad habits")?.ids||[]), "ppg", "mvp", "seasondynasty", ...PLAYOFF_BADGES,
     ...BADGES.filter(b=>/^season\d{4}$/.test(b.id) && b.id!==SEASON_BADGE).map(b=>b.id)];   // past seasons' tickets can't be won now
   return BADGE_ORDER.filter(id=>!r.earned.includes(id) && !bad.includes(id))
     .sort((a,b)=>share(b)-share(a) || rank(a)-rank(b)).slice(0,n)
@@ -1154,6 +1215,8 @@ function withTrophyCase(r, kept){
 function badgeReward(id){
   if(id.startsWith("riv_")) return 5;
   if(["minor","doubleminor","major","misconduct","ejection","seasondynasty"].includes(id)) return 0;
+  const po={po_ot3:25, po_mvp:25, po_sweep:10, po_game7:10, po_ot2:10, po_buster:10, po_ot1:5, po_final:5};   // same as badge_reward() in SQL
+  if(id in po) return po[id];
   return {navy:5, red:10, gold:25}[BADGE_BY_ID[id]?.ring]||0;
 }
 // Asks the database to pay any badge rewards due; tells the page's Chiclets counters to refresh if it paid any.
@@ -1243,6 +1306,9 @@ const BADGE_BRAG={
   firstshift:"played my first game of Breakaway", dangler:"scored 250 in Breakaway", dekemaster:"scored 500 in Breakaway",
   coasttocoast:"scored 1,000 in Breakaway", highlightreel:"scored 2,000 in Breakaway", rinkrat:"played 100 games of Breakaway",
   breakawaychamp:"took the #1 score on the Breakaway leaderboard",
+  po_sweep:"called a playoff sweep in my bracket", po_game7:"made a pick on a Game 7", po_ot1:"called a playoff overtime winner",
+  po_ot2:"called a double-overtime winner", po_ot3:"called a triple-overtime winner", po_final:"made a pick on the Final",
+  po_buster:"called a playoff upset in my bracket", po_mvp:"finished the playoffs #1 on stickpicks",
   pt20:"scored 20 points on one sheet", pt50:"scored 50 points on one sheet",
   monthlydynasty:"was Player of the Month 3 times", seasondynasty:"was MVP in 3 different seasons",
   ppg:"finished the season with a point a game", minor:"took a 2-minute minor for missing 5 games",
@@ -1366,8 +1432,7 @@ function cardLogoParts(){
 }
 function badgeSvg(id){
   const b=BADGE_BY_ID[id];
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="${BADGE_RING[b.ring]}"/>`+
-    `<circle cx="32" cy="32" r="28.2" fill="none" stroke="#EFE6D2" stroke-width="1.1" stroke-dasharray="2.3 2"/><circle cx="32" cy="32" r="25.4" fill="${BI.c}"/>${badgeArt(b)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 64 64">${patchBase(b)}${badgeArt(b)}</svg>`;
 }
 async function drawCard(o){
   await Promise.all(["700 90px Oswald","600 28px Oswald","italic 30px 'Libre Caslon Text'","64px Yellowtail"].map(f=>document.fonts?.load(f).catch(()=>{})));
@@ -1487,6 +1552,7 @@ function showRememberedChiclets(){
 let chicletNavListening=false;
 async function mountChicletNav(sb){
   const box=document.getElementById("navChiclets");
+  refreshPlayoffMode(sb);   // every page with the top bar keeps the playoff phase up to date
   if(!box || !sb) return;
   if(!chicletNavListening){ chicletNavListening=true; document.addEventListener("chiclets:changed",()=>mountChicletNav(sb)); }   // after badge rewards
   try{
@@ -1510,7 +1576,7 @@ function markTopNav(){
   set(".topnav .navint", page==="intermission.html");
   set(".topnav .navrules", page==="rules.html");
   set(".topnav a.navaccount", own);
-  document.querySelector(".teammenu-btn")?.classList.toggle("is-current", ["teams.html","sheet.html","compare.html"].includes(page));
+  document.querySelector(".teammenu-btn")?.classList.toggle("is-current", ["teams.html","sheet.html","compare.html","playoffs.html","bracket.html"].includes(page));
 }
 document.addEventListener("DOMContentLoaded",()=>{ showRememberedChiclets(); markTopNav(); });
 async function chicletBalance(sb, username){
@@ -1519,18 +1585,95 @@ async function chicletBalance(sb, username){
   return error ? null : Number(data)||0;
 }
 
+/* ───────── Playoff mode ───────── */
+// The database says which phase the playoffs are in (playoff_state(), schema.sql section 15b):
+//   none: first-round matchups not set (regular site) · countdown: set, before the first playoff puck drop (the home
+//   page offers a Regular season | Playoffs switch; the choice is remembered) · live: playoffs under way · done: the
+//   Final is decided. Playoff mode (html.playoffs: silver, black and gold; the Playoff Sheet button) is on when live or
+//   done, or in countdown week if you picked Playoffs. The last answer is kept in localStorage "stickpicks-playoffs"
+//   so pages draw in the right colours straight away (each page's <head> script reads it too).
+const PO_KEY="stickpicks-playoffs";
+function poCache(){ try{ const c=JSON.parse(localStorage.getItem(PO_KEY)||"null"); return c && c.season===SEASON ? c : {season:SEASON}; }catch(e){ return {season:SEASON}; } }
+function poSave(c){ try{ localStorage.setItem(PO_KEY, JSON.stringify(c)); }catch(e){} }
+function playoffOn(c=poCache()){ return c.phase==="live" || c.phase==="done" || (c.phase==="countdown" && c.choice==="playoffs"); }
+function applyPlayoffMode(){
+  const was=document.documentElement.classList.contains("playoffs"), on=playoffOn();
+  document.documentElement.classList.toggle("playoffs", on);
+  if(was!==on) document.dispatchEvent(new CustomEvent("playoffs:changed", {detail:poCache()}));
+}
+function setPlayoffChoice(choice){ const c=poCache(); c.choice=choice; poSave(c); applyPlayoffMode(); }
+// Asks the database for the phase; returns the cached state {phase, first, round, champion, choice}.
+let poReq=null;
+function refreshPlayoffMode(sb){
+  if(!sb) return Promise.resolve(poCache());
+  return poReq ||= sb.rpc("playoff_state",{p_season:SEASON}).then(({data,error})=>{
+    const c=poCache();
+    if(!error){ const st=data?.[0]||{}; Object.assign(c, {phase:st.phase||"none", first:st.first_start||null, round:st.current_round||null, champion:st.champion||null}); poSave(c); }
+    applyPlayoffMode();
+    return c;
+  }).catch(()=>poCache());
+}
+const ROUND_NAMES=["","First Round","Second Round","Conference Finals","The Final"];
+const roundName=r=>ROUND_NAMES[r]||"Playoffs";
+// "COL leads 2–1", "Series tied 1–1", "FLA wins 4–1" from a playoff_series row
+function seriesText(s){
+  if(!s?.top_team || !s?.bottom_team) return "";
+  const t=s.top_wins, b=s.bottom_wins;
+  if(s.winner) return `${s.winner} wins ${Math.max(t,b)}–${Math.min(t,b)}`;
+  if(t===b) return t ? `Series tied ${t}–${b}` : "Series starts";
+  return t>b ? `${s.top_team} leads ${t}–${b}` : `${s.bottom_team} leads ${b}–${t}`;
+}
+// A playoff game's result: the winning team, or null until it's final
+const poWinner=g=>g && g.period_type && g.home_score!=null && g.away_score!=null ? (g.home_score>g.away_score ? g.home : g.away) : null;
+// Points for a playoff pick: 1 for the winner, 1 for the exact combined goals (null until final)
+function scorePlayoffPick(g, p){
+  const w=poWinner(g); if(!w || !p) return null;
+  const goals=g.home_score+g.away_score;
+  const wHit = p.winner ? p.winner===w : null, gHit = p.goals!=null ? p.goals===goals : null;
+  return {winner:w, goals, wHit, gHit, points:(wHit?1:0)+(gHit?1:0)};
+}
+// "OT", "2OT" ... for a final playoff game
+const otLabel=g=>!g?.ot_periods ? "" : g.ot_periods===1 ? "OT" : `${g.ot_periods}OT`;
+// "Avalanche", "Maple Leafs": a team's nickname, for tight spots (bracket, home banner)
+const teamNick=c=>{ const w=(TEAMS[c]?.name||c||"").split(" "), two=["Leafs","Knights","Jackets","Wings"].includes(w[w.length-1]); return w.slice(two?-2:-1).join(" "); };
+
+// The playoff trophy: a generic two-handled cup on a wooden base with a gold nameplate. Deliberately NOT the
+// Stanley Cup (the NHL holds trademarks on its name and shape). Drawn in a 60×88 box; uid keeps gradient ids unique.
+function trophySvg(uid, compact=false){
+  const g="trg"+uid;
+  return `<defs><linearGradient id="${g}" x1="0" x2="1"><stop offset="0" stop-color="#7E878F"/><stop offset=".38" stop-color="#F4F6F8"/><stop offset=".62" stop-color="#D3D8DD"/><stop offset="1" stop-color="#868F97"/></linearGradient></defs>`+
+    `<g fill="none" stroke="url(#${g})" stroke-width="3.4" stroke-linecap="round"><path d="M14.5 10 C4 9.5 3.5 25 17 27.5"/><path d="M45.5 10 C56 9.5 56.5 25 43 27.5"/></g>`+
+    (compact ? "" : `<g fill="none" stroke="#4E565E" stroke-width=".7" opacity=".8"><path d="M14.5 8.2 C2 8 1.8 26.4 17 29.2 M14.5 11.8 C6 11.4 5.6 23.6 17 25.8"/><path d="M45.5 8.2 C58 8 58.2 26.4 43 29.2 M45.5 11.8 C54 11.4 54.4 23.6 43 25.8"/></g>`)+
+    `<g fill="url(#${g})" stroke="#4E565E" stroke-width="${compact?1.2:.9}" stroke-linejoin="round">`+
+      `<path d="M10.5 3 H49.5 V7 H10.5 Z"/><path d="M12 7 H48 C47.6 22 40.8 31.6 30 32.4 C19.2 31.6 12.4 22 12 7 Z"/>`+
+      `<path d="M27.4 32.2 H32.6 V45 H27.4 Z"/><ellipse cx="30" cy="39" rx="5" ry="2.6"/>`+
+      `<path d="M27.4 45 H32.6 C33 48.5 37.5 50.5 41 51.5 H19 C22.5 50.5 27 48.5 27.4 45 Z"/></g>`+
+    (compact
+      ? `<path d="M15 51.5 H45 V57 H15 Z" fill="#5A3A1E"/><path d="M12 57 H48 V72 H12 Z" fill="#7A4E26"/><rect x="19" y="60.5" width="22" height="8" rx="1" fill="#D9A33A"/>`
+      : `<path d="M15 51.5 H45 V57 H15 Z" fill="#5A3A1E" stroke="#3B2512" stroke-width=".8"/><path d="M11 57 H49 V84 H11 Z" fill="#7A4E26" stroke="#3B2512" stroke-width=".9"/>`+
+        `<path d="M11 60 H49" stroke="#3B2512" stroke-width=".6" opacity=".6"/><rect x="18" y="66" width="24" height="10" rx="1" fill="#D9A33A" stroke="#8A6516" stroke-width=".7"/>`+
+        `<path d="M21.5 70 H38.5 M23.5 73 H36.5" stroke="#8A6516" stroke-width=".7"/><path d="M17 10.5 C17.6 19 21.4 25.6 26 28" stroke="#fff" stroke-width="1.1" fill="none" opacity=".7"/>`);
+}
+
 /* ───────── Shared helpers ───────── */
 function makeClient(){
   const cfg=window.PICKS_CONFIG||{};
   const ok=window.supabase && cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT");
   return ok ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY) : null;
 }
-const SEASON=(window.PICKS_CONFIG||{}).SEASON||"20262027";
+// Testing only: on this computer (localhost), localStorage "stickpicks-dev-season" can point the site at another
+// season, e.g. 20252026 for last spring's playoffs. Never applies on stickpicks.hockey.
+const SEASON=(()=>{
+  const s=(window.PICKS_CONFIG||{}).SEASON||"20262027";
+  try{ if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){ const d=localStorage.getItem("stickpicks-dev-season"); if(/^\d{8}$/.test(d||"")) return d; } }catch(e){}
+  return s;
+})();
 // "20262027" → "2026–27", shown in banners; elements marked data-season get it filled in
 const SEASON_LABEL=`${SEASON.slice(0,4)}–${SEASON.slice(6,8)}`;
 // This season's ticket badge (season2627, season2728, ...)
 const SEASON_BADGE=`season${SEASON.slice(2,4)}${SEASON.slice(6,8)}`;
 document.querySelectorAll("[data-season]").forEach(el=>{ el.textContent=SEASON_LABEL; });
+document.documentElement.classList.toggle("playoffs", playoffOn());   // playoff colours before anything draws (the <head> script does this too)
 const USERNAME_RULE=/^[A-Za-z0-9_]{3,20}$/;
 
 // A game's outcome from one team's side: "W", "L", "OTL", or null if not final.

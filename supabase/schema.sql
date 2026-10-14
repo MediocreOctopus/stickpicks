@@ -748,11 +748,12 @@ returns boolean language sql stable security definer set search_path = '' as $$
 $$;
 grant execute on function public.bracket_is_open(text) to anon, authenticated;
 
-create or replace function public.save_bracket(p_picks jsonb)
+drop function if exists public.save_bracket(jsonb);   -- the old one-argument version
+create or replace function public.save_bracket(p_picks jsonb, p_season text default null)
 returns void language plpgsql volatile security definer set search_path = '' as $$
 declare
   uid uuid := auth.uid();
-  s text := public.current_season();
+  s text := coalesce(p_season, public.current_season());
   k text;
   v jsonb;
 begin
@@ -771,8 +772,8 @@ begin
   insert into public.brackets (user_id, season, picks, updated_at) values (uid, s, p_picks, now())
   on conflict (user_id, season) do update set picks = excluded.picks, updated_at = now();
 end $$;
-revoke all on function public.save_bracket(jsonb) from public, anon;
-grant execute on function public.save_bracket(jsonb) to authenticated;
+revoke all on function public.save_bracket(jsonb, text) from public, anon;
+grant execute on function public.save_bracket(jsonb, text) to authenticated;
 
 -- A bracket: your own any time; anyone's once brackets lock.
 create or replace function public.bracket_view(p_username text default null, p_season text default null)

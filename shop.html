@@ -26,7 +26,9 @@
 function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
-window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
@@ -116,6 +118,9 @@ async function start(){
     $("shopNote").innerHTML = signedIn ? 'Choose a username in <a href="profile.html#settings">Settings</a> to start earning Chiclets.'
       : '<a href="index.html#signin">Sign in</a> to earn Chiclets by picking games, then spend them here. Free to play, no real money.';
   }
+  // playoff-only items (Playoff Black) are on sale from countdown week until the Final is decided; if you own one it stays listed
+  const po=await refreshPlayoffMode(sb), onSale=["countdown","live"].includes(po.phase);
+  items=items.filter(i=>!i.playoffs_only || onSale || owned.has(i.id));
   render();
 }
 

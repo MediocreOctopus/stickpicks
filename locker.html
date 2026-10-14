@@ -26,7 +26,9 @@
 function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
-window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
@@ -86,6 +88,7 @@ async function load(){
     sb.rpc("my_items").then(r=>(r.data||[]).map(x=>x.item_id)),
     sb.from("shop_items").select("*").eq("active",true).order("sort").then(r=>r.data||[]),
     myBadges(sb, me.username).catch(()=>null),
+    refreshPlayoffMode(sb),
   ]);
   render({me, ledger:ledger.slice().reverse(), owned:new Set(mine), shop, badges});
 }
@@ -127,7 +130,8 @@ function render(s){
 
   // ── Shop: what you're saving for ──
   const sh=card("Shop");
-  const forSale=s.shop.filter(i=>(!i.available_from || today()>=i.available_from) && (!i.available_to || today()<=i.available_to) && !s.owned.has(i.id));
+  const poSale=["countdown","live"].includes(poCache().phase);   // playoff-only items: countdown week until the Final is decided
+  const forSale=s.shop.filter(i=>(!i.available_from || today()>=i.available_from) && (!i.available_to || today()<=i.available_to) && !s.owned.has(i.id) && (!i.playoffs_only || poSale));
   const canBuy=forSale.filter(i=>i.price<=bal), next=forSale.filter(i=>i.price>bal).sort((a,c)=>a.price-c.price)[0];
   const p=document.createElement("p"); p.className="lr-note";
   p.textContent = canBuy.length ? `You can afford ${canBuy.length} item${canBuy.length===1?"":"s"} right now.` : next ? "Saving up for your next item." : "You own everything in the shop. Legend.";

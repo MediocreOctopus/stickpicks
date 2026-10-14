@@ -4,6 +4,8 @@
   --board:#001628; --accent:#99D9D9; --stripe:#99D9D9; --brand:#355464; --title:#99D9D9;
   --ctl-light:#355464; --ctl-dark:#99D9D9; --ctl-ink-light:#fff; --ctl-ink-dark:#001628;
   --wool:#EFE6D2; --navy:#1C2B45; --red:#9B1C1F; --gold:#D9A33A;
+  /* banners and their sleeve stripes (playoff mode swaps these for black, silver and gold) */
+  --banner:var(--navy); --banner-road:#14203A; --sleeve-a:#E8463F; --sleeve-b:var(--wool);
   --ink:#17233A; --muted:#5D6473; --line:#DDD3BF; --panel:#FBF7EE;
   --bg:color-mix(in srgb, var(--brand) 6%, #F3ECDD);
   --home:color-mix(in srgb, var(--brand) 7%, #FBF7EE);
@@ -219,7 +221,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .topbar{--sleeve2:var(--wool)} [data-scheme="dark"] .topbar{--sleeve2:var(--navy)}
 .teammenu-btn{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--btn);color:var(--btn-ink);font:600 .9rem var(--display);letter-spacing:.1em;text-transform:uppercase;
   padding:6px 13px 6px 26px;border-radius:4px;cursor:pointer;white-space:nowrap;
-  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 9px,transparent 9px 12px,var(--sleeve2) 12px 16px,transparent 16px),var(--btn)}
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 9px,transparent 9px 12px,var(--sleeve2) 12px 16px,transparent 16px),var(--btn)}
 .teammenu-btn:hover{filter:brightness(1.12)}
 .teammenu-btn::after{content:"";width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
 .teammenu-btn[aria-expanded="true"]::after{transform:translateY(2px) rotate(-135deg)}
@@ -227,11 +229,11 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .teammenu-panel{position:absolute;top:calc(100% - 6px);right:0;z-index:20;width:min(920px,calc(100vw - 32px));
   background:var(--panel);border:2px solid var(--ink);border-radius:8px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.22)}
 .teammenu-panel[hidden]{display:none}
-.tm-head{position:relative;display:grid;gap:2px;padding:12px 18px 22px 40px;background:var(--navy);color:var(--wool)}
-[data-scheme="dark"] .tm-head{background:#14203A}
+.tm-head{position:relative;display:grid;gap:2px;padding:12px 18px 22px 40px;background:var(--banner);color:var(--wool)}
+[data-scheme="dark"] .tm-head{background:var(--banner-road)}
 .tm-head::before{content:"";position:absolute;left:0;top:0;bottom:10px;width:24px;
-  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
-.tm-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(to bottom,#E8463F 0 4px,transparent 4px 6px,var(--wool) 6px 10px)}
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 10px,transparent 10px 14px,var(--sleeve-b) 14px 19px,transparent 19px)}
+.tm-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(to bottom,var(--sleeve-a) 0 4px,transparent 4px 6px,var(--sleeve-b) 6px 10px)}
 .tm-head small{font:600 .7rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
 .tm-head b{font:700 1.5rem/1 var(--display);letter-spacing:.03em;text-transform:uppercase}
 .tm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 18px;padding:14px 16px 6px}
@@ -259,12 +261,12 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 
 /* ───── Pick Team page: sweater banner, then every team as a card with its sweater ───── */
 .teamspage .wrap{max-width:1040px}
-.teams-banner{position:relative;margin-top:4px;padding:18px 20px 30px 44px;background:var(--navy);color:var(--wool);border-radius:8px;overflow:hidden}
-[data-scheme="dark"] .teams-banner{background:#14203A;box-shadow:0 0 0 2px var(--ink)}
+.teams-banner{position:relative;margin-top:4px;padding:18px 20px 30px 44px;background:var(--banner);color:var(--wool);border-radius:8px;overflow:hidden}
+[data-scheme="dark"] .teams-banner{background:var(--banner-road);box-shadow:0 0 0 2px var(--ink)}
 .teams-banner::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
-  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 10px,transparent 10px 14px,var(--sleeve-b) 14px 19px,transparent 19px)}
 .teams-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;
-  background:linear-gradient(to bottom,#E8463F 0 5px,transparent 5px 8px,var(--wool) 8px 14px)}
+  background:linear-gradient(to bottom,var(--sleeve-a) 0 5px,transparent 5px 8px,var(--sleeve-b) 8px 14px)}
 .tb-kicker{font:600 .75rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
 .teams-banner h1{font:700 clamp(2.2rem,6.5vw,3.2rem)/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:4px 0 0}
 .teams-banner p{font:italic .95rem var(--serif);color:#C9D0DC;margin:8px 0 0}
@@ -313,7 +315,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .cta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 /* Home account box: "Current Picks" label, and Continue at the bottom */
 .acct-label{font:600 .75rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
-.promo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:36px;padding:16px 20px;border-radius:8px;background:var(--navy);color:var(--wool);text-decoration:none;border-left:6px solid var(--goal);font:italic .95rem var(--serif)}
+.promo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:36px;padding:16px 20px;border-radius:8px;background:var(--banner);color:var(--wool);text-decoration:none;border-left:6px solid var(--goal);font:italic .95rem var(--serif)}
 [data-scheme="dark"] .promo{background:var(--board)}
 .promo b{font:600 1.3rem "Oswald",sans-serif;font-style:normal;letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
 .promo:hover{filter:brightness(1.15)}
@@ -389,7 +391,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 @media (max-width:560px){
   /* navy bar on the home sweater, wool bar on the road sweater */
   .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);
-    background:var(--navy);border-top:3px solid var(--hem-a);padding:4px 2px calc(4px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(0,0,0,.12)}
+    background:var(--banner);border-top:3px solid var(--hem-a);padding:4px 2px calc(4px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(0,0,0,.12)}
   .tabbar a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:rgba(239,230,210,.75);text-decoration:none;font:500 .66rem var(--display);letter-spacing:.08em;text-transform:uppercase;border-radius:8px}
   .tabbar a > svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .tabbar a[aria-current="page"]{color:var(--gold)}
@@ -500,7 +502,7 @@ html.sheetpage[data-scheme="dark"]{--edge:var(--stripe)}
 .ptsbadge{justify-self:end;min-width:2.2rem;text-align:center;font:700 .8rem var(--display);padding:2px 6px;border-radius:3px}
 .ptsbadge:empty{visibility:hidden}
 .ptsbadge[data-p="2"]{background:var(--gold);color:#3A2A08}
-.ptsbadge[data-p="1"]{background:var(--navy);color:var(--wool)}
+.ptsbadge[data-p="1"]{background:var(--banner);color:var(--wool)}
 [data-scheme="dark"] .ptsbadge[data-p="1"]{background:var(--wool);color:var(--navy)}
 .ptsbadge[data-p="0"]{background:color-mix(in srgb, var(--ink) 10%, transparent);color:var(--muted)}
 
@@ -729,15 +731,15 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 
 /* ───── Profile page ───── */
 .profilepage .wrap{max-width:1040px}
-.pf-banner{margin-top:8px;background:var(--navy);color:var(--wool);border-radius:8px;overflow:hidden}
-[data-scheme="dark"] .pf-banner{background:#14203A}
+.pf-banner{margin-top:8px;background:var(--banner);color:var(--wool);border-radius:8px;overflow:hidden}
+[data-scheme="dark"] .pf-banner{background:var(--banner-road)}
 .pf-banner-in{display:flex;gap:18px;align-items:center;padding:18px 20px;flex-wrap:wrap}
 .pf-avatar{flex:none;display:flex}
 .pf-avatar .avatar:not(.avatar-sweater):not(.avatar-photo),.av-preview .avatar:not(.avatar-sweater):not(.avatar-photo){
   font:400 calc(var(--av-size) * .62)/1 "Yellowtail",cursive;text-transform:none}
 .pf-name{font:clamp(2.2rem,6vw,3rem)/1.1 "Yellowtail",cursive;color:var(--wool);word-break:break-word}
 .pf-est{font:600 .8rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:#B8C0CF;margin-top:6px}
-.pf-banner::after{content:"";display:block;height:14px;background:linear-gradient(to bottom,#E8463F 0 5px,transparent 5px 9px,var(--wool) 9px 14px)}
+.pf-banner::after{content:"";display:block;height:14px;background:linear-gradient(to bottom,var(--sleeve-a) 0 5px,transparent 5px 9px,var(--sleeve-b) 9px 14px)}
 /* One column; Settings (closed until opened from the banner) sits first, just under the banner */
 .pf-grid{display:flex;flex-direction:column;gap:18px;margin-top:18px}
 .pf-grid > *{min-width:0}
@@ -857,12 +859,12 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .acct-card{padding:0 0 20px;overflow:hidden}
 .acct-card > :not(.acct-banner){margin-left:20px;margin-right:20px}
 .acct-card > :not(.acct-banner):not(.hidden){margin-top:16px}
-.acct-banner{position:relative;display:flex;align-items:center;gap:14px;min-height:92px;padding:16px 18px 26px 40px;background:var(--navy);color:var(--wool)}
-[data-scheme="dark"] .acct-banner{background:#14203A}
+.acct-banner{position:relative;display:flex;align-items:center;gap:14px;min-height:92px;padding:16px 18px 26px 40px;background:var(--banner);color:var(--wool)}
+[data-scheme="dark"] .acct-banner{background:var(--banner-road)}
 .acct-banner::before{content:"";position:absolute;left:0;top:0;bottom:12px;width:24px;
-  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 10px,transparent 10px 14px,var(--sleeve-b) 14px 19px,transparent 19px)}
 .acct-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;
-  background:linear-gradient(to bottom,#E8463F 0 4px,transparent 4px 7px,var(--wool) 7px 12px)}
+  background:linear-gradient(to bottom,var(--sleeve-a) 0 4px,transparent 4px 7px,var(--sleeve-b) 7px 12px)}
 .acct-face{display:flex;flex:none}
 .acct-face .avatar:not(.avatar-sweater):not(.avatar-photo){font:400 calc(var(--av-size) * .62)/1 "Yellowtail",cursive;text-transform:none}
 .acct-head{display:grid;min-width:0}
@@ -899,9 +901,9 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .reach-tile b{font:600 .72rem/1.15 var(--display);letter-spacing:.08em;text-transform:uppercase}
 .reach-tile .bprog-bar{width:80%;height:6px;margin-top:auto}
 /* Upcoming Picks: a navy day header with a red-and-cream hem above each day's games */
-.upday{position:relative;padding:8px 14px 13px;background:var(--navy);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
-[data-scheme="dark"] .upday{background:#14203A}
-.upday::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+.upday{position:relative;padding:8px 14px 13px;background:var(--banner);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+[data-scheme="dark"] .upday{background:var(--banner-road)}
+.upday::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,var(--sleeve-a) 0 2.5px,transparent 2.5px 3.5px,var(--sleeve-b) 3.5px 6px)}
 .uprows .upgame .gdate b{font:600 .95rem var(--display);letter-spacing:.02em}
 @media (max-width:760px){ .uprows .upgame .gdate b{font:italic .78rem var(--serif);letter-spacing:0} }
 /* ───── Leaderboard banner: the pick sheet's sweater banner, keeping the script headline ───── */
@@ -916,22 +918,22 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .rulespage .points-strip div{background:var(--panel);border:2px solid var(--ink);border-radius:8px;padding:12px 14px;color:var(--ink)}
 .rulespage .points-strip span{display:grid;font:600 .95rem var(--display);letter-spacing:.06em;text-transform:uppercase;line-height:1.2}
 .rulespage .points-strip small{font:italic .8rem var(--serif);letter-spacing:0;text-transform:none;color:var(--muted);margin-top:2px}
-.medal{flex:none;display:grid;place-items:center;width:3.2rem;height:3.2rem;border-radius:50%;background:var(--navy);color:var(--wool)!important;
+.medal{flex:none;display:grid;place-items:center;width:3.2rem;height:3.2rem;border-radius:50%;background:var(--banner);color:var(--wool)!important;
   font:700 1.35rem var(--display)!important;outline:1.5px dashed rgba(255,255,255,.75);outline-offset:-5px}
 .medal.red{background:#9B1C1F} .medal.gold{background:#C08A2A;color:#2A1C02!important}
 .rulespage .basics{counter-reset:rule}
 .rulespage .basics li{position:relative;counter-increment:rule;padding:12px 14px 12px 60px;border:2px solid var(--ink);border-radius:8px}
 .rulespage .basics li::before{content:counter(rule);position:absolute;left:12px;top:10px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
-  background:var(--navy);color:var(--wool);font:700 1rem var(--display);outline:1.2px dashed rgba(255,255,255,.75);outline-offset:-4px}
-[data-scheme="dark"] .rulespage .basics li::before,[data-scheme="dark"] .medal:not(.red):not(.gold){background:#14203A;box-shadow:0 0 0 1.5px var(--wool)}
+  background:var(--banner);color:var(--wool);font:700 1rem var(--display);outline:1.2px dashed rgba(255,255,255,.75);outline-offset:-4px}
+[data-scheme="dark"] .rulespage .basics li::before,[data-scheme="dark"] .medal:not(.red):not(.gold){background:var(--banner-road);box-shadow:0 0 0 1.5px var(--wool)}
 .rulespage details{border:2px solid var(--ink);border-radius:8px;overflow:hidden}
 .rulespage summary{font:600 1rem var(--display);letter-spacing:.08em;text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .rulespage summary::-webkit-details-marker{display:none}
 .rulespage summary::after{content:"+";font:700 1.3rem/1 var(--display)}
-.rulespage details[open] > summary{position:relative;background:var(--navy);color:var(--wool);border-bottom:0;padding-bottom:18px}
-[data-scheme="dark"] .rulespage details[open] > summary{background:#14203A}
+.rulespage details[open] > summary{position:relative;background:var(--banner);color:var(--wool);border-bottom:0;padding-bottom:18px}
+[data-scheme="dark"] .rulespage details[open] > summary{background:var(--banner-road)}
 .rulespage details[open] > summary::after{content:"–"}
-.rulespage details[open] > summary::before{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+.rulespage details[open] > summary::before{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,var(--sleeve-a) 0 2.5px,transparent 2.5px 3.5px,var(--sleeve-b) 3.5px 6px)}
 .rulespage #faq summary{font-size:.9rem;letter-spacing:.04em}
 /* ───── Sharing: Share buttons, Invite friends, and the share box for browsers without a share sheet ───── */
 .sharebtn{display:inline-flex;align-items:center;gap:6px}
@@ -1002,9 +1004,9 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 }
 .sharesheet{width:min(520px,calc(100% - 32px));padding:0;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);box-shadow:0 18px 44px rgba(0,0,0,.35)}
 .sharesheet::backdrop{background:rgba(15,24,40,.55)}
-.ss-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--navy);color:var(--wool);
+.ss-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--banner);color:var(--wool);
   font:600 .9rem var(--display);letter-spacing:.16em;text-transform:uppercase}
-.ss-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:linear-gradient(to bottom,#E8463F 0 3px,transparent 3px 4px,var(--wool) 4px 7px)}
+.ss-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:linear-gradient(to bottom,var(--sleeve-a) 0 3px,transparent 3px 4px,var(--sleeve-b) 4px 7px)}
 .ss-x{border:0;background:transparent;color:var(--wool);font:600 1.5rem/1 var(--display);cursor:pointer;padding:0 4px}
 .ss-body{padding:14px}
 .ss-body img{display:block;width:100%;border-radius:6px;border:1px solid var(--line)}
@@ -1047,10 +1049,10 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .bfilter button{border:0;background:transparent;color:var(--ink);font:600 .78rem var(--display);letter-spacing:.12em;text-transform:uppercase;padding:5px 14px;border-radius:999px;cursor:pointer}
 .bfilter button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink)}
 .bgroup{margin-top:18px;background:var(--panel);border:2px solid var(--ink);border-radius:8px;overflow:hidden}
-.bgroup-head{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0;padding:9px 14px 15px;background:var(--navy);color:var(--wool);
+.bgroup-head{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0;padding:9px 14px 15px;background:var(--banner);color:var(--wool);
   font:600 .9rem var(--display);letter-spacing:.14em;text-transform:uppercase}
-[data-scheme="dark"] .bgroup-head{background:#14203A}
-.bgroup-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+[data-scheme="dark"] .bgroup-head{background:var(--banner-road)}
+.bgroup-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,var(--sleeve-a) 0 2.5px,transparent 2.5px 3.5px,var(--sleeve-b) 3.5px 6px)}
 .bgroup-head small{font:italic .82rem var(--serif);letter-spacing:0;text-transform:none;color:var(--gold)}
 .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:4px;padding:10px 8px}
 .btile{display:grid;justify-items:center;align-content:start;gap:6px;padding:10px 6px;border:0;border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;text-align:center}
@@ -1064,9 +1066,9 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .btile-bar i{display:block;height:100%;background:var(--bp);border-radius:inherit}
 .bdlg{width:min(400px,calc(100% - 32px));padding:0;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);box-shadow:0 18px 44px rgba(0,0,0,.35)}
 .bdlg::backdrop{background:rgba(15,24,40,.55)}
-.bdlg-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--navy);color:var(--wool);
+.bdlg-head{position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 14px 16px;background:var(--banner);color:var(--wool);
   font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
-.bdlg-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:linear-gradient(to bottom,#E8463F 0 3px,transparent 3px 4px,var(--wool) 4px 7px)}
+.bdlg-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:linear-gradient(to bottom,var(--sleeve-a) 0 3px,transparent 3px 4px,var(--sleeve-b) 4px 7px)}
 .bdlg-body{display:grid;justify-items:center;gap:6px;padding:18px 20px 20px;text-align:center}
 .bdlg-body h3{margin:6px 0 0;font:700 1.5rem var(--display);letter-spacing:.04em;text-transform:uppercase}
 .bdlg-state{font:600 .72rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -1088,13 +1090,13 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .bk-banner{margin-top:4px}
 .bk-banner p b{color:var(--wool);font-style:normal}
 .bk-card{margin-top:18px;background:var(--panel);border:2px solid var(--ink);border-radius:8px;overflow:hidden}
-.bk-head{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0;padding:9px 14px 15px;background:var(--navy);color:var(--wool);
+.bk-head{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0;padding:9px 14px 15px;background:var(--banner);color:var(--wool);
   font:600 1rem var(--display);letter-spacing:.16em;text-transform:uppercase}
-[data-scheme="dark"] .bk-head{background:#14203A}
-.bk-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,#E8463F 0 2.5px,transparent 2.5px 3.5px,var(--wool) 3.5px 6px)}
+[data-scheme="dark"] .bk-head{background:var(--banner-road)}
+.bk-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,var(--sleeve-a) 0 2.5px,transparent 2.5px 3.5px,var(--sleeve-b) 3.5px 6px)}
 .bk-head small{font:italic .9rem var(--serif);letter-spacing:0;text-transform:none;color:var(--gold)}
 .bk-head small b{font:600 1.05rem var(--display);color:var(--wool);font-style:normal}
-.bk-card .rinkwrap{border:0;border-radius:0;background:var(--navy)}
+.bk-card .rinkwrap{border:0;border-radius:0;background:var(--banner)}
 .bk-card .runbar{padding:10px 14px 12px;margin-top:0}
 .bk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;margin-top:14px;align-items:start}
 .bk-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
@@ -1118,7 +1120,7 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
    Est. date; Invite on the right; the teams as felt pills under a stitched divider */
 .pf-banner{position:relative}
 .pf-banner::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
-  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 10px,transparent 10px 14px,var(--sleeve-b) 14px 19px,transparent 19px)}
 .pf-banner-in{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:0 18px;padding:18px 20px 16px 44px}
 .pf-who{min-width:0}
 .pf-kicker{display:block;margin-bottom:2px}
@@ -1240,11 +1242,11 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .shop-need{font:italic .8rem var(--serif);color:var(--muted)}
 /* ───── Locker Room: you, your Chiclets, the shop, your gear, your badges ───── */
 .lr-banner{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 18px;margin-top:4px;
-  padding:18px 20px 30px 44px;background:var(--navy);color:var(--wool);border-radius:8px;overflow:hidden}
-[data-scheme="dark"] .lr-banner{background:#14203A}
+  padding:18px 20px 30px 44px;background:var(--banner);color:var(--wool);border-radius:8px;overflow:hidden}
+[data-scheme="dark"] .lr-banner{background:var(--banner-road)}
 .lr-banner::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
-  background:linear-gradient(to right,transparent 0 5px,#E8463F 5px 10px,transparent 10px 14px,var(--wool) 14px 19px,transparent 19px)}
-.lr-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;background:linear-gradient(to bottom,#E8463F 0 5px,transparent 5px 9px,var(--wool) 9px 14px)}
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 10px,transparent 10px 14px,var(--sleeve-b) 14px 19px,transparent 19px)}
+.lr-banner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;background:linear-gradient(to bottom,var(--sleeve-a) 0 5px,transparent 5px 9px,var(--sleeve-b) 9px 14px)}
 .lr-face{display:flex}
 .lr-who{min-width:0}
 .lr-name{margin:0;font:clamp(2rem,6vw,2.8rem)/1.1 "Yellowtail",cursive;color:var(--wool);overflow-wrap:anywhere;padding-right:.25em}
@@ -1294,7 +1296,7 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .buy-preview{display:grid;place-items:center;margin:4px 0 6px}
 .buy-left{display:block;margin:-6px 0 14px;font:italic .85rem var(--serif);color:var(--muted)}
 .shop-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;max-width:calc(100% - 32px);
-  padding:10px 18px;border-radius:999px;background:var(--navy);color:var(--wool);border:1px solid rgba(239,230,210,.3);font:600 .85rem "Barlow",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  padding:10px 18px;border-radius:999px;background:var(--banner);color:var(--wool);border:1px solid rgba(239,230,210,.3);font:600 .85rem "Barlow",sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .shop-toast.is-bad{background:#7E1518}
 .ch-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;padding:14px}
 .ch-rule{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:baseline;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
@@ -1315,3 +1317,163 @@ button.invite-patch:hover{background:#E8463F;border-color:transparent;color:#FBF
 .st-head span:nth-child(n+3){text-align:right}
 .st-empty{margin:0;padding:14px}
 .st-moreb{display:flex;margin:12px auto}
+
+/* ───────── Playoff mode (html.playoffs, set by playoffOn() in teams.js): silver, black and gold ───────── */
+:root{--cup:#C9CED4; --cup-dark:#8E979F; --ice:#10151F}
+:root[data-scheme="dark"]{--ice:#0A0E16}
+html.playoffs{--btn:var(--ice); --btn-ink:var(--cup); --goal:var(--gold); --logo-ink:#1A2130; --logo-tape:var(--gold); --logo-wrap:var(--cup);
+  --logo-wood:#9AA2AB; --logo-grain:#6B737C;   /* a silver stick (deeper silver so it shows on cream; bright silver in dark mode) */
+  --banner:var(--ice); --banner-road:var(--ice); --sleeve-a:var(--cup); --sleeve-b:var(--gold)}   /* every banner: black with silver and gold stripes */
+html.playoffs .ticker{background:var(--ice)}
+html.playoffs .medal.red{background:var(--cup-dark)}
+html.playoffs[data-scheme="dark"] .tabbar a[aria-current="page"],html.playoffs[data-scheme="dark"] .tabbar a[aria-current="page"] > svg{color:var(--gold);stroke:var(--gold)}
+html.playoffs .invite-patch{background:var(--gold);color:var(--ice);outline-color:rgba(16,21,31,.6)} html.playoffs button.invite-patch:hover{background:#E8B44A;color:var(--ice);outline-color:var(--ice)}
+html.playoffs[data-scheme="dark"]{--goal:var(--gold); --btn:var(--cup); --btn-ink:var(--ice); --logo-ink:var(--cup); --logo-wrap:var(--ice); --logo-wood:var(--gold); --logo-grain:#A87A22; --logo-tape:var(--cup);   /* dark: gold stick, silver tape */
+  --board:#0E1219; --brand:#2A2F38; --bg:#151A22; --panel:#1F2530; --line:#343B47}   /* charcoal instead of navy */
+html.playoffs .hem{background:linear-gradient(to bottom,var(--cup) 0 10px,transparent 10px 15px,var(--gold) 15px 19px,transparent 19px 24px,var(--cup-dark) 24px 32px,transparent 32px 34px,var(--cup) 34px 38px)}
+html.playoffs .hem-top{background:linear-gradient(to bottom,var(--cup) 0 6px,transparent 6px 9px,var(--gold) 9px 12px,transparent 12px 13px,var(--cup-dark) 13px 16px)}
+html.playoffs .acct-banner{background:var(--ice)}
+html.playoffs .acct-banner::before{background:linear-gradient(to right,transparent 0 5px,var(--cup) 5px 10px,transparent 10px 13px,var(--gold) 13px 16px,transparent 16px 19px,var(--cup) 19px 24px)}
+html.playoffs .acct-banner::after{background:linear-gradient(to bottom,var(--cup) 0 4px,transparent 4px 6px,var(--gold) 6px 8px,transparent 8px 9px,var(--cup) 9px 12px)}
+html.playoffs .acct-kicker{color:var(--gold)}
+html.playoffs .promo{background:var(--ice);border-left-color:var(--gold)}
+/* the top bar's Playoff Sheet button, where Pick Team is the rest of the year */
+.topnav .po-sheetbtn{color:var(--btn-ink)}
+.po-sheetbtn{text-decoration:none;background:linear-gradient(to right,transparent 0 5px,var(--cup) 5px 9px,transparent 9px 12px,var(--gold) 12px 15px,transparent 15px),var(--btn)}
+.po-sheetbtn::after{display:none}
+
+/* Home: the Regular season | Playoffs switch (countdown week only) */
+.modeswitch{display:flex;justify-content:center;margin:2px 0 16px}
+.modeswitch .seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;padding:3px;background:var(--panel)}
+.modeswitch button{border:0;background:transparent;color:var(--ink);font:600 .85rem var(--display);letter-spacing:.12em;text-transform:uppercase;padding:7px 18px;border-radius:999px;cursor:pointer}
+.modeswitch button[aria-pressed="true"]{background:var(--ice);color:var(--cup)}
+.modeswitch button .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--alarm);margin-right:7px;vertical-align:1px}
+.modeswitch button:focus-visible{outline:3px solid var(--alarm);outline-offset:2px}
+
+/* Home: the playoff banner */
+.po-hero{position:relative;background:var(--ice);color:#F3F5F7;border-radius:8px;overflow:hidden;padding:18px 18px 34px 44px;margin-bottom:22px}
+.po-hero::before{content:"";position:absolute;left:0;top:0;bottom:14px;width:26px;
+  background:linear-gradient(to right,var(--cup) 0 7px,transparent 7px 11px,var(--gold) 11px 15px,transparent 15px 19px,var(--cup) 19px 26px)}
+.po-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;
+  background:linear-gradient(to bottom,var(--cup) 0 5px,transparent 5px 8px,var(--gold) 8px 10px,transparent 10px 12px,var(--cup) 12px 14px)}
+.po-kicker{font:600 .72rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.po-title{font:700 clamp(1.7rem,5vw,2.4rem)/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:4px 0 2px;color:var(--cup)}
+.po-sub{font:italic .9rem var(--serif);color:#C3C9D2;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.po-cup{position:absolute;right:18px;top:12px;width:64px;height:94px}
+.po-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;max-width:520px}
+.po-stat{display:block;text-decoration:none;color:inherit;border:1.5px solid color-mix(in srgb,var(--cup) 40%,transparent);border-radius:8px;padding:10px 12px;
+  background:color-mix(in srgb,var(--cup) 7%,transparent);transition:background-color .15s,border-color .15s}
+.po-stat:hover,.po-stat:focus-visible,.po-stat:active{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,transparent);outline:none}
+.po-stat small{display:block;font:600 .68rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--cup-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.po-stat b{display:flex;justify-content:space-between;align-items:baseline;gap:6px;white-space:nowrap;font:700 1.35rem var(--display);color:#fff;margin-top:2px}
+.po-stat .go{font:600 .7rem var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+.po-stat > span:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:italic .8rem var(--serif);color:#C3C9D2}
+.countdown{display:inline-block;margin-right:6px;font:normal 600 .68rem/1.35 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--ice);background:var(--gold);padding:1px 8px;border-radius:999px;vertical-align:1px}
+/* a playoff game card: the series line under the score */
+.gcard .series{grid-column:1/-1;font:600 .7rem var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-top:1px dashed var(--line);padding-top:5px;margin-top:2px;display:flex;justify-content:space-between;gap:8px}
+.gcard .series .mine{color:var(--win)}
+
+/* Playoff sheet, bracket and boards: the sheet banner in playoff colours */
+.posheet{--board:var(--ice); --board-ink:#F3F5F7; --title:var(--cup); --stripe:var(--cup); --brand:var(--gold)}
+.posheet .sheethead::before{background:linear-gradient(to right,var(--cup) 0 7px,transparent 7px 11px,var(--gold) 11px 15px,transparent 15px 19px,var(--cup) 19px 26px)}
+.posheet .sh-rec small{font:italic .85rem var(--serif);opacity:.8}
+.po-note{font:italic .9rem var(--serif);color:var(--muted);margin:10px 0 0}
+.po-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
+.po-tabs a,.po-tabs button{border:2px solid var(--ink);background:var(--panel);color:var(--ink);font:600 .72rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:999px;cursor:pointer;text-decoration:none}
+.po-tabs [aria-current="page"],.po-tabs [aria-pressed="true"]{background:var(--ice);color:var(--cup);border-color:var(--ice)}
+[data-scheme="dark"] .po-tabs [aria-current="page"],[data-scheme="dark"] .po-tabs [aria-pressed="true"]{background:var(--cup);color:var(--ice);border-color:var(--cup)}
+.round{margin-top:22px}
+.serieshead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 6px;padding:8px 10px;border-radius:6px;background:var(--panel);border:1px solid var(--line)}
+.serieshead .vs{font:italic .85rem var(--serif);color:var(--muted)}
+.serieshead b{font:600 1rem var(--display);text-transform:uppercase;letter-spacing:.03em}
+.serieshead .state{margin-left:auto;font:600 .72rem var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.serieshead .state.done{color:var(--win)}
+/* a playoff game row: pick the winner (team buttons) and the combined goals */
+.pgame{display:grid;grid-template-columns:96px 1fr auto auto 40px;align-items:center;gap:10px 12px;padding:10px 6px;border-bottom:1px solid var(--line)}
+.pgame .pg-date{text-align:left}
+.pgame .pg-date b{display:block;font:600 .9rem var(--display);text-transform:uppercase}
+.pgame .pg-date small{font:italic .78rem var(--serif);color:var(--muted)}
+.pgame .pg-name{font:600 .95rem var(--display);text-transform:uppercase;letter-spacing:.02em}
+.pgame .pg-name small{display:block;font:italic .78rem var(--serif);text-transform:none;letter-spacing:0;color:var(--muted)}
+.pgame .ptsbadge{justify-self:end}
+.wpick{display:inline-flex;justify-self:start;border:2px solid var(--ink);border-radius:6px;overflow:hidden}
+.wpick button{border:0;background:var(--panel);color:var(--muted);font:600 .85rem var(--display);letter-spacing:.06em;padding:8px 12px;min-width:58px;cursor:pointer}
+.wpick button+button{border-left:2px solid var(--ink)}
+.wpick button[aria-pressed="true"]{background:var(--t-board);color:var(--t-ink);box-shadow:inset 0 -4px 0 var(--t-stripe)}
+.wpick button:disabled{cursor:default}
+.wpick button:focus-visible{outline:3px solid var(--alarm);outline-offset:-3px}
+.pgame.locked .wpick button[aria-pressed="false"]{opacity:.45}
+.pgame.ifneeded{opacity:.55}
+.pgame.ifneeded .wpick,.pgame.ifneeded .goals{visibility:hidden}
+.pgame .note{grid-column:3/5;font:italic .82rem var(--serif);color:var(--muted)}
+@media (max-width:620px){
+  .pgame{grid-template-columns:1fr auto;grid-template-areas:"name pts" "date date" "pick goals";gap:6px 10px}
+  .pgame .pg-date{grid-area:date;display:flex;gap:6px;align-items:baseline}
+  .pgame .pg-date b{display:inline;font-size:.8rem;color:var(--muted)}
+  .pgame .pg-name{grid-area:name}.pgame .wpick{grid-area:pick}.pgame .goals{grid-area:goals;justify-self:end}.pgame .ptsbadge{grid-area:pts}
+  .pgame .note{grid-column:1/-1}
+}
+
+/* Bracket */
+.bk-rules{font:italic .88rem var(--serif);color:var(--muted);margin:10px 0 0}
+.bk-scroll{margin:14px 0 0}
+.bk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:stretch}
+.bk-col{display:flex;flex-direction:column;gap:8px;height:100%}
+.bk-stack{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:12px}
+.bk-col h3{font:600 .7rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 2px;text-align:center}
+.bk-final h3{color:var(--gold)}
+.bseries{border:1.5px solid var(--ink);border-radius:8px;background:var(--panel);overflow:hidden}
+.bseries .bt{display:flex;align-items:center;gap:7px;width:100%;border:0;background:transparent;color:var(--ink);padding:7px 8px;font:500 .88rem "Barlow",sans-serif;text-align:left;cursor:pointer}
+.bseries .bt+.bt{border-top:1px solid var(--line)}
+.bseries .bt:disabled{cursor:default}
+.bseries .bt .seed{font:600 .72rem var(--display);color:var(--muted);min-width:12px}
+.bseries .bt .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bseries .bt .nm .full{display:none}
+.bseries .bt[aria-pressed="true"]{background:color-mix(in srgb,var(--t-board) 16%,transparent);font-weight:700}
+.bseries .bt[aria-pressed="true"]::after{content:"✓";font-weight:700;color:var(--win)}
+.bseries .bt.tbd{color:var(--muted);font-style:italic}
+.bseries .bt.out{opacity:.5;text-decoration:line-through}
+.bseries.right{border-color:var(--win);box-shadow:0 0 0 1px var(--win)}
+.bseries.wrong{border-color:var(--loss)}
+.bseries .len{display:flex;align-items:center;gap:4px;padding:6px 8px;border-top:1px dashed var(--line);font:600 .66rem var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.bseries .len button{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:4px;font:600 .78rem var(--display);width:24px;height:22px;padding:0;cursor:pointer}
+.bseries .len button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.bseries .len button:disabled{cursor:default}
+.bseries .len .pts{margin-left:auto;color:var(--win)}
+.bk-cup{text-align:center}
+.bk-cup svg{width:62px;height:91px}
+.bk-champ{margin-top:6px;border:2px solid var(--gold);border-radius:8px;padding:8px;text-align:center;background:color-mix(in srgb,var(--gold) 10%,var(--panel))}
+.bk-champ small{display:block;font:600 .66rem var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.bk-champ b{font:700 1.05rem var(--display);text-transform:uppercase}
+.bk-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.bk-lock{font:italic .85rem var(--serif);color:var(--muted)}
+.bk-rounds{display:none}
+@media (min-width:1240px){
+  .bracketpage .bk-scroll{width:1180px;margin-left:calc((100% - 1180px) / 2)}
+  .bseries .bt .sw{display:none}
+  .bseries .bt{border-left:6px solid var(--t-board)}
+}
+@media (max-width:1239px){   /* phones and tablets: one round at a time, full team names */
+  .bk{display:block}
+  .bk-col{display:none;height:auto;margin-bottom:16px}
+  .bk[data-r="1"] .bk-col[data-r="1"],.bk[data-r="2"] .bk-col[data-r="2"],.bk[data-r="3"] .bk-col[data-r="3"],.bk[data-r="4"] .bk-col[data-r="4"]{display:flex}
+  .bk-col h3{text-align:left}
+  .bseries .bt .nm .full{display:inline}.bseries .bt .nm .short{display:none}
+  .bk-rounds{display:flex}
+}
+/* the playoff boards on the leaderboard page (?board=playoffs or bracket): silver stripes instead of brand red */
+html.lbpage.poboard,html.playoffs.lbpage.neutral{--lb-stripe:var(--cup)} html.lbpage.poboard[data-scheme="dark"],html.playoffs.lbpage.neutral[data-scheme="dark"]{--edge:var(--cup)}
+html.lbpage.poboard .lbhead,html.playoffs.lbpage.neutral .lbhead{--stripe:var(--cup)}
+.po-hero:not(.hidden) + .homegrid{padding-top:0}   /* home: the banner already leaves room above the grid */
+.signedin .po-hero:not(.hidden) + .homegrid #account{margin-top:0}
+@media (max-width:520px){ .po-stats{grid-template-columns:1fr} }   /* phones: one tile per row, so nothing gets cut off */
+.po-hero .po-title,.po-hero .po-sub{margin-right:72px}   /* keep clear of the trophy */
+@media (max-width:520px){ .po-hero .po-sub{white-space:normal} }
+/* the playoff boards (and All-Teams in playoff mode): silver and gold stripes and gold headings, like the other playoff banners */
+html.lbpage.poboard,html.playoffs.lbpage.neutral{--title:var(--gold)}
+:is(html.lbpage.poboard,html.playoffs.lbpage.neutral) .lbhead::before{background:linear-gradient(to right,var(--cup) 0 7px,transparent 7px 11px,var(--gold) 11px 15px,transparent 15px 19px,var(--cup) 19px 26px)}
+:is(html.lbpage.poboard,html.playoffs.lbpage.neutral) .lbhead .sh-hem i{background:linear-gradient(to bottom,var(--cup) 0 5px,transparent 5px 9px,var(--gold) 9px 14px)}
+:is(html.lbpage.poboard,html.playoffs.lbpage.neutral) .you::before{background:linear-gradient(to right,transparent 0 5px,var(--cup) 5px 10px,transparent 10px 14px,var(--gold) 14px 19px,transparent 19px)}
+:is(html.lbpage.poboard,html.playoffs.lbpage.neutral) .you::after{background:linear-gradient(to bottom,var(--cup) 0 4px,transparent 4px 6px,var(--gold) 6px 10px)}
+:is(html.lbpage.poboard,html.playoffs.lbpage.neutral) .lb th{background:linear-gradient(to bottom,var(--board) 0 calc(100% - 10px),var(--cup) calc(100% - 10px) calc(100% - 6px),var(--board) calc(100% - 6px) calc(100% - 4px),var(--gold) calc(100% - 4px))}
+:is(html.lbpage.poboard,html.playoffs.lbpage.neutral) .lb tr.me td:first-child{box-shadow:inset 5px 0 0 var(--gold)}
