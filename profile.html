@@ -467,7 +467,7 @@ document.querySelectorAll(".avseg button").forEach(b=>b.addEventListener("click"
 async function savePicture(fields){
   if(!username){ msg("avMsg","Choose a username first, then add your picture.","err"); return false; }
   const {error}=await sb.from("profiles").update(fields).eq("user_id",user.id);
-  if(error){ msg("avMsg", /avatar_|column/.test(error.message||"") ? "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : friendly(error), "err"); return false; }
+  if(error){ msg("avMsg", /avatar_|column/.test(error.message||"") ? "Couldn’t save your picture right now. Please try again later." : friendly(error), "err"); return false; }
   avatar=avatarFromProfile(fields); showAvatar(); return true;
 }
 const removePhotoFile = () => sb.storage.from("avatars").remove([AV_PATH()]).catch(()=>{});
@@ -513,7 +513,7 @@ $("avFile").addEventListener("change", async e=>{
     pv.className="avatar avatar-photo"; pv.replaceChildren(img); $("avPreview").replaceChildren(pv);
     msg("avMsg","Uploading…");
     const {error:upErr}=await sb.storage.from("avatars").upload(AV_PATH(), blob, {upsert:true, contentType:blob.type, cacheControl:"3600"});
-    if(upErr) throw new Error(/bucket|not found/i.test(upErr.message||"") ? "Photo storage isn’t set up yet. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : friendly(upErr));
+    if(upErr) throw new Error(/bucket|not found/i.test(upErr.message||"") ? "Photo uploads aren’t working right now. Please try again later." : friendly(upErr));
     const url=sb.storage.from("avatars").getPublicUrl(AV_PATH()).data.publicUrl+"?v="+Date.now();
     if(await savePicture({avatar_kind:"photo", avatar_team:null, avatar_number:null, avatar_url:url})){ showPreview(avatar); msg("avMsg","Photo saved.","ok"); }
   }catch(err){ msg("avMsg",err.message||"Couldn’t upload that photo.","err"); showPreview(avatar?.kind==="photo"?avatar:null); }
@@ -597,7 +597,7 @@ $("remToggle").addEventListener("click", async ()=>{
   btn.disabled=false;
   if(err==="dismissed") return msg("remMsg","No problem. Tap Turn on whenever you’re ready, then choose Allow.");
   await showReminders();
-  if(err && !["blocked","ios-install","unsupported"].includes(err)) msg("remMsg", /function|does not exist/.test(err) ? "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again." : "Couldn’t turn on reminders: "+err, "err");
+  if(err && !["blocked","ios-install","unsupported"].includes(err)) msg("remMsg", /function|does not exist/.test(err) ? "Reminders aren’t available right now. Please try again later." : "Couldn’t turn on reminders: "+err, "err");
 });
 
 $("signOut").addEventListener("click", async ()=>{ await disableReminders(sb).catch(()=>{}); await sb.auth.signOut(); forgetMe(); location.href="index.html"; });
