@@ -20,6 +20,10 @@
   const START_SPEED=380, MAX_SPEED=950, ACCEL=9;  // px per second (and per second²); score adds speed/38 a second
   const STAND_H=56, DUCK_H=34, PLAYER_X=64;
   const C={navy:"#1C2B45", navy2:"#14203A", red:"#9B1C1F", red2:"#E8463F", wool:"#EFE6D2", gold:"#D9A33A", wood:"#B98245", ice:"#F4F8FA"};
+  // The start/game-over cards and the scoreboard trim: navy, red and cream, or black, silver and gold in playoff mode
+  // (html.playoffs, see playoffOn() in teams.js). The rink itself keeps its red lines.
+  const TRIM={panel:C.navy, s1:C.red2, s2:C.wool, tag:C.red}, PO_TRIM={panel:"#10151F", s1:"#C9CED4", s2:"#D9A33A", tag:"#8E979F"};
+  const trim=()=>document.documentElement.classList.contains("playoffs") ? PO_TRIM : TRIM;
 
   let W=600, dpr=1;
   const touch=window.matchMedia?.("(pointer:coarse)").matches;
@@ -330,20 +334,20 @@
     const bw=184, bx=W-bw-10, by=8;                    // up in the stands, like the arena scoreboard, clear of the ice
     ctx.fillStyle="#0F1828"; roundRect(bx,by,bw,24,4); ctx.fill();
     ctx.strokeStyle="rgba(217,163,58,.7)"; ctx.lineWidth=1; roundRect(bx+.5,by+.5,bw-1,23,4); ctx.stroke();
-    ctx.fillStyle=C.red2; ctx.fillRect(bx,by+21,bw,1.5);
+    ctx.fillStyle=trim().s1; ctx.fillRect(bx,by+21,bw,1.5);
     ctx.textBaseline="middle"; ctx.textAlign="left";
-    ctx.fillStyle=C.red; roundRect(bx+4,by+4,28,14,2); ctx.fill();
+    ctx.fillStyle=trim().tag; roundRect(bx+4,by+4,28,14,2); ctx.fill();
     ctx.font='700 9.5px "Oswald", system-ui, sans-serif'; ctx.fillStyle=C.wool; ctx.textAlign="center"; ctx.fillText(PERIODS[per].name, bx+18, by+11.5);
     ctx.textAlign="left";
     ctx.font='600 9px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.65)"; ctx.fillText("HI", bx+40, by+11.5);
     ctx.font='600 13px "Oswald", system-ui, sans-serif'; ctx.fillStyle="rgba(239,230,210,.8)"; ctx.fillText(String(hi).padStart(5,"0"), bx+54, by+11.5);
-    ctx.textAlign="right"; ctx.font='700 16px "Oswald", system-ui, sans-serif'; ctx.fillStyle=flashing?C.red2:C.gold; ctx.fillText(s, bx+bw-8, by+11.5);
+    ctx.textAlign="right"; ctx.font='700 16px "Oswald", system-ui, sans-serif'; ctx.fillStyle=flashing?trim().s1:C.gold; ctx.fillText(s, bx+bw-8, by+11.5);
     if(state==="running" && callout.text && t<callout.until){
       const fade=Math.min(1,(callout.until-t)/0.4);
       ctx.save(); ctx.globalAlpha=fade;
       const cw=150, cx=(W-cw)/2, cy=34;                // in the stands, so it never hides what's coming
-      ctx.fillStyle=C.navy; roundRect(cx,cy,cw,26,4); ctx.fill();
-      ctx.fillStyle=C.red2; ctx.fillRect(cx,cy+22,cw,2); ctx.fillStyle=C.wool; ctx.fillRect(cx,cy+24.5,cw,1.5);
+      const tr=trim(); ctx.fillStyle=tr.panel; roundRect(cx,cy,cw,26,4); ctx.fill();
+      ctx.fillStyle=tr.s1; ctx.fillRect(cx,cy+22,cw,2); ctx.fillStyle=tr.s2; ctx.fillRect(cx,cy+24.5,cw,1.5);
       ctx.fillStyle=C.gold; ctx.font='700 14px "Oswald", system-ui, sans-serif'; ctx.textAlign="center";
       if("letterSpacing" in ctx) ctx.letterSpacing="3px";
       ctx.fillText(callout.text, W/2, cy+12);
@@ -356,14 +360,15 @@
   function overlay(){
     ctx.fillStyle="rgba(14,22,40,.55)"; ctx.fillRect(0,0,W,H);
     const pw=Math.min(W-24,420), ph=state==="ready"?132:150, px=(W-pw)/2, py=(H-ph)/2;
-    ctx.fillStyle=C.navy; roundRect(px,py,pw,ph,8); ctx.fill();
+    const tr=trim();
+    ctx.fillStyle=tr.panel; roundRect(px,py,pw,ph,8); ctx.fill();
     ctx.save(); roundRect(px,py,pw,ph,8); ctx.clip();
-    ctx.fillStyle=C.red2; ctx.fillRect(px+5,py,5,ph-12); ctx.fillStyle=C.wool; ctx.fillRect(px+14,py,5,ph-12);
-    ctx.fillStyle=C.red2; ctx.fillRect(px,py+ph-12,pw,4); ctx.fillStyle=C.wool; ctx.fillRect(px,py+ph-5,pw,5);
+    ctx.fillStyle=tr.s1; ctx.fillRect(px+5,py,5,ph-12); ctx.fillStyle=tr.s2; ctx.fillRect(px+14,py,5,ph-12);
+    ctx.fillStyle=tr.s1; ctx.fillRect(px,py+ph-12,pw,4); ctx.fillStyle=tr.s2; ctx.fillRect(px,py+ph-5,pw,5);
     ctx.restore();
     const cx=px+pw/2+8; ctx.textAlign="center"; ctx.textBaseline="middle";
     if(state==="ready"){
-      ctx.fillStyle=C.red2; ctx.font='22px "Yellowtail", cursive'; ctx.fillText("stickpicks", cx, py+24);
+      ctx.fillStyle=tr.s1; ctx.font='22px "Yellowtail", cursive'; ctx.fillText("stickpicks", cx, py+24);
       ctx.fillStyle=C.wool; ctx.font='700 30px "Oswald", system-ui, sans-serif'; ctx.fillText("BREAKAWAY", cx, py+54);
       ctx.fillStyle=C.gold; ctx.font='600 12px "Oswald", system-ui, sans-serif';
       ctx.fillText((touch?"TAP TO START":"TAP OR PRESS SPACE TO START"), cx, py+82);

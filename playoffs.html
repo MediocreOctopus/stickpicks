@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" class="home sheetpage posheet">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Playoff Sheet · stickpicks</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Free NHL playoff prediction game. Pick the winner and the combined goals for every playoff game.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="stickpicks · NHL Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
+<link rel="stylesheet" href="styles.css?v=__V__">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="leaderboard.html?board=playoffs" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
+    </div>
+  </nav>
+
+  <!-- The playoff sheet: one per player, every playoff game. Pick the winner and the combined goals. -->
+  <header class="sheethead" aria-live="polite">
+    <div class="sh-in">
+      <div class="sh-main">
+        <div class="sh-kicker" id="kicker">Playoffs · pick sheet</div>
+        <h1 class="sh-team" id="title">Playoff Sheet</h1>
+        <div class="sh-chips">
+          <span class="sh-chip" id="picked">0 picked</span>
+          <span class="sh-chip" id="scorechip">Score 0 pts</span>
+          <span class="sh-chip hidden" id="rankchip"></span>
+          <span class="sh-chip save hidden" id="savestate" data-s="ok">Saved</span>
+        </div>
+      </div>
+      <div class="sh-rec"><div class="rec" id="bigpts">0</div><small>playoff points</small></div>
+    </div>
+    <div class="sh-hem" aria-hidden="true"><i id="bar"></i></div>
+  </header>
+
+  <nav class="po-tabs" aria-label="Playoffs">
+    <a href="playoffs.html" aria-current="page" id="tabSheet">Playoff sheet</a>
+    <a href="bracket.html" id="tabBracket">Bracket</a>
+    <a href="leaderboard.html?board=playoffs">Playoff leaderboard</a>
+  </nav>
+
+  <!-- Signed out, no username, or viewing someone else's sheet -->
+  <p class="sh-strip hidden" id="strip"></p>
+
+  <p class="po-note">Pick the winner and the combined goals for every playoff game: 1 point each, locked at puck drop. There’s no OTL in the playoffs: an overtime loss is just a loss. <a href="rules.html#playoffs">Playoff rules</a></p>
+
+  <main id="sheet"></main>
+  <div class="empty hidden" id="empty"></div>
+
+  <footer>Fan-made, not affiliated with the NHL. Picks lock at puck drop. Start times can change and are shown in your time zone. <a href="rules.html#playoffs">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=__V__"></script>
+<script src="teams.js?v=__V__"></script>
+<script>
+const sb=makeClient(), $=id=>document.getElementById(id);
+const GOAL_MAX=20;
+mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
+// playoffs.html = your playoff sheet; playoffs.html?user=Name = another player's (picks hidden until puck drop)
+const VIEW_USER=(()=>{ const u=new URL(location.href).searchParams.get("user"); return u && USERNAME_RULE.test(u) ? u : null; })();
+let games=[], series={}, picks={}, userId=null, canPick=false;
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const dayOf=g=>{ const [y,m,d]=g.game_date.split("-").map(Number); return `${DAYS[new Date(y,m-1,d).getDay()]} ${MONTHS[m-1]} ${d}`; };
+const timeOf=g=>g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}) : "Time TBD";
+const byId=id=>games.find(g=>String(g.game_id)===String(id));
+const stateEl=$("savestate");
+function setState(s,t){ stateEl.classList.remove("hidden"); stateEl.dataset.s=s; stateEl.textContent=t; }
+function strip(text, link){ const s=$("strip"); s.replaceChildren(text); if(link){ const a=document.createElement("a"); a.href=link[1]; a.textContent=link[0]; s.append(" ",a); } s.classList.remove("hidden"); }
+function empty(text){ $("empty").textContent=text; $("empty").classList.remove("hidden"); }
+const sw=c=>{ const s=document.createElement("span"); s.className="sw"; s.textContent=c; teamStyle(s,c); return s; };
+const teamName=c=>TEAMS[c]?.name||c;
+
+async function start(){
+  $("kicker").textContent=`${SEASON_LABEL} playoffs · pick sheet`;
+  if(!sb) return empty("Can’t reach stickpicks right now. Check your connection and try again.");
+  const [{data:{session}}, gq, sq]=await Promise.all([
+    sb.auth.getSession(),
+    sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,ot_periods,playoff_round,series_letter,series_game")
+      .eq("season",SEASON).eq("game_type",3).order("game_date").order("start_utc"),
+    sb.from("playoff_series").select("*").eq("season",SEASON)
+  ]);
+  if(gq.error || sq.error) return empty("Couldn’t load the playoffs. Please try again in a moment.");
+  games=(gq.data||[]).filter(g=>g.schedule_state!=="NOTNEEDED");   // "if needed" games a series didn't need
+  series=Object.fromEntries((sq.data||[]).filter(s=>s.top_team||s.bottom_team).map(s=>[s.letter,s]));
+  if(!games.length && !Object.keys(series).length) return empty("The playoffs haven’t started yet. The playoff sheet opens once the first-round matchups are set.");
+
+  if(VIEW_USER){
+    $("title").textContent=`${VIEW_USER}’s Playoff Sheet`; document.title=`${VIEW_USER}’s playoff sheet · stickpicks`;
+    const {data,error}=await sb.rpc("playoff_sheet_picks",{p_username:VIEW_USER, p_season:SEASON});
+    if(error) return empty(`Couldn’t load ${VIEW_USER}’s picks. Please try again in a moment.`);
+    (data||[]).forEach(r=>picks[r.game_id]={winner:r.winner, goals:r.goals, hidden:!r.revealed});
+    strip(`You’re looking at ${VIEW_USER}’s picks. Picks are revealed at puck drop, so upcoming games show only whether a pick was made.`, ["Open my sheet","playoffs.html"]);
+  }else if(session){
+    userId=session.user.id;
+    const {data:prof}=await sb.from("profiles").select("username").eq("user_id",userId).maybeSingle();
+    if(!prof?.username) strip("Choose a username to make playoff picks and join the leaderboard.", ["Choose one","index.html#account"]);
+    else{
+      canPick=true;
+      const {data}=await sb.from("playoff_picks").select("game_id,winner,goals");
+      const ids=new Set(games.map(g=>String(g.game_id)));
+      (data||[]).filter(p=>ids.has(String(p.game_id))).forEach(p=>picks[p.game_id]={winner:p.winner, goals:p.goals});
+    }
+  }else strip("Sign in to make playoff picks.", ["Sign in","index.html#signin"]);
+  render(); refresh(); loadRank();
+}
+
+// Rounds, latest first; each round's series in letter order; each series' games in order
+function render(){
+  const root=$("sheet"); root.replaceChildren();
+  const rounds=[...new Set([...Object.values(series).map(s=>s.round), ...games.map(g=>g.playoff_round)].filter(Boolean))].sort((a,b)=>b-a);
+  rounds.forEach(r=>{
+    const sec=document.createElement("section"); sec.className="round month"; sec.dataset.round=r;
+    sec.innerHTML=`<div class="month-head"><h2></h2><span class="mrec"></span></div>`;
+    sec.querySelector("h2").textContent=roundName(r);
+    const letters=[...new Set([...Object.values(series).filter(s=>s.round===r).map(s=>s.letter), ...games.filter(g=>g.playoff_round===r).map(g=>g.series_letter)])].filter(Boolean).sort();
+    letters.forEach(L=>{
+      const s=series[L], sg=games.filter(g=>g.series_letter===L).sort((a,b)=>(a.series_game||0)-(b.series_game||0));
+      const a=s?.top_team||sg[0]?.home, b=s?.bottom_team||sg[0]?.away;
+      if(!a || !b) return;
+      const h=document.createElement("div"); h.className="serieshead";
+      const n1=document.createElement("b"); n1.textContent=teamName(a);
+      const vs=document.createElement("span"); vs.className="vs"; vs.textContent="vs";
+      const n2=document.createElement("b"); n2.textContent=teamName(b);
+      const st=document.createElement("span"); st.className="state"+(s?.winner?" done":""); st.textContent=s ? seriesText(s) : "";
+      h.append(sw(a),n1,vs,sw(b),n2,st); sec.append(h);
+      if(!sg.length){ const p=document.createElement("p"); p.className="hint"; p.textContent="Games appear here once they’re scheduled."; sec.append(p); }
+      sg.forEach(g=>sec.append(gameRow(g)));
+    });
+    root.append(sec);
+  });
+}
+
+function gameRow(g){
+  const row=document.createElement("div"); row.className="pgame"; row.dataset.id=g.game_id;
+  row.innerHTML=`<span class="pg-date"><b></b><small></small></span><span class="pg-name"><span class="gn"></span><small></small></span>
+    <span class="wpick" role="group"></span>
+    <span class="goals" role="group"><span class="glabel" aria-hidden="true">Goals</span>
+      <button type="button" class="gbtn" data-d="-1" aria-label="One fewer goal">−</button>
+      <input class="gin" type="text" inputmode="numeric" maxlength="2" placeholder="?" autocomplete="off">
+      <button type="button" class="gbtn" data-d="1" aria-label="One more goal">+</button></span>
+    <span class="ptsbadge"></span>`;
+  row.querySelector(".pg-date b").textContent=dayOf(g);
+  row.querySelector(".pg-date small").textContent=timeOf(g);
+  row.querySelector(".gn").textContent=g.series_game ? `Game ${g.series_game}` : "Game";
+  const wp=row.querySelector(".wpick"); wp.setAttribute("aria-label",`Winner, ${g.away} at ${g.home}`);
+  [g.away,g.home].forEach(c=>{ const bt=document.createElement("button"); bt.type="button"; bt.dataset.team=c; bt.textContent=c; teamStyle(bt,c); bt.setAttribute("aria-label",`${teamName(c)} win`); wp.append(bt); });
+  row.querySelector(".gin").setAttribute("aria-label",`Combined goals, ${g.away} at ${g.home}`);
+  if(!g.start_utc && !g.period_type){ row.classList.add("ifneeded"); const n=document.createElement("span"); n.className="note"; n.textContent="If needed. Opens once it’s scheduled."; row.append(n); }
+  return row;
+}
+
+const locked=g=>!canPick || !g || hasStarted(g) || !g.start_utc;
+function refresh(){
+  let pts=0, made=0, open=0;
+  const roundPts={};
+  document.querySelectorAll(".pgame").forEach(row=>{
+    const id=row.dataset.id, g=byId(id), p=picks[id]||{}, lock=locked(g);
+    row.classList.toggle("locked", lock && !!g?.start_utc);
+    row.querySelectorAll(".wpick button").forEach(b=>{ b.setAttribute("aria-pressed",String(p.winner===b.dataset.team)); b.disabled=lock; });
+    const inp=row.querySelector(".gin"); if(document.activeElement!==inp) inp.value=p.goals ?? "";
+    row.querySelector(".goals").classList.toggle("set", p.goals!=null);
+    row.querySelectorAll(".gbtn,.gin").forEach(el=>el.disabled=lock);
+    if(p.winner || p.goals!=null || p.hidden) made++;
+    if(!lock && (!p.winner || p.goals==null)) open++;
+    // the line under "Game 3": who's home, then the final score or "picked, revealed at puck drop"
+    const sm=row.querySelector(".pg-name small"), badge=row.querySelector(".ptsbadge");
+    const sc=scorePlayoffPick(g,p), w=poWinner(g);
+    let line=`at ${teamName(g.home)}`;
+    if(w){ const ws=Math.max(g.home_score,g.away_score), ls=Math.min(g.home_score,g.away_score); line+=` · Final: ${w} wins ${ws}–${ls}${otLabel(g)?" "+otLabel(g):""} · ${g.home_score+g.away_score} goals`; }
+    else if(p.hidden) line+=" · picked, revealed at puck drop";
+    sm.textContent=line;
+    badge.textContent=""; badge.removeAttribute("data-p"); badge.removeAttribute("title");
+    if(sc && (sc.wHit!==null || sc.gHit!==null)){
+      badge.textContent=`+${sc.points}`; badge.dataset.p=sc.points;
+      badge.title=[sc.wHit!==null?`winner ${sc.wHit?"right":"wrong"}`:"", sc.gHit!==null?`goals ${sc.gHit?"right":"wrong"}`:""].filter(Boolean).join(", ");
+      pts+=sc.points; roundPts[g.playoff_round]=(roundPts[g.playoff_round]||0)+sc.points;
+    }
+  });
+  document.querySelectorAll(".round").forEach(sec=>{ const r=sec.dataset.round; sec.querySelector(".mrec").textContent=`${roundPts[r]||0} pts`; });
+  $("bigpts").textContent=pts;
+  $("scorechip").textContent=`${VIEW_USER?"Their score":"Score"} ${pts} pt${pts===1?"":"s"}`;
+  const total=games.filter(g=>g.start_utc||g.period_type).length;
+  $("picked").textContent=`${made} of ${total} picked`+(canPick&&open?` · ${open} to pick`:"");
+  $("bar").style.width=(total?made/total*100:0)+"%";
+}
+
+async function loadRank(){
+  const who=VIEW_USER || (canPick ? (await sb.from("profiles").select("username").eq("user_id",userId).maybeSingle()).data?.username : null);
+  if(!who) return;
+  const {data}=await sb.rpc("playoff_leaderboard",{p_season:SEASON});
+  const rows=data||[], me=rows.find(r=>r.username.toLowerCase()===who.toLowerCase());
+  if(!me) return;
+  const rank=1+rows.filter(r=>Number(r.points)>Number(me.points)).length;
+  $("rankchip").textContent=`#${rank} of ${rows.length}`; $("rankchip").classList.remove("hidden");
+}
+
+// Saving: one row per game (winner and/or goals); an empty pick deletes the row
+async function save(id, prev){
+  const p=picks[id];
+  setState("busy","Saving…");
+  const q = p && (p.winner || p.goals!=null)
+    ? sb.from("playoff_picks").upsert({user_id:userId, game_id:Number(id), winner:p.winner||null, goals:p.goals ?? null}, {onConflict:"user_id,game_id"})
+    : sb.from("playoff_picks").delete().eq("user_id",userId).eq("game_id",Number(id));
+  const {error}=await q;
+  if(!error){ setState("ok","Saved"); loadRank(); return; }
+  if(prev) picks[id]=prev; else delete picks[id];
+  refresh();
+  setState("err", hasStarted(byId(id)) ? "That game has started, so its picks are locked" : "Couldn’t save. Please try again.");
+}
+const pending={};
+function queueSave(id, prev){
+  if(!pending[id]) pending[id]={prev};
+  clearTimeout(pending[id].t);
+  pending[id].t=setTimeout(()=>{ const p=pending[id].prev; delete pending[id]; save(id,p); },600);
+}
+function setPart(id, field, value){
+  const prev=picks[id]?{...picks[id]}:undefined, next={...(picks[id]||{})};
+  if(value===null||value===undefined) delete next[field]; else next[field]=value;
+  if(!next.winner && next.goals==null) delete picks[id]; else picks[id]=next;
+  return prev;
+}
+const editable=id=>{ const g=byId(id); if(locked(g)){ refresh(); return false; } return true; };
+
+$("sheet").addEventListener("click",e=>{
+  const b=e.target.closest(".wpick button, .gbtn"); if(!b) return;
+  const id=b.closest(".pgame").dataset.id; if(!editable(id)) return;
+  if(b.classList.contains("gbtn")){
+    const cur=picks[id]?.goals;
+    const prev=setPart(id,"goals", cur==null ? 6 : Math.min(GOAL_MAX, Math.max(0, cur+Number(b.dataset.d))));
+    refresh(); queueSave(id,prev); return;
+  }
+  const prev=setPart(id,"winner", picks[id]?.winner===b.dataset.team ? null : b.dataset.team);   // tap again to clear
+  refresh(); save(id,prev);
+});
+$("sheet").addEventListener("change",e=>{
+  const inp=e.target.closest(".gin"); if(!inp) return;
+  const id=inp.closest(".pgame").dataset.id; if(!editable(id)) return;
+  const v=inp.value.trim()==="" ? null : Math.min(GOAL_MAX, Math.max(0, parseInt(inp.value,10)||0));
+  const prev=setPart(id,"goals",v); refresh(); queueSave(id,prev);
+});
+setInterval(refresh, 30*1000);   // games lock at puck drop while the page is open
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && games.length) refresh(); });
+start();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

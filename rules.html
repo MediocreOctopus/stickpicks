@@ -25,7 +25,9 @@
 function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
-window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
@@ -148,6 +150,34 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       </ul>
       <p>You need a username to earn Chiclets. Your count is in the top-right corner of every page. Tap it (or the Me tab on your phone) to open your <a href="locker.html">Locker Room</a>. Your full <a href="chiclets.html">Chiclets statement</a> lists every Chiclet gained or lost. Other players can see your total.</p>
       <p>The <a href="shop.html"><b>shop</b></a> sells borders for your profile picture, throwback styles for your sweater, and sweaters for your Breakaway skater (who otherwise wears the stickpicks house sweater). Some items are only on sale for a short time. Starter items cost 150, Classic 400, Premium 800 and Legendary 1,500. You buy each item once and keep it for good, and you can wear it, take it off, or switch any time. Purchases are final. Chiclets can’t be bought with real money and have no cash value.</p>
+    </details>
+
+    <details id="playoffs">
+      <summary>Playoffs</summary>
+      <p>When the regular season ends, stickpicks switches to playoff mode: silver, black and gold, with a <b>Playoff Sheet</b> button where Pick Team usually is. In the days between the first-round matchups being set and the first playoff puck drop, the home page has a <b>Regular season | Playoffs</b> switch so you can look ahead and get your picks in. Once the first playoff game starts, the whole site stays in playoff mode until next season.</p>
+      <h3>The playoff sheet</h3>
+      <p>One sheet holds every playoff game. For each game, pick the <b>winner</b> and the <b>combined goals</b>: 1 point each, so up to 2 points a game. There’s no OTL in the playoffs (games are played until someone scores), so an overtime loss is just a loss. Games appear once the NHL schedules them; a game that isn’t needed because a series ended early drops off. Picks lock at puck drop, like always.</p>
+      <h3>The bracket</h3>
+      <p>Before the playoffs start, pick the winner of every series all the way to the champion, and how many games each series will take (4 to 7). You can change your bracket as often as you like until the first playoff puck drop; then every bracket locks, and everyone’s brackets can be seen.</p>
+      <div class="tablewrap">
+        <table class="rtable">
+          <thead><tr><th scope="col">Round</th><th scope="col">Right winner</th><th scope="col">Right winner and length</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">First round</th><td>1</td><td>2</td></tr>
+            <tr><th scope="row">Second round</th><td>2</td><td>3</td></tr>
+            <tr><th scope="row">Conference finals</th><td>4</td><td>5</td></tr>
+            <tr><th scope="row">The Final</th><td>8</td><td>9</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The length point only counts when you also picked the right winner. A perfect bracket is worth 47 points.</p>
+      <h3>Leaderboards, Chiclets and badges</h3>
+      <ul class="bullets">
+        <li>The <a href="leaderboard.html?board=playoffs">leaderboard</a> has a <b>Playoff sheet</b> board and a <b>Bracket</b> board. Ties share a rank.</li>
+        <li>Playoff picks earn <a href="#chiclets">Chiclets</a> like regular-season picks: <b>+1</b> for the right winner and <b>+2</b> for exact goals. Skipping a playoff game costs nothing.</li>
+        <li>Playoff badges (silver ring, black felt) can be earned again every season: Clean Sweep, Game 7, The Final, Bracket Buster, Playoff MVP, and three overtime badges. A game that goes to four overtimes earns all three overtime badges. See them all on the <a href="badges.html">Badges</a> page.</li>
+        <li>The <b>Playoff Black</b> sweater is in the <a href="shop.html">shop</a> only from countdown week until the Final is decided. If you buy it, it’s yours for good.</li>
+      </ul>
     </details>
 
     <section id="faq">

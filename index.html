@@ -26,7 +26,9 @@
 function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
-window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
@@ -49,6 +51,21 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
       <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="#account" class="navaccount" id="navAccount" data-me>Sign in</a></span>
     </div>
   </nav>
+
+  <!-- Playoffs: the Regular season | Playoffs switch (countdown week only) and the playoff banner, filled in by loadPlayoffHome() -->
+  <div class="modeswitch hidden" id="modeSwitch"><div class="seg" role="group" aria-label="Show">
+    <button type="button" data-choice="regular" aria-pressed="true">Regular season</button><button type="button" data-choice="playoffs" aria-pressed="false"><span class="dot" aria-hidden="true"></span>Playoffs</button>
+  </div></div>
+  <section class="po-hero hidden" id="poHero" aria-label="Playoffs">
+    <svg class="po-cup" id="poCup" viewBox="0 0 60 88" aria-hidden="true"></svg>
+    <div class="po-kicker" id="poKicker"></div>
+    <h2 class="po-title" id="poTitle"></h2>
+    <p class="po-sub" id="poSub"></p>
+    <div class="po-stats">
+      <a class="po-stat" id="poTileA" href="playoffs.html"></a>
+      <a class="po-stat" id="poTileB" href="bracket.html"></a>
+    </div>
+  </section>
 
   <main class="homegrid">
     <section class="intro">
@@ -263,11 +280,14 @@ const fmtDay=s=>{ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,
 // One panel per calendar day in a sideways strip. It opens on today; swiping, or the ‹ › buttons,
 // moves one day at a time (days without NHL games say so). Days are loaded as you reach them,
 // from the season's first scheduled day to its last, so you can go back to earlier final scores.
-const GAME_COLS="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at";
+const GAME_COLS="game_id,game_date,start_utc,home,away,home_score,away_score,game_state,schedule_state,period_type,updated_at,ot_periods,series_letter,series_game";
 const strip=$("dayStrip");
 let days=[], dayIdx=0, noPrev=false, noNext=false, extending=false;   // days: [{day, data, el}]
-// (regular-season games only: game_type 2. Playoff games, type 3, get their own playoff pages.)
-const gamesRange=(a,b)=>sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_type",2).gte("game_date",a).lte("game_date",b).order("start_utc");
+// Regular-season games (game_type 2), or playoff games (type 3) while the site is in playoff mode.
+// Playoff games that turned out not to be needed (a series ended early) are left out.
+const gameType=()=>playoffOn()?3:2;
+const typed=q=>gameType()===3 ? q.eq("game_type",3).neq("schedule_state","NOTNEEDED") : q.eq("game_type",2);
+const gamesRange=(a,b)=>typed(sb.from("games").select(GAME_COLS).eq("season",SEASON)).gte("game_date",a).lte("game_date",b).order("start_utc");
 // The first three days (yesterday, today, tomorrow) arrive in one request and wait here until the strip reaches them.
 const dayCache=new Map();
 async function prefetchDays(a,b){
@@ -276,12 +296,12 @@ async function prefetchDays(a,b){
 }
 const gamesOn=day=>{
   if(dayCache.has(day)){ const data=dayCache.get(day); dayCache.delete(day); return Promise.resolve({data, error:null}); }
-  return sb.from("games").select(GAME_COLS).eq("season",SEASON).eq("game_type",2).eq("game_date",day).order("start_utc");
+  return typed(sb.from("games").select(GAME_COLS).eq("season",SEASON)).eq("game_date",day).order("start_utc");
 };
 // Every calendar day, one at a time (no-game days included), within the season's schedule.
 let seasonFirst=null, seasonLast=null;
 async function seasonBounds(){
-  const q=asc=>sb.from("games").select("game_date").eq("season",SEASON).eq("game_type",2).order("game_date",{ascending:asc}).limit(1);
+  const q=asc=>typed(sb.from("games").select("game_date").eq("season",SEASON)).not("game_date","is",null).order("game_date",{ascending:asc}).limit(1);
   const [a,b]=await Promise.all([q(true),q(false)]);
   seasonFirst=a.data?.[0]?.game_date||null; seasonLast=b.data?.[0]?.game_date||null;
 }
@@ -314,7 +334,7 @@ function noGamesNote(box, day){
 // Title, "Last updated" note, buttons and strip height follow the day in view.
 function showDay(i){
   dayIdx=Math.max(0,Math.min(days.length-1,i)); const d=days[dayIdx]; if(!d) return;
-  $("todayTitle").textContent=dayTitle(d.day);
+  $("todayTitle").textContent=gameType()===3 ? dayTitle(d.day).replace(/games$/,"playoff games") : dayTitle(d.day);
   const last=d.data.reduce((m,g)=>g.updated_at && g.updated_at>m ? g.updated_at : m, "");
   if(last){
     const t=new Date(last), sameDay=ymd(t)===ymd(new Date());
@@ -363,11 +383,13 @@ async function loadToday(){
   const empty=$("todayEmpty");
   if(!sb){ empty.textContent="Connect the database to see today’s games."; empty.classList.remove("hidden"); return; }
   if(days.length) return refreshDays();
+  if(gameType()===3) await loadSeries();
   // the season's first and last days, and yesterday-to-tomorrow's games, all at once
   const today=ymd(new Date());
   await Promise.all([seasonBounds(), prefetchDays(shiftDay(today,-1), shiftDay(today,1))]);
   if(!seasonFirst){
-    empty.textContent = navigator.onLine ? "The schedule isn’t posted yet. Check back soon." : "You’re offline. Today’s games will show up when you reconnect.";
+    empty.textContent = !navigator.onLine ? "You’re offline. Today’s games will show up when you reconnect."
+      : gameType()===3 ? "The playoff schedule isn’t posted yet. Check back soon." : "The schedule isn’t posted yet. Check back soon.";
     empty.classList.remove("hidden"); return;
   }
   // open on today (kept within the season's schedule, e.g. before opening night)
@@ -382,6 +404,7 @@ async function loadToday(){
 // Every few minutes: fresh scores for the days already loaded.
 async function refreshDays(){
   if(!days.length) return;
+  if(gameType()===3) await loadSeries();
   const {data,error}=await gamesRange(days[0].day, days[days.length-1].day);   // one request for every day loaded
   if(!error && data) days.forEach(d=>{
     d.data=data.filter(g=>g.game_date===d.day);
@@ -389,6 +412,15 @@ async function refreshDays(){
   });
   showDay(dayIdx);
 }
+
+// The playoff series, by letter, for the series line on playoff game cards.
+let seriesBy={};
+async function loadSeries(){
+  const {data}=await sb.from("playoff_series").select("*").eq("season",SEASON);
+  if(data) seriesBy=Object.fromEntries(data.map(x=>[x.letter,x]));
+}
+// Switching between the regular season and the playoffs (countdown week): start the strip over.
+function resetDays(){ days=[]; dayIdx=0; noPrev=noNext=false; seasonFirst=seasonLast=null; dayCache.clear(); strip.replaceChildren(); }
 
 function renderCards(box, data){
   data.forEach(g=>{
@@ -406,13 +438,14 @@ function renderCards(box, data){
       const row=document.createElement("div"); row.className="team";
       const other=side==="away"?g.home_score:g.away_score;
       if(final && score<other) row.classList.add("lost");
-      const name=TEAMS[code]?.name||code, href=`sheet.html?team=${code}&game=${g.game_id}`;
+      const name=TEAMS[code]?.name||code, po=gameType()===3;
+      const href = po ? "playoffs.html" : `sheet.html?team=${code}&game=${g.game_id}`;   // playoffs: one sheet for every game
       const a=document.createElement("a"); a.href=href; a.textContent=name;
-      a.title=`Open the ${name} pick sheet`;
+      a.title = po ? "Open your playoff sheet" : `Open the ${name} pick sheet`;
       row.append(swatch(code), a);
       if(open){
         const pk=document.createElement("a"); pk.className="pickbtn"; pk.href=href; pk.textContent="Pick";
-        pk.setAttribute("aria-label",`Pick this game on the ${name} sheet`);
+        pk.setAttribute("aria-label", po ? "Pick this game on your playoff sheet" : `Pick this game on the ${name} sheet`);
         row.append(pk);
       }else{
         const sc=document.createElement("span"); sc.className="score"; sc.textContent = score!=null ? score : "";
@@ -423,11 +456,19 @@ function renderCards(box, data){
     const st=document.createElement("div"); st.className="status";
     const left=document.createElement("span"), right=document.createElement("span");
     if(g.schedule_state==="PPD"){ left.textContent="Postponed"; }
-    else if(final){ left.innerHTML=`<b>Final${g.period_type!=="REG"?" · "+g.period_type:""}</b>`; }
+    else if(final){ const ot=otLabel(g)||(g.period_type!=="REG"?g.period_type:""); left.innerHTML=`<b>Final${ot?" · "+ot:""}</b>`; }
     else if(started){ left.className="live"; left.textContent="In progress"; }
     else { left.textContent = g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}) : "Time TBD"; }
     right.textContent = open ? "Picks open" : started && !final ? "Picks locked" : "";
     st.append(left,right); card.appendChild(st);
+    // playoffs: "Game 3 · COL leads 2–1" under the score
+    const s=g.series_letter && seriesBy[g.series_letter];
+    if(s){
+      const line=document.createElement("div"); line.className="series";
+      const a=document.createElement("span"); a.textContent=`${roundName(s.round)} · Game ${g.series_game}`;
+      const b=document.createElement("span"); b.textContent=seriesText(s);
+      line.append(a,b); card.appendChild(line);
+    }
     box.appendChild(card);
   });
 }
@@ -648,6 +689,8 @@ async function loadMyStats(){
   // never picked: a Pick Now button instead of Current Picks
   const none=!rows.length;
   $("curLabel").classList.toggle("hidden",none); list.classList.toggle("hidden",none); $("pickNow").classList.toggle("hidden",!none);
+  $("pickNow").href = playoffOn() ? "playoffs.html" : "teams.html";   // playoff mode: one sheet for every game
+  $("pickNow").textContent = playoffOn() ? "Playoff Sheet" : "Pick Now";
   // the Locker Room link, once you have a username
   $("acctLocker").classList.toggle("hidden", !profile?.username);
   $("lockerIco").replaceChildren(lockerIcon(38, lockerLabel(profile)));
@@ -655,7 +698,7 @@ async function loadMyStats(){
   const SHOW=4;
   if(none){
     if(profile?.username) announceBadges(currentUser.id, ["inaugural"], profile.username);   // earned by making a profile
-    loadRecap([]); loadUpNext([lastTeam()]); return;
+    loadRecap([]); loadUpNext([lastTeam()]); loadPlayoffHome(); return;
   }
   [...rows].sort((a,b)=>Number(b.points)-Number(a.points)).slice(0,SHOW).forEach(r=>{
     const li=document.createElement("li"), a=document.createElement("a");
@@ -666,6 +709,7 @@ async function loadMyStats(){
     a.append(swatch(r.team), name, meta); li.appendChild(a); list.appendChild(li);
   });
   const teams=rows.map(r=>r.team);
+  loadPlayoffHome();
   loadRecap(teams);
   loadUpNext([...teams, lastTeam()]);
   const uid=currentUser.id;   // pop-up for badges earned since this device last showed them
@@ -767,6 +811,7 @@ let upGames={}, upPicks={}, upPending={};
 async function loadUpNext(teams){
   const sec=$("upnext");
   teams=[...new Set(teams)].filter(t=>t && TEAMS[t]);
+  if(playoffOn()){ sec.classList.add("hidden"); return; }   // playoff mode: the playoff sheet replaces Upcoming Picks
   if(!sb || !teams.length || Object.keys(upPending).length){ if(!teams.length) sec.classList.add("hidden"); return; }
   const now=new Date(), until=new Date(now.getTime()+UP_DAYS*24*60*60*1000), list=teams.join(",");
   const {data,error}=await sb.from("games").select("game_id,game_date,start_utc,home,away,schedule_state,period_type")
@@ -900,6 +945,97 @@ $("upnextRows").addEventListener("input",e=>{
 });
 setInterval(()=>document.querySelectorAll("#upnextRows .upgame").forEach(r=>{ if(!r.classList.contains("locked") && hasStarted(upGames[r.dataset.id])){ upPaint(r); upCount(); } }), 30*1000);
 
+/* ───────── Playoffs: the countdown-week switch and the playoff banner ───────── */
+// The switch shows only in countdown week (matchups set, before the first puck drop). From Game 1 on,
+// the whole site stays in playoff mode. The banner's two tiles link to your playoff sheet and your bracket.
+$("modeSwitch").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-choice]"); if(!b) return;
+  setPlayoffChoice(b.dataset.choice);   // fires playoffs:changed when the mode flips (below)
+  loadPlayoffHome();
+});
+document.addEventListener("playoffs:changed",()=>{
+  resetDays(); loadToday(); loadPlayoffHome();
+  if(currentUser) loadMyStats(); else loadUpNext(localSheetTeams());
+});
+const rankIn=(rows, name)=>{   // [rank, of] on a board sorted by points (ties share a rank), or [null, n]
+  const me=name && rows.find(r=>r.username.toLowerCase()===name.toLowerCase());
+  return [me ? 1+rows.filter(r=>Number(r.points)>Number(me.points)).length : null, rows.length, me];
+};
+const ptsText=n=>`${n} pt${Number(n)===1?"":"s"}`;
+function poTile(el, label, big, go, line){
+  el.replaceChildren();
+  const sm=document.createElement("small"); sm.textContent=label;
+  const b=document.createElement("b"); b.textContent=big;
+  const g=document.createElement("span"); g.className="go"; g.textContent=go; b.append(g);
+  const l=document.createElement("span"); l.textContent=line;
+  el.append(sm,b,l);
+}
+let poHomeReq=0;
+async function loadPlayoffHome(){
+  const c=poCache(), on=playoffOn(c), hero=$("poHero");
+  $("modeSwitch").classList.toggle("hidden", c.phase!=="countdown");
+  $("modeSwitch").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", String((b.dataset.choice==="playoffs")===on)));
+  if(on) $("upnext").classList.add("hidden");   // the team sheets' Upcoming Picks are for the regular season
+  if(!on || !sb){ hero.classList.add("hidden"); return; }
+  const req=++poHomeReq, year=SEASON.slice(4), done=c.phase==="done";
+  if(!$("poCup").childElementCount) $("poCup").innerHTML=trophySvg("home");
+  $("poKicker").textContent=`${year} Playoffs`;
+  const sub=$("poSub"); sub.replaceChildren();
+  if(done && c.champion){
+    $("poTitle").textContent=`${teamNick(c.champion)} win it all`;
+    sub.textContent=`Your ${year} champions. See you next season.`;
+  }else if(c.phase==="countdown"){
+    $("poTitle").textContent=roundName(1);
+    const tag=document.createElement("span"); tag.className="countdown";
+    if(c.first){
+      const start=new Date(c.first), d=Math.max(0, Math.ceil((new Date(ymd(start)+"T00:00")-new Date(ymd(new Date())+"T00:00"))/864e5));
+      tag.textContent=`Starts ${start.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"})} · ${d===0?"today":d===1?"1 day":d+" days"}`;
+    }else tag.textContent="Matchups set";
+    sub.append(tag, " Get your picks in.");
+  }else{
+    const r=c.round||1;
+    $("poTitle").textContent=roundName(r);
+    sub.textContent = r===1 ? "16 teams. Four rounds. One champion." : `${16>>(r-1)} teams left. One champion.`;
+  }
+  hero.classList.remove("hidden");
+  // the tiles: your playoff sheet and your bracket (the bracket comes first while it's still open)
+  const sheetTile=c.phase==="countdown" ? $("poTileB") : $("poTileA"), bracketTile=c.phase==="countdown" ? $("poTileA") : $("poTileB");
+  sheetTile.href="playoffs.html"; bracketTile.href="bracket.html";
+  const name=profile?.username||null;
+  if(!currentUser){
+    poTile(sheetTile,"Your playoff sheet","Free to play", done?"View ›":"Pick ›","Sign in to save your picks");
+    poTile(bracketTile,"Your bracket", c.phase==="countdown"?"15 series":"Locked", c.phase==="countdown"?"Pick ›":"View ›",
+      c.phase==="countdown" ? "Pick them before puck drop" : "See how every bracket is doing");
+    if(c.phase!=="countdown") bracketTile.href="leaderboard.html?board=bracket";
+    return;
+  }
+  const [gm, pk, sheetBoard, bracketBoard, mine]=await Promise.all([
+    sb.from("games").select("game_id,start_utc,schedule_state,playoff_round,series_game").eq("season",SEASON).eq("game_type",3),
+    sb.from("playoff_picks").select("game_id,winner,goals"),
+    c.phase==="countdown" ? Promise.resolve({data:[]}) : sb.rpc("playoff_leaderboard",{p_season:SEASON}),
+    c.phase==="countdown" ? Promise.resolve({data:[]}) : sb.rpc("bracket_leaderboard",{p_season:SEASON}),
+    c.phase==="countdown" ? sb.rpc("bracket_view",{p_season:SEASON}) : Promise.resolve({data:[]}),
+  ]);
+  if(req!==poHomeReq) return;   // a newer refresh is on its way
+  const games=gm.data||[], picked=new Set((pk.data||[]).filter(p=>p.winner).map(p=>p.game_id));
+  if(c.phase==="countdown"){
+    const g1=games.filter(g=>g.playoff_round===1 && g.series_game===1);
+    poTile(sheetTile,"Your playoff sheet",`${g1.filter(g=>picked.has(g.game_id)).length} of ${g1.length||8}`,"Pick ›","Game 1s picked");
+    const n=Object.keys(mine.data?.[0]?.picks||{}).length;
+    poTile(bracketTile,"Your bracket",`${n} of 15`, "Pick ›","series picked");
+    return;
+  }
+  const now=Date.now();
+  const toPick=games.filter(g=>g.start_utc && new Date(g.start_utc)>now && !["NOTNEEDED","PPD"].includes(g.schedule_state) && !picked.has(g.game_id)).length;
+  const [sr, sn, sme]=rankIn(sheetBoard.data||[], name);
+  poTile(sheetTile,"Your playoff sheet", ptsText(sme?.points||0), done||!toPick?"View ›":"Pick ›",
+    [sr ? `#${sr} of ${sn}` : "", done ? "Final" : toPick ? `${toPick} game${toPick===1?"":"s"} to pick` : "All picked"].filter(Boolean).join(" · "));
+  const [br, bn, bme]=rankIn(bracketBoard.data||[], name);
+  if(bme) poTile(bracketTile,"Your bracket", ptsText(bme.points), "View ›",
+    [`#${br} of ${bn}`, bme.champion ? `Champion pick: ${teamNick(bme.champion)}` : ""].filter(Boolean).join(" · "));
+  else{ poTile(bracketTile,"Your bracket","No bracket","View ›","See the bracket board"); bracketTile.href="leaderboard.html?board=bracket"; }
+}
+
 /* ───────── Start ───────── */
 if(!sb){ show("pOffline"); }
 else{
@@ -913,12 +1049,14 @@ else{
         currentUser=null; profile=null; setNavAccount();
         $("recap").classList.add("hidden");
         loadUpNext(localSheetTeams());   // guests: sheets started on this device
+        loadPlayoffHome();
         if(wantSignin){ wantSignin=false; openForms("in"); } else show("pWelcome");
       }
       if(location.hash.includes("access_token")) history.replaceState(null,"",location.pathname+location.search);
     },0);
   });
   loadNews(); loadToday();
+  refreshPlayoffMode(sb).then(loadPlayoffHome);   // playoff mode on or off (the playoffs:changed listener redraws if it flips)
   setInterval(loadNews, 10*60*1000);
   setInterval(loadToday, 5*60*1000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden){ loadToday(); if(currentUser) loadMyStats(); else loadUpNext(localSheetTeams()); } });

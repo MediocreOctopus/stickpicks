@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" class="home sheetpage posheet bracketpage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bracket · stickpicks</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="Fill in a playoff bracket on stickpicks: every series winner and how many games it takes.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="stickpicks · NHL Predictions">
+<meta property="og:description" content="Call every game for any NHL team and climb the leaderboard. Free to play.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
+<link rel="stylesheet" href="styles.css?v=__V__">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="leaderboard.html?board=bracket" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
+    </div>
+  </nav>
+
+  <!-- The bracket: every series' winner and length, picked before the first playoff puck drop -->
+  <header class="sheethead" aria-live="polite">
+    <div class="sh-in">
+      <div class="sh-main">
+        <div class="sh-kicker" id="kicker">Playoffs · bracket</div>
+        <h1 class="sh-team" id="title">Your Bracket</h1>
+        <div class="sh-chips">
+          <span class="sh-chip" id="pickedchip">0 of 15 series picked</span>
+          <span class="sh-chip" id="lockchip"></span>
+          <span class="sh-chip hidden" id="rankchip"></span>
+          <span class="sh-chip save hidden" id="savestate" data-s="ok">Saved</span>
+        </div>
+      </div>
+      <div class="sh-rec"><div class="rec" id="bigpts">0</div><small>bracket points</small></div>
+    </div>
+    <div class="sh-hem" aria-hidden="true"><i id="bar"></i></div>
+  </header>
+
+  <nav class="po-tabs" aria-label="Playoffs">
+    <a href="playoffs.html">Playoff sheet</a>
+    <a href="bracket.html" aria-current="page">Bracket</a>
+    <a href="leaderboard.html?board=bracket">Bracket leaderboard</a>
+  </nav>
+
+  <p class="sh-strip hidden" id="strip"></p>
+
+  <p class="bk-rules">Pick the winner of every series and how many games it takes. Right winner: <b>1</b> point in the first round, <b>2</b> in the second, <b>4</b> in the conference finals, <b>8</b> in the Final. Right number of games too: <b>+1</b>. The whole bracket locks at the first puck drop of the playoffs. <a href="rules.html#playoffs">Playoff rules</a></p>
+
+  <div class="bk-rounds po-tabs" role="group" aria-label="Round">
+    <button type="button" data-r="1" aria-pressed="true">First Round</button><button type="button" data-r="2" aria-pressed="false">Second Round</button><button type="button" data-r="3" aria-pressed="false">Conference Finals</button><button type="button" data-r="4" aria-pressed="false">The Final</button>
+  </div>
+  <div class="bk-scroll"><div class="bk" id="bk" data-r="1"></div></div>
+  <div class="empty hidden" id="empty"></div>
+
+  <div class="bk-actions hidden" id="actions">
+    <button class="btn" type="button" id="saveBtn">Save bracket</button>
+    <span class="bk-lock" id="lockNote"></span>
+  </div>
+
+  <footer>Fan-made, not affiliated with the NHL. Brackets can be changed until the first playoff game starts. <a href="rules.html#playoffs">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+<script src="config.js?v=__V__"></script>
+<script src="teams.js?v=__V__"></script>
+<script>
+const sb=makeClient(), $=id=>document.getElementById(id);
+mountTeamMenu($("teamMenu"));
+mountChicletNav(sb);
+// bracket.html = yours; bracket.html?user=Name = another player's (once brackets lock)
+const VIEW_USER=(()=>{ const u=new URL(location.href).searchParams.get("user"); return u && USERNAME_RULE.test(u) ? u : null; })();
+// The NHL's series letters: A–D East and E–H West first round; I/J East and K/L West second round;
+// M East final, N West final, O the Final. Each later series is fed by two earlier ones.
+const FEED={I:["A","B"], J:["C","D"], K:["E","F"], L:["G","H"], M:["I","J"], N:["K","L"], O:["M","N"]};
+const ROUND_OF=L=>"ABCDEFGH".includes(L)?1:"IJKL".includes(L)?2:"MN".includes(L)?3:4;
+const POINTS=[0,1,2,4,8];
+let series={}, picks={}, open=false, editable=false, firstStart=null, dirty=false;
+const stateEl=$("savestate");
+function setState(s,t){ stateEl.classList.remove("hidden"); stateEl.dataset.s=s; stateEl.textContent=t; }
+function strip(text, link){ const s=$("strip"); s.replaceChildren(text); if(link){ const a=document.createElement("a"); a.href=link[1]; a.textContent=link[0]; s.append(" ",a); } s.classList.remove("hidden"); }
+const nick=teamNick;   // "Avalanche", "Maple Leafs" (teams.js)
+const sw=c=>{ const s=document.createElement("span"); s.className="sw"; s.textContent=c; teamStyle(s,c); return s; };
+const seedOf=c=>{ for(const s of Object.values(series)){ if(s.round===1){ if(s.top_team===c) return s.top_rank; if(s.bottom_team===c) return s.bottom_rank; } } return null; };
+
+// The two teams in a series: the real matchup once the brackets have locked and it's known; otherwise
+// (while picking) whoever this bracket sends through from the two series that feed it.
+function teamsOf(L){
+  const s=series[L];
+  if(ROUND_OF(L)===1 || (!editable && s?.top_team && s?.bottom_team)) return [s?.top_team||null, s?.bottom_team||null];
+  return FEED[L].map(f=>picks[f]?.w||null);
+}
+// Picking a different winner earlier can knock a team out of later series: clear those picks
+function prune(){
+  let changed=true;
+  while(changed){ changed=false;
+    Object.keys(FEED).forEach(L=>{ const p=picks[L]; if(p && !teamsOf(L).includes(p.w)){ delete picks[L]; changed=true; } });
+  }
+}
+
+async function start(){
+  $("kicker").textContent=`${SEASON_LABEL} playoffs · bracket`;
+  if(!sb) return empty("Can’t reach stickpicks right now. Check your connection and try again.");
+  const [{data:{session}}, sq, oq, st]=await Promise.all([
+    sb.auth.getSession(), sb.from("playoff_series").select("*").eq("season",SEASON),
+    sb.rpc("bracket_is_open",{p_season:SEASON}), sb.rpc("playoff_state",{p_season:SEASON})]);
+  series=Object.fromEntries((sq.data||[]).map(s=>[s.letter,s]));
+  open=!!oq.data; firstStart=st.data?.[0]?.first_start||null;
+  const r1=Object.values(series).filter(s=>s.round===1 && s.top_team && s.bottom_team).length;
+  if(r1<8) return empty("The bracket opens once all eight first-round matchups are set.");
+  if(VIEW_USER){
+    $("title").textContent=`${VIEW_USER}’s Bracket`; document.title=`${VIEW_USER}’s bracket · stickpicks`;
+    const {data}=await sb.rpc("bracket_view",{p_username:VIEW_USER, p_season:SEASON});
+    if(!data?.length) return empty(open ? "Brackets are private until the first playoff game starts." : `${VIEW_USER} didn’t fill in a bracket.`);
+    picks=data[0].picks||{};
+    strip(`You’re looking at ${VIEW_USER}’s bracket.`, ["Open mine","bracket.html"]);
+  }else if(session){
+    const {data:prof}=await sb.from("profiles").select("username").eq("user_id",session.user.id).maybeSingle();
+    const {data}=await sb.rpc("bracket_view",{p_username:null, p_season:SEASON});
+    picks=data?.[0]?.picks||{};
+    if(!prof?.username) strip("Choose a username to fill in a bracket.", ["Choose one","index.html#account"]);
+    else editable=open;
+    if(!open && !data?.length) strip("Brackets are locked: they had to be in before the first playoff game.");
+  }else strip(open ? "Sign in to fill in your bracket." : "Sign in to see your bracket.", ["Sign in","index.html#signin"]);
+  $("actions").classList.toggle("hidden", !editable);
+  render(); loadRank();
+}
+function empty(text){ $("empty").textContent=text; $("empty").classList.remove("hidden"); $("bk").replaceChildren(); }
+
+function seriesBox(L){
+  const s=series[L], p=picks[L], round=ROUND_OF(L), [a,b]=teamsOf(L);
+  const d=document.createElement("div"); d.className="bseries"; d.dataset.l=L;
+  // once a series is decided: was this pick right?
+  if(s?.winner && p) d.classList.add(p.w===s.winner ? "right" : "wrong");
+  [a,b].forEach(c=>{
+    const bt=document.createElement("button"); bt.type="button"; bt.className="bt";
+    if(!c){ bt.classList.add("tbd"); bt.disabled=true; bt.textContent=round===1?"To be decided":"Pick the series before"; d.append(bt); return; }
+    teamStyle(bt,c); bt.dataset.team=c; bt.setAttribute("aria-pressed",String(p?.w===c)); bt.disabled=!editable;
+    if(s?.winner && s.winner!==c && (s.top_team===c || s.bottom_team===c)) bt.classList.add("out");
+    const se=document.createElement("span"); se.className="seed"; se.textContent=seedOf(c)??"";
+    const n=document.createElement("span"); n.className="nm";
+    const short=document.createElement("span"); short.className="short"; short.textContent=nick(c);
+    const full=document.createElement("span"); full.className="full"; full.textContent=TEAMS[c]?.name||c;
+    n.append(short,full); bt.append(se,sw(c),n);
+    bt.setAttribute("aria-label",`${TEAMS[c]?.name||c} win${p?.w===c?" (picked)":""}`);
+    d.append(bt);
+  });
+  const len=document.createElement("div"); len.className="len"; len.append("In ");
+  [4,5,6,7].forEach(n=>{ const bn=document.createElement("button"); bn.type="button"; bn.textContent=n; bn.dataset.g=n;
+    bn.setAttribute("aria-pressed",String(p?.g===n)); bn.setAttribute("aria-label",`in ${n} games`); bn.disabled=!editable || !p; len.append(bn); });
+  if(s?.winner && p){ const pts=p.w===s.winner ? POINTS[round]+(p.g===s.top_wins+s.bottom_wins?1:0) : 0; const t=document.createElement("span"); t.className="pts"; t.textContent=`+${pts}`; len.append(t); }
+  d.append(len);
+  return d;
+}
+function col(title, r, letters, extra){
+  const c=document.createElement("div"); c.className="bk-col"+(r===4?" bk-final":""); c.dataset.r=r;
+  const h=document.createElement("h3"); h.textContent=title;
+  const st=document.createElement("div"); st.className="bk-stack";
+  if(extra?.before) st.append(extra.before);
+  letters.forEach(L=>st.append(seriesBox(L)));
+  if(extra?.after) st.append(extra.after);
+  c.append(h,st); return c;
+}
+function render(){
+  const bk=$("bk"); bk.replaceChildren();
+  const champ=picks.O?.w, trophy=document.createElement("div"); trophy.className="bk-cup";
+  trophy.innerHTML=`<svg viewBox="0 0 60 88" aria-hidden="true">${trophySvg("bk")}</svg>`;
+  const ch=document.createElement("div"); ch.className="bk-champ";
+  ch.innerHTML=`<small>${VIEW_USER?"Their":"Your"} champion</small><b></b>`; ch.querySelector("b").textContent=champ ? (TEAMS[champ]?.name||champ) : "Not picked yet";
+  bk.append(
+    col("West · First Round",1,["E","F","G","H"]), col("West · Second Round",2,["K","L"]), col("West Final",3,["N"]),
+    col("The Final",4,["O"],{before:trophy, after:ch}),
+    col("East Final",3,["M"]), col("East · Second Round",2,["I","J"]), col("East · First Round",1,["A","B","C","D"]));
+  // header numbers
+  const n=Object.keys(picks).length;
+  $("pickedchip").textContent=`${n} of 15 series picked`;
+  $("bar").style.width=(n/15*100)+"%";
+  $("lockchip").textContent = open ? (firstStart ? `Locks ${new Date(firstStart).toLocaleString([], {weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}` : "Open") : "Locked";
+  let pts=0; Object.entries(picks).forEach(([L,p])=>{ const s=series[L]; if(s?.winner && p.w===s.winner) pts+=POINTS[ROUND_OF(L)]+(p.g===s.top_wins+s.bottom_wins?1:0); });
+  $("bigpts").textContent=pts;
+  $("lockNote").textContent = dirty ? "You have changes to save." : "You can change it until the first game starts.";
+}
+async function loadRank(){
+  if(open) return;
+  const who=VIEW_USER || (await sb.auth.getSession()).data.session && (await sb.from("profiles").select("username").eq("user_id",(await sb.auth.getSession()).data.session.user.id).maybeSingle()).data?.username;
+  if(!who) return;
+  const {data}=await sb.rpc("bracket_leaderboard",{p_season:SEASON});
+  const rows=data||[], me=rows.find(r=>r.username.toLowerCase()===who.toLowerCase());
+  if(!me) return;
+  const rank=1+rows.filter(r=>Number(r.points)>Number(me.points)).length;
+  $("rankchip").textContent=`#${rank} of ${rows.length}`; $("rankchip").classList.remove("hidden");
+}
+
+$("bk").addEventListener("click",e=>{
+  if(!editable) return;
+  const box=e.target.closest(".bseries"); if(!box) return;
+  const L=box.dataset.l, bt=e.target.closest(".bt[data-team]"), gn=e.target.closest(".len button");
+  if(bt){ picks[L] = picks[L]?.w===bt.dataset.team ? undefined : {w:bt.dataset.team, g:picks[L]?.g||null}; if(!picks[L]) delete picks[L]; prune(); }
+  else if(gn && picks[L]) picks[L].g = picks[L].g===Number(gn.dataset.g) ? null : Number(gn.dataset.g);
+  else return;
+  dirty=true; render();
+});
+$("saveBtn").addEventListener("click", async ()=>{
+  const missing=Object.entries(picks).filter(([,p])=>!p.g).map(([L])=>L);
+  if(missing.length){ setState("err",`Pick how many games for ${missing.length} series first`); return; }
+  setState("busy","Saving…"); $("saveBtn").disabled=true;
+  const {error}=await sb.rpc("save_bracket",{p_picks:picks, p_season:SEASON});
+  $("saveBtn").disabled=false;
+  if(error){ setState("err", /locked/i.test(error.message) ? "The bracket is locked now" : "Couldn’t save. Please try again."); return; }
+  dirty=false; setState("ok","Saved"); render();
+});
+document.querySelectorAll(".bk-rounds button").forEach(b=>b.addEventListener("click",()=>{ $("bk").dataset.r=b.dataset.r;
+  document.querySelectorAll(".bk-rounds button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); }));
+addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+start();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){return location.pathname}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

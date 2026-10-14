@@ -26,7 +26,9 @@
 function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
 document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
 apply();if(mq.addEventListener)mq.addEventListener("change",apply);
-window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();</script>
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
@@ -65,6 +67,11 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
     </div>
     <div class="sh-hem" aria-hidden="true"><i style="width:100%"></i></div>
   </header>
+
+  <!-- Once the playoffs exist: the playoff sheet board, the bracket board, or the regular-season boards -->
+  <nav class="po-tabs hidden" id="boardTabs" aria-label="Boards">
+    <button type="button" data-board="playoffs" aria-pressed="false">Playoff sheet</button><button type="button" data-board="bracket" aria-pressed="false">Bracket</button><button type="button" data-board="regular" aria-pressed="false">Regular season</button>
+  </nav>
 
   <!-- Your standing sits in a sidebar to the left of the table (above it on phones) -->
   <div class="lb-layout">
@@ -163,8 +170,46 @@ document.getElementById("pPrev").addEventListener("click",()=>setPeriod(period, 
 document.getElementById("pNext").addEventListener("click",()=>setPeriod(period, stepped(1)));
 
 // Banner, page title, footer and address for the board and time frame showing
+/* ───────── Playoff boards: ?board=playoffs (the playoff sheet) or ?board=bracket ───────── */
+let board="regular";
+const PO_THEME={"--board":"#10151F","--board-ink":"#F3F5F7","--title":"#D9A33A","--stripe":"#C9CED4","--brand":"#D9A33A","--accent":"#C9CED4"};
+const headCells=[...document.querySelectorAll(".lb thead th")], regularHeads=headCells.map(th=>[th.textContent, th.dataset.short, th.title]);
+const PO_HEADS={
+  playoffs:[null,null,["","",""],null,["Winners","Win","Right winners out of graded picks"],null,["Games picked",undefined,""]],
+  bracket:[null,null,["Champion","Champ","Their pick to win it all (shown once brackets lock)"],null,["Series","Ser","Series winners called right"],["Lengths","Len","Series lengths called right"],["Series picked",undefined,""]]};
+function setBoard(b, reload=true){
+  board = b==="playoffs" || b==="bracket" ? b : "regular";
+  document.querySelectorAll("#boardTabs button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.board===board)));
+  const po=board!=="regular";
+  document.querySelector(".lb-when").classList.toggle("hidden",po);
+  document.querySelector(".lbhead .sh-switch").classList.toggle("hidden",po);
+  headCells.forEach((th,i)=>{ const h=po ? (PO_HEADS[board][i]||regularHeads[i]) : regularHeads[i];
+    th.textContent=h[0]; if(h[1]===undefined) delete th.dataset.short; else th.dataset.short=h[1]; th.title=h[2]||""; });
+  document.getElementById("teamCol").classList.toggle("hidden", board==="playoffs");
+  document.documentElement.classList.toggle("poboard", po);   // silver stripes (styles.css)
+  if(!reload) return;
+  if(po){
+    applyTheme(NEUTRAL_THEME); document.documentElement.classList.add("neutral");
+    Object.entries(PO_THEME).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+    describe(); load();
+  }else setTeam(team);
+}
+document.querySelectorAll("#boardTabs button").forEach(b=>b.addEventListener("click",()=>setBoard(b.dataset.board)));
+
 function describe(){
   const url=new URL(location.href);
+  if(board!=="regular"){
+    ["team","period","from"].forEach(k=>url.searchParams.delete(k)); url.searchParams.set("board",board); history.replaceState(null,"",url);
+    const name = board==="playoffs" ? "Playoff Sheet" : "Bracket";
+    document.getElementById("lbKicker").textContent=`${SEASON_LABEL} playoffs · Leaderboard`;
+    document.getElementById("headline").textContent=name;
+    document.title=`${name} leaderboard · stickpicks`;
+    document.getElementById("scope").textContent = board==="playoffs"
+      ? "Every playoff sheet. 1 point for the right winner, 1 for the exact goals."
+      : "Every bracket. Right winner: 1, 2, 4 or 8 points by round, +1 for the right number of games.";
+    return;
+  }
+  url.searchParams.delete("board");
   team ? url.searchParams.set("team",team) : url.searchParams.delete("team");
   period==="season" ? url.searchParams.delete("period") : url.searchParams.set("period",period);
   period==="season" ? url.searchParams.delete("from") : url.searchParams.set("from",ymdOf(pStart));
@@ -182,7 +227,7 @@ function describe(){
 function setTeam(code){
   team = code && TEAMS[code] ? code : null;
   sel.value = team || "";
-  applyTheme(team || NEUTRAL_THEME);
+  applyTheme(team || (playoffOn() ? PLAYOFF_THEME : NEUTRAL_THEME));   // All teams in playoff mode: black, silver and gold
   document.documentElement.classList.toggle("neutral", !team); // All teams: plain wool page
   describe(); load();
 }
@@ -196,6 +241,7 @@ function showEmpty(msg){ emptyEl.textContent=msg; emptyEl.classList.remove("hidd
 let loading=0;
 async function load(){
   if(!sb){ showEmpty("Can’t reach stickpicks right now. Check your connection and try again."); document.getElementById("updated").textContent="Offline"; return; }
+  if(board!=="regular") return loadPlayoffBoard();
   const ticket=++loading, want=team;
   const args={p_season:SEASON, p_team:team};
   if(period!=="season"){ args.p_from=ymdOf(pStart); args.p_to=ymdOf(endOf(period,pStart)); }
@@ -271,6 +317,55 @@ function render(list){
   renderYou(list.length, mine);
 }
 
+// The playoff sheet board and the bracket board: one row per player
+async function loadPlayoffBoard(){
+  const ticket=++loading, want=board;
+  const {data,error}=await sb.rpc(board==="playoffs" ? "playoff_leaderboard" : "bracket_leaderboard", {p_season:SEASON});
+  if(ticket!==loading || want!==board) return;
+  if(error){ showEmpty("Couldn’t load the leaderboard. Please try again in a moment."); return; }
+  await loadFaces((data||[]).map(r=>r.username));
+  if(ticket!==loading) return;
+  document.getElementById("updated").textContent=`Updated ${new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"})}`;
+  renderPlayoffBoard(data||[]);
+}
+function renderPlayoffBoard(list){
+  rowsEl.innerHTML="";
+  const bracket=board==="bracket";
+  if(!list.length) showEmpty(bracket ? "No brackets yet." : "No playoff picks yet.");
+  else{ emptyEl.classList.add("hidden"); wrapEl.classList.remove("hidden"); }
+  let rank=0, prevPts=null, mine=null;
+  list.forEach((r,i)=>{
+    const pts=Number(r.points); if(pts!==prevPts){ rank=i+1; prevPts=pts; }
+    const isMe = myName && r.username.toLowerCase()===myName.toLowerCase();
+    if(isMe) mine={rank, pts};
+    const tr=document.createElement("tr"); if(isMe) tr.className="me";
+    const wins = bracket ? Number(r.series_right) : Number(r.winner_points);
+    tr.innerHTML=`<td class="rank"><span class="rk${rank<=3&&pts>0?" r"+rank:""}">${rank}</span></td><td class="name"></td><td class="teamcell${bracket?"":" hidden"}"></td>
+      <td class="pts">${pts}</td><td>${wins}</td><td>${bracket ? Number(r.lengths_right) : Number(r.goals_points)}</td><td class="opt">${bracket ? r.picked : r.total_picks}</td>`;
+    const page = bracket ? "bracket.html" : "playoffs.html", url = isMe ? page : `${page}?user=${encodeURIComponent(r.username)}`;
+    const nameLink=document.createElement("a"); nameLink.href=isMe ? "profile.html" : `profile.html?user=${encodeURIComponent(r.username)}`; nameLink.className="lb-who";
+    const nm=document.createElement("span"); nm.textContent=r.username;
+    nameLink.append(avatarEl(faces.get(r.username.toLowerCase()), r.username, 28), nm);
+    tr.querySelector(".name").append(nameLink);
+    if(bracket && r.champion){ const t=r.champion, a=document.createElement("span"); a.className="teamlink"; const tn=document.createElement("span"); tn.className="tname"; tn.textContent=TEAMS[t]?.name||t; a.append(swatch(t),tn); tr.querySelector(".teamcell").append(a); }
+    tr.classList.add("clickable"); tr.addEventListener("click",e=>{ if(!e.target.closest("a")) location.href=url; });
+    rowsEl.appendChild(tr);
+  });
+  // your spot
+  youEl.classList.remove("hidden"); youEl.innerHTML="";
+  const el=(tag,cls,text)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; youEl.appendChild(e); return e; };
+  const name = bracket ? "bracket" : "playoff sheet";
+  if(!myName){ el("div","you-label","Join the board"); el("p",null,`Sign in and choose a username to get your ${name} on the board.`); const a=el("a","btn","Sign in"); a.href="index.html#signin"; return; }
+  if(!mine){ el("div","you-label",`Your ${name}`); el("p",null, bracket ? "You don’t have a bracket on the board." : "You haven’t made any playoff picks yet."); const a=el("a","btn", bracket ? "Open the bracket" : "Pick playoff games"); a.href=bracket?"bracket.html":"playoffs.html"; return; }
+  el("div","you-label",`Your ${name}`);
+  const main=el("div","you-main");
+  const rk=document.createElement("div"); rk.className="you-rank"; rk.textContent=`#${mine.rank}`;
+  const of=document.createElement("span"); of.textContent=` of ${list.length}`; rk.append(of);
+  const info=document.createElement("div"); info.className="you-info";
+  const p=document.createElement("div"); p.className="you-pts"; p.textContent=`${mine.pts} point${mine.pts===1?"":"s"}`; info.append(p);
+  main.append(rk,info);
+}
+
 /* ───────── Your standing (sidebar card) ───────── */
 // Built only from numbers and the TEAMS list, never from usernames.
 function renderYou(total, mine){
@@ -337,7 +432,15 @@ async function start(){
   }
   const q=new URL(location.href).searchParams, from=/^\d{4}-\d{2}-\d{2}$/.test(q.get("from")||"") ? new Date(q.get("from")+"T12:00:00") : null;
   setPeriod(q.get("period"), from, false);
-  setTeam(q.get("team")?.toUpperCase());
+  // Playoff boards: shown once the playoffs exist; in playoff mode the board opens on the playoff sheet
+  const asked=q.get("board"), c=poCache();
+  const showTabs=st=>document.getElementById("boardTabs").classList.toggle("hidden", !(asked || (st.phase && st.phase!=="none")));
+  showTabs(c);
+  const first = asked || (playoffOn(c) && !q.get("team") && !q.get("period") ? "playoffs" : "regular");
+  setBoard(first, false);
+  team = q.get("team")?.toUpperCase() && TEAMS[q.get("team").toUpperCase()] ? q.get("team").toUpperCase() : null;
+  if(board!=="regular") setBoard(board); else setTeam(team);
+  refreshPlayoffMode(sb).then(showTabs);
 }
 start();
 </script>
