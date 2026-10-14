@@ -345,6 +345,18 @@ document.addEventListener("DOMContentLoaded", mountLogo);
 // sw.js keeps a copy of the site on the device so it opens fast and works offline.
 if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")){
   addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  // A page left open (a Safari tab, or the Home Screen app sitting in the background) keeps running the
+  // code it loaded, even after a deploy. Each time it comes back on screen, check for a new version;
+  // when the new version takes over, reload so the old code (and its old Supabase library) stops running.
+  const hadController=!!navigator.serviceWorker.controller;
+  let reloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+    if(!hadController || reloading) return;   // the very first install doesn't need a reload
+    reloading=true; location.reload();
+  });
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState==="visible") navigator.serviceWorker.getRegistration().then(r=>r && r.update()).catch(()=>{});
+  });
 }
 const IS_APP = matchMedia("(display-mode: standalone)").matches || navigator.standalone===true;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
@@ -1677,6 +1689,14 @@ function makeClient(){
   const ok=window.supabase && cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT");
   return ok ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY) : null;
 }
+// The request never reached Supabase (no signal, a VPN or content blocker, the app sent to the background).
+// Each browser words it differently: Safari "Load failed", Chrome "Failed to fetch", Firefox "NetworkError…".
+function isNetworkError(e){
+  if(!e) return false;
+  if(e.name==="AuthRetryableFetchError" || e.status===0) return true;
+  return /load failed|failed to fetch|networkerror|network connection was lost|internet connection appears to be offline/i.test(e.message||"");
+}
+const NETWORK_MSG="Couldn’t reach stickpicks. Check your connection, turn off any VPN or content blocker for this site, and try again.";
 // Testing only: on this computer (localhost), localStorage "stickpicks-dev-season" can point the site at another
 // season, e.g. 20252026 for last spring's playoffs. Never applies on stickpicks.hockey.
 const SEASON=(()=>{
