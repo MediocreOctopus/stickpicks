@@ -2,7 +2,7 @@
 
 Pick sheets for all 32 NHL teams. Pick a team, then call every regular-season game a win, loss, or overtime loss, and guess the combined goals. Each sheet uses its team's colors, final scores fill in automatically, and leaderboards rank every sheet by points. A home page handles accounts and shows an NHL news ticker and the day's games. It's hosted free on GitHub Pages, with a Supabase database.
 
-**Live at [stickpicks.hockey](https://stickpicks.hockey/).** The old address, `mediocreoctopus.github.io/nhl-picks/`, forwards there automatically.
+**Live at [stickpicks.hockey](https://stickpicks.hockey/).** Old links to `mediocreoctopus.github.io/nhl-picks/…` still work: the small [`nhl-picks`](https://github.com/MediocreOctopus/nhl-picks) repository forwards each one to the same page on stickpicks.hockey.
 
 ```
 index.html                                  home page: sign-in, news ticker, today's games
@@ -63,9 +63,9 @@ Open `config.js` and replace the placeholders with your Project URL and publisha
 
 ### 3. Publish on GitHub Pages
 
-1. Create a **public** GitHub repository, for example `nhl-picks`, and upload everything in this folder. Keep the folder structure, and make sure the hidden `.github` folder is included.
+1. Create a **public** GitHub repository, for example `stickpicks`, and upload everything in this folder. Keep the folder structure, and make sure the hidden `.github` folder is included.
 2. Go to **Settings → Pages**, and under **Build and deployment → Source** choose **GitHub Actions**. The included `.github/workflows/deploy-site.yml` then publishes the site on every push to `main`, stamping a fresh version into each page's `?v=__V__` links and `sw.js` so phones always pick up changes (never edit `__V__` by hand).
-3. Your site will be live at `https://YOUR-GITHUB-NAME.github.io/nhl-picks/`. To use your own domain instead, see [Custom domain](#custom-domain) below.
+3. Your site will be live at `https://YOUR-GITHUB-NAME.github.io/stickpicks/`. To use your own domain instead, see [Custom domain](#custom-domain) below.
 
 ### 4. Allow sign-in
 
