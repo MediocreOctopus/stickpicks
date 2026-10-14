@@ -1656,6 +1656,22 @@ function trophySvg(uid, compact=false){
 }
 
 /* ───────── Shared helpers ───────── */
+// Search engines: a page's title, description and preferred address ("canonical": one address per team page, without
+// extra bits like &game= or ?period=), and noindex for one player's pages so searches find the game, not people.
+// Google runs the page's script before reading these. The list of pages to search is sitemap.xml.
+function setPageMeta({title, description, canonical, noindex}={}){
+  // finds <meta name|property=...> or <link rel=...> in <head>, adding it if missing
+  const get=(tagName,attr,val)=>{
+    let el=document.head.querySelector(`${tagName}[${attr}="${val}"]`);
+    if(!el){ el=document.createElement(tagName); el.setAttribute(attr,val); document.head.appendChild(el); }
+    return el;
+  };
+  if(title){ document.title=title; get("meta","property","og:title").content=title; }
+  if(description){ get("meta","name","description").content=description; get("meta","property","og:description").content=description; }
+  if(canonical!==undefined){ get("link","rel","canonical").href=SITE_URL+canonical; get("meta","property","og:url").content=SITE_URL+canonical; }
+  if(noindex!==undefined) get("meta","name","robots").content = noindex ? "noindex" : "index,follow";
+}
+
 function makeClient(){
   const cfg=window.PICKS_CONFIG||{};
   const ok=window.supabase && cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT");

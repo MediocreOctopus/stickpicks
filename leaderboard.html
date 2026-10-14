@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<link rel="canonical" href="https://stickpicks.hockey/leaderboard.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
 <meta property="og:title" content="stickpicks · NHL Predictions">
@@ -203,7 +204,9 @@ function describe(){
     const name = board==="playoffs" ? "Playoff Sheet" : "Bracket";
     document.getElementById("lbKicker").textContent=`${SEASON_LABEL} playoffs · Leaderboard`;
     document.getElementById("headline").textContent=name;
-    document.title=`${name} leaderboard · stickpicks`;
+    setPageMeta({title:`${name} leaderboard · stickpicks`, canonical:`leaderboard.html?board=${board}`,
+      description: board==="playoffs" ? "The stickpicks playoff sheet leaderboard: every playoff game, 1 point for the winner and 1 for the exact goals. Free, no money."
+        : "The stickpicks playoff bracket leaderboard: every series winner and length, 1, 2, 4 or 8 points by round. Free, no money."});
     document.getElementById("scope").textContent = board==="playoffs"
       ? "Every playoff sheet. 1 point for the right winner, 1 for the exact goals."
       : "Every bracket. Right winner: 1, 2, 4 or 8 points by round, +1 for the right number of games.";
@@ -218,7 +221,11 @@ function describe(){
   // Same format on every board: "<when> · <which> leaderboard" above the name in script
   document.getElementById("lbKicker").textContent = `${w.kicker} · ${team ? "team leaderboard" : "Leaderboard"}`;
   document.getElementById("headline").textContent = team ? TEAMS[team].name : "All-Teams";
-  document.title = `${team?TEAMS[team].name+" ":""}Leaderboard${period==="season"?"":" · "+w.kicker} · stickpicks`;
+  // search engines: one page per board (the season view; months and weeks aren't separate pages)
+  setPageMeta({title:`${team?TEAMS[team].name+" ":""}Leaderboard${period==="season"?"":" · "+w.kicker} · stickpicks`,
+    canonical: team ? `leaderboard.html?team=${team}` : "leaderboard.html",
+    description: team ? `The ${TEAMS[team].name} pick'em leaderboard: ${teamNick(team)} fans ranked by how well they call every ${teamNick(team)} game. Free, no money, no ads.`
+      : "The stickpicks All-Teams leaderboard: every pick sheet for every NHL team, ranked by season, month and week. Free, no money, no ads."});
   document.getElementById("scope").textContent = (team
     ? `Every ${TEAMS[team].name} pick sheet.`
     : "Every pick sheet, each ranked on its own.") + (period==="season" ? "" : ` Only games played ${w.phrase} count.`);
