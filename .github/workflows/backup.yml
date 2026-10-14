@@ -1,0 +1,75 @@
+name: Back up the database
+
+# Every Sunday: a full copy of the stickpicks database (Supabase's free plan keeps no backups of its own).
+# What's saved: everything in the public schema (games, picks, profiles, Chiclets, badges, the shop, playoffs...,
+# structure and data) plus the sign-in accounts (auth.users and auth.identities), so players could sign back in.
+# Not saved: uploaded profile photos (those live in Supabase Storage, not the database).
+#
+# The copy is ENCRYPTED before it's stored, because this repository is public and anyone signed in to GitHub can
+# download a public repository's workflow files. Only someone with BACKUP_PASSPHRASE can open it.
+# Each backup is kept for 90 days (about 13 weekly copies): Actions → this workflow → a run → "Artifacts".
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL     Supabase → Connect → "Session pooler" connection string, with your database password filled in.
+#                       (The "Direct connection" string won't work: GitHub's machines can't reach it.)
+#   BACKUP_PASSPHRASE   any long passphrase. Keep a copy somewhere safe (a password manager): without it the backups
+#                       can't be opened.
+# Restoring: see "Backups" in CLAUDE.md.
+on:
+  schedule:
+    - cron: "23 10 * * 0"   # Sundays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check the secrets are set
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$DB" ] || { echo "::error::Add the SUPABASE_DB_URL secret (see the top of backup.yml)."; exit 1; }
+          [ -n "$PASS" ] || { echo "::error::Add the BACKUP_PASSPHRASE secret (see the top of backup.yml)."; exit 1; }
+
+      - name: Install the PostgreSQL 17 backup tools (they must match the database's version)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      - name: Copy the database and encrypt it
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          day=$(date -u +%Y-%m-%d)
+          dir="$RUNNER_TEMP/stickpicks-backup-$day"; mkdir -p "$dir"
+          PG=/usr/lib/postgresql/17/bin
+          # the site's own tables, functions and permissions, with their data
+          $PG/pg_dump "$DB" --schema=public --no-owner --format=custom --file="$dir/public.dump"
+          # sign-in accounts (data only; Supabase recreates the auth tables themselves)
+          $PG/pg_dump "$DB" --data-only --table=auth.users --table=auth.identities --format=custom --file="$dir/auth.dump"
+          # how many rows each table had, to sanity-check a restore (counts only: this log is public)
+          $PG/psql "$DB" -At -c "select relname || ': ' || n_live_tup from pg_stat_user_tables where schemaname='public' order by relname" > "$dir/row-counts.txt"
+          echo "Backed up $(wc -l < "$dir/row-counts.txt") tables"
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/backup.tgz" "stickpicks-backup-$day"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/stickpicks-backup-$day.tgz.gpg" "$RUNNER_TEMP/backup.tgz"
+          rm -rf "$dir" "$RUNNER_TEMP/backup.tgz"   # only the encrypted copy is kept
+          ls -lh "$RUNNER_TEMP"/stickpicks-backup-*.gpg
+          echo "DAY=$day" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stickpicks-backup-${{ env.DAY }}
+          path: ${{ runner.temp }}/stickpicks-backup-*.tgz.gpg
+          retention-days: 90
+          if-no-files-found: error

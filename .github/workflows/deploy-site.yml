@@ -1,6 +1,9 @@
 # Publishes the site to GitHub Pages on every push to main.
-# Before publishing it stamps a fresh version into every page's ?v=__V__ links and sw.js's VERSION, so phones and the
-# installed app always pick up new styles.css / teams.js / game.js (no more bumping the date in every file by hand).
+# 1. Safety-net checks (scripts/check_site.py, then a syntax check of every script). If anything is wrong the deploy
+#    stops here and the live site stays as it was; GitHub emails you what failed.
+# 2. Before publishing it stamps a fresh version into every page's ?v=__V__ links and sw.js's VERSION, so phones and the
+#    installed app always pick up new styles.css / teams.js / game.js (no more bumping the date in every file by hand).
+# 3. After publishing, a real browser opens the main pages of the live site and checks for errors (scripts/live_check.py).
 # Needs Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Deploy site
 
@@ -24,10 +27,21 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      version: ${{ steps.stamp.outputs.version }}
     steps:
       - uses: actions/checkout@v7
 
+      - name: Safety-net checks (the deploy stops here if anything is wrong)
+        run: |
+          python3 scripts/check_site.py --extract "$RUNNER_TEMP/inline"
+          # every script, including each page's inline scripts, must at least parse
+          for f in *.js scripts/*.mjs "$RUNNER_TEMP"/inline/*.js; do
+            node --check "$f" || { echo "::error file=$f::This script has a syntax error (see above)"; exit 1; }
+          done
+
       - name: Copy the site and stamp the version
+        id: stamp
         run: |
           V="$(date -u +%Y%m%d%H%M)-${GITHUB_SHA::7}"
           mkdir -p _site
@@ -36,6 +50,7 @@ jobs:
             --exclude 'scripts' --exclude 'README.md' --exclude 'CLAUDE.md'
           sed -i "s/__V__/$V/g" _site/*.html _site/sw.js
           if grep -l "__V__" _site/*.html _site/sw.js; then echo "A version placeholder was left unstamped"; exit 1; fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "Published version $V"
 
       - uses: actions/configure-pages@v6
@@ -44,3 +59,21 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # Opens the live site in a real browser once the new version is being served. A failure here means the site is
+  # already published, so fix forward (or revert the commit); the email says which page and what went wrong.
+  live-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install a browser
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet playwright==1.48.0
+          "$RUNNER_TEMP/venv/bin/playwright" install --with-deps chromium
+      - name: Check the live site
+        run: '"$RUNNER_TEMP/venv/bin/python" scripts/live_check.py'
+        env:
+          EXPECT_VERSION: ${{ needs.deploy.outputs.version }}
