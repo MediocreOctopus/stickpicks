@@ -597,9 +597,10 @@ $("fUp").addEventListener("submit", async e=>{
   if(!email) return msg("upMsg","Enter your email address.","err");
   if(password.length<8) return msg("upMsg","Use a password of at least 8 characters.","err");
   busy(e.target,true); msg("upMsg","Checking username…");
-  const {data:free,error:e1}=await sb.rpc("username_available",{p_username:username});
+  const {data:status,error:e1}=await sb.rpc("username_status",{p_username:username});   // ok | taken | not_allowed
   if(e1){ busy(e.target,false); return msg("upMsg",friendly(e1),"err"); }
-  if(!free){ busy(e.target,false); return msg("upMsg","That username is taken. Try another.","err"); }
+  if(status==="taken"){ busy(e.target,false); return msg("upMsg","That username is taken. Try another.","err"); }
+  if(status==="not_allowed"){ busy(e.target,false); return msg("upMsg",USERNAME_NOT_ALLOWED,"err"); }
   msg("upMsg","Creating your account…");
   const {data,error}=await sb.auth.signUp({email,password,options:{data:INVITER ? {username, invited_by:INVITER} : {username}, emailRedirectTo:HOME_URL}});
   busy(e.target,false);
@@ -687,7 +688,7 @@ $("fName").addEventListener("submit", async e=>{
   busy(e.target,true);
   const {error}=await sb.from("profiles").upsert({user_id:currentUser.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
-  if(error) return msg("nmMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
+  if(error) return msg("nmMsg", usernameError(error, friendly(error)), "err");
   if(!profile) noteInvite(currentUser);   // first profile: credit an invitation, if they came from one
   profile={...(profile||{}), username:name}; $("welcome").textContent=`Welcome back, ${name}`; setNavAccount(); setBanner();
   showNameForm(false); loadMyStats();

@@ -1716,6 +1716,11 @@ const SEASON_BADGE=`season${SEASON.slice(2,4)}${SEASON.slice(6,8)}`;
 document.querySelectorAll("[data-season]").forEach(el=>{ el.textContent=SEASON_LABEL; });
 document.documentElement.classList.toggle("playoffs", playoffOn());   // playoff colours before anything draws (the <head> script does this too)
 const USERNAME_RULE=/^[A-Za-z0-9_]{3,20}$/;
+// What to tell someone whose username couldn't be saved: taken (23505), or refused by the database's word filter
+// (23514, profiles_username_check in schema.sql section 21). Never says which word.
+const USERNAME_NOT_ALLOWED="That username isn’t allowed. Please choose another.";
+const usernameError=(error, fallback)=> error?.code==="23505" ? "That username is taken. Try another."
+  : error?.code==="23514" ? USERNAME_NOT_ALLOWED : fallback;
 
 // A game's outcome from one team's side: "W", "L", "OTL", or null if not final.
 function resultFor(g, team){

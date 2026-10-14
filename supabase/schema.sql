@@ -1574,4 +1574,103 @@ $$;
 revoke all on function public.weekly_report_stats(timestamptz) from public, anon, authenticated;
 grant execute on function public.weekly_report_stats(timestamptz) to service_role;
 
+
+-- 21) Username moderation: no profanity, slurs or hate terms (including common workarounds), and nothing posing as the
+-- site. Enforced here, so it can't be skipped by going around the website; the site shows a friendly message
+-- ("That username isn't allowed"). Existing usernames aren't re-checked; to fix one by hand:
+--   update public.profiles set username = 'NewName' where lower(username) = lower('OldName');
+--
+-- How a name is checked (username_blocked):
+--   1. lower case; underscores removed; number-for-letter swaps undone (0 o, 1 i or l, 3 e, 4 a, 5 s, 7 t, 8 b, 9 g);
+--      also a copy with stretched letters collapsed (fuuuck -> fuck).
+--   2. innocent words that happen to contain a blocked word are removed first (Dickinson, Hancock, therapist...).
+--   3. BLOCK_ANYWHERE words are blocked anywhere in the name.
+--   4. BLOCK_ALONE words are only blocked as a separate part of the name (split at underscores, numbers and capitals:
+--      "BigAss", "ass_man", "Ass69"), because they hide inside ordinary words (Cassidy, Glass, assist, document).
+--   5. reserved: anything containing stickpicks / admin / moderator, and a few exact names.
+-- To add a word: put it in the right list below and re-run this section in the SQL editor.
+create or replace function public.username_blocked(p_username text)
+returns boolean language plpgsql immutable set search_path = '' as $$
+declare
+  block_anywhere text[] := array[
+    'fuck','fuk','fck','fvck','phuck','phuk','shit','shyt','cunt','bitch','whore','slut','twat','wank','dildo','pussy','penis','vagina','porn','jizz',
+    'cock','dick','asshole','asshat','assclown','assface','asswipe','dumbass','jackass','smartass','kissmyass','bigass',
+    'fatass','buttfuck',
+    'nigger','nigga','niggr','negro','faggot','fagot','retard','tranny','rapist','rape','molest','pedo','hitler','nazi',
+    'kkk','heilhitler','whitepower','wetback','beaner','chink','kike','raghead','towelhead','sandnigger'];
+  block_alone text[] := array[
+    'ass','asses','tit','tits','titty','cum','fag','fags','coon','coons','spic','spics','gook','gooks','homo','hoe','hoes',
+    'jap','japs','sex','anal','boob','boobs','butt','piss'];
+  -- innocent words containing a block_anywhere word (removed before checking)
+  allow text[] := array[
+    'dickinson','dickens','dickson','dickey','dickie','hancock','babcock','peacock','hitchcock','cockburn','woodcock',
+    'cockatoo','cockpit','cockerel','scunthorpe','shiitake','shitake','therapist','grape','drape','scrape','rapeseed',
+    'montenegro','nigeria','penistone','swank','draper','trapeze','torpedo','pedometer'];
+  reserved_anywhere text[] := array['stickpicks','admin','moderator'];
+  reserved_exact text[] := array['support','staff','official','nhl','root','system','help','contact','alerts','null','undefined'];
+  raw text := coalesce(p_username, '');
+  base text;
+  variants text[];
+  parts text[];
+  v text; w text; t text;
+begin
+  base := lower(raw);
+  if base = any(reserved_exact) then return true; end if;
+  foreach w in array reserved_anywhere loop if position(w in replace(base, '_', '')) > 0 then return true; end if; end loop;
+
+  -- whole-name variants: underscores out, numbers read as letters (1 as i, and as l), plus stretched letters collapsed
+  base := replace(base, '_', '');
+  variants := array[translate(base, '013457890', 'oieastbgo'), translate(base, '013457890', 'oleastbgo')];
+  variants := variants || array[regexp_replace(variants[1], '(.)\1+', '\1', 'g'), regexp_replace(variants[2], '(.)\1+', '\1', 'g')];
+  for i in 1..4 loop
+    v := variants[i];
+    foreach w in array allow loop v := replace(v, w, ''); end loop;
+    foreach w in array block_anywhere loop
+      if position(w in v) > 0 then return true; end if;
+      -- the collapsed copies are also checked against collapsed words ("niiigger" -> "niger"), if still 4+ letters long
+      if i > 2 and length(regexp_replace(w, '(.)\1+', '\1', 'g')) >= 4
+         and position(regexp_replace(w, '(.)\1+', '\1', 'g') in v) > 0 then return true; end if;
+    end loop;
+    if v = any(block_alone) then return true; end if;
+  end loop;
+
+  -- separate parts of the name: split at underscores, numbers and lower-to-upper capitals ("BigAss_69")
+  parts := regexp_split_to_array(regexp_replace(regexp_replace(raw, '([a-z])([A-Z])', '\1 \2', 'g'), '[_0-9]+', ' ', 'g'), ' ');
+  foreach t in array parts loop
+    t := lower(t);
+    if t = '' then continue; end if;
+    if t = any(block_alone) or regexp_replace(t, '(.)\1+', '\1', 'g') = any(block_alone) then return true; end if;
+  end loop;
+  -- parts split only at underscores, with numbers read as letters ("A55_man")
+  foreach t in array string_to_array(lower(raw), '_') loop
+    if translate(t, '013457890', 'oieastbgo') = any(block_alone) or translate(t, '013457890', 'oleastbgo') = any(block_alone) then
+      return true; end if;
+  end loop;
+  return false;
+end $$;
+revoke all on function public.username_blocked(text) from public, anon, authenticated;
+
+create or replace function public.profiles_username_check()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if public.username_blocked(new.username) then
+    raise exception 'That username isn''t allowed. Please choose another.' using errcode = '23514';
+  end if;
+  return new;
+end $$;
+drop trigger if exists profiles_username_check on public.profiles;
+create trigger profiles_username_check before insert or update of username on public.profiles
+  for each row execute function public.profiles_username_check();
+
+-- For the sign-up and rename forms: 'ok', 'taken' or 'not_allowed' (never says which word).
+create or replace function public.username_status(p_username text)
+returns text language sql stable security definer set search_path = '' as $$
+  select case
+    when p_username is null or p_username !~ '^[A-Za-z0-9_]{3,20}$' then 'invalid'
+    when public.username_blocked(p_username) then 'not_allowed'
+    when exists (select 1 from public.profiles where lower(username) = lower(p_username)) then 'taken'
+    else 'ok' end;
+$$;
+grant execute on function public.username_status(text) to anon, authenticated;
+
 notify pgrst, 'reload schema';

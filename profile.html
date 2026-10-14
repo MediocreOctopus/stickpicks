@@ -545,7 +545,7 @@ $("unForm").addEventListener("submit", async e=>{
   busy(e.target,true); msg("unMsg","Saving…");
   const {error}=await sb.from("profiles").upsert({user_id:user.id, username:name},{onConflict:"user_id"});
   busy(e.target,false);
-  if(error) return msg("unMsg", error.code==="23505" ? "That username is taken. Try another." : friendly(error), "err");
+  if(error) return msg("unMsg", usernameError(error, friendly(error)), "err");
   setName(name); closeUsername(); msg("unMsg","Username saved.","ok"); loadStats();
 });
 
