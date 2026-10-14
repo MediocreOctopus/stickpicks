@@ -1,0 +1,39 @@
+name: Reminders
+
+# Opens a to-do issue on the right date for the jobs that need a person (GitHub emails it to you):
+#   .github/reminders/04-01.md  April 1      playoffs are coming (put Playoff Black on sale, check the bracket)
+#   .github/reminders/07-01.md  July 1       new NHL season (switch SEASON, new ticket badge, load the schedule)
+#   .github/reminders/09-15.md  September 15 preseason check (domain renewal, backups, Google, outreach)
+# To add one, add a file named MM-DD.md (on the 1st or 15th) with a "title:" line at the top, like the others.
+# To try one now: Actions → Reminders → Run workflow, and type its name (e.g. 04-01).
+on:
+  schedule:
+    - cron: "5 15 1,15 * *"   # the 1st and 15th of each month
+  workflow_dispatch:
+    inputs:
+      reminder:
+        description: "Send this reminder now (e.g. 04-01)"
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Open today's reminder, if there is one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANTED: ${{ inputs.reminder }}
+        run: |
+          name="${WANTED:-$(date -u +%m-%d)}"
+          file=".github/reminders/$name.md"
+          if [ ! -f "$file" ]; then echo "No reminder for $name."; exit 0; fi
+          title=$(sed -n 's/^title: *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' "$file" | head -1)
+          awk 'BEGIN{n=0} /^---$/{n++; next} n>=2' "$file" > "$RUNNER_TEMP/body.md"
+          gh label create reminder --color D9A33A --description "A to-do from the reminders workflow" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          gh issue create --repo "$GITHUB_REPOSITORY" --label reminder --title "${title:-Reminder $name} ($(date -u +%Y))" --body-file "$RUNNER_TEMP/body.md"

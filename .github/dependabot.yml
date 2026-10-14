@@ -1,0 +1,16 @@
+# Dependabot: once a week, checks whether the GitHub building blocks the workflows use (actions/checkout,
+# actions/setup-node, actions/upload-artifact, ...) have newer versions, and opens one pull request updating them all.
+# Review it and click "Merge" (the safety-net checks run first). This is what avoids "Node version is deprecated"
+# warnings and eventually-broken workflows.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      workflow-building-blocks:
+        patterns: ["*"]
+    commit-message:
+      prefix: "Update workflow building blocks"

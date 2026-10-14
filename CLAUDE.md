@@ -35,7 +35,13 @@ Owner is not a professional developer: explain changes in plain language, and sa
 | `chiclets.html` | Your Chiclets balance (banner), a fold-out "How it works", and your statement (`chiclets_ledger`, newest first, by month). Signed-in only. |
 | `shop.html` | The Chiclets shop: items from `shop_items` in three sections (borders, sweater styles, Breakaway skater), each previewed on you; Buy (`buy_item`), Wear / Take off (`equip_item`); limited-time items show "On sale <date>" before their window. |
 | `badges.html` | Every badge by `BADGE_GROUPS`, with filters and a dialog per badge (including its Chiclets reward). |
-| `.github/workflows/deploy-site.yml` | Publishes the site and stamps `__V__` (see Hosting). |
+| `.github/workflows/deploy-site.yml` | On every push: safety-net checks (`scripts/check_site.py` + `node --check` of every script, inline ones included; a failure stops the deploy), publish and stamp `__V__` (see Hosting), then `live-check`: a real browser (Playwright, `scripts/live_check.py`) opens 14 live pages once the new version is served and fails on script errors or the site's own files 404ing (missing content is only a warning). |
+| `.github/workflows/monitor.yml` | Hourly: site up, database answering, update-job heartbeat (`site_settings.updated_at` for key `season`, stamped every run) under 2 hours old, the last 4 update runs not all failed. Opens one issue labelled `site-monitor` (emails the owner) and closes it when healthy again. |
+| `.github/workflows/backup.yml` | Sundays: `pg_dump` (PostgreSQL 17 client, matching Supabase 17.6) of the `public` schema + `auth.users`/`auth.identities` data, encrypted with gpg (AES256) and kept 90 days as a workflow artifact. Secrets `SUPABASE_DB_URL` (Session pooler string; the direct connection is IPv6-only and unreachable from GitHub) and `BACKUP_PASSPHRASE`. Profile photos (Storage) aren't included. |
+| `.github/workflows/weekly-report.yml` | Mondays: `scripts/weekly_report.py` (totals + public top 5, optional `GOATCOUNTER_TOKEN` for visits) posted as an issue labelled `weekly-report`, then closed. Repo is public: totals only. |
+| `.github/workflows/reminders.yml` | 1st and 15th: opens `.github/reminders/MM-DD.md` as an issue labelled `reminder` (04-01 playoffs, 07-01 new season, 09-15 preseason). Manual run with an input name to test one. |
+| `.github/dependabot.yml` | Weekly grouped PR updating the `uses:` versions in the workflows. |
+| `scripts/check_site.py` | Pre-deploy checks (stdlib Python; run it locally with `python scripts/check_site.py`): page files exist and carry `?v=__V__`, no top-level name declared twice on a page (config.js + teams.js + game.js + inline scripts share one scope), links/anchors, sitemap vs teams.js, robots, manifest, sw.js SHELL. Script-handled anchors are listed in `SCRIPT_ANCHORS`. |
 | `og-image.png` | Link-preview image (logo on knit with hem stripes). Every page's `og:image` uses the absolute URL `https://stickpicks.hockey/og-image.png`; update it if the site moves. |
 | `styles.css` | All styles for every page. Theme colors are CSS custom properties set per team by `applyTheme()`. |
 | `scripts/update-games.mjs` | Syncs all 32 schedules + scores from the NHL feed into `games`, and ESPN headlines into `news`. |
@@ -102,6 +108,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - **New-season checklist** (July, once the NHL posts the schedule): set `SEASON` in `config.js`; add the new ticket badge (e.g. `season2728`) to `BADGES` with its own art, `BADGE_ORDER`, the "Getting started" group and the share phrases (the SQL handles any `seasonNNNN` id already); move dated shop items (Frozen Pond's dates); push, then run the "Update NHL games" workflow once. Last season's games, picks and trophy case stay in the database.
 - Sharing (teams.js): `shareButton(label, spec, cls, lazy)` pre-draws a 1200x630 picture card (`drawCard`, cached by `cardFor`) and opens `navigator.share` with the file, falling back to `openShareSheet` (a <dialog>). Specs: `inviteSpec(name)`, `badgeSpec(id, name)`; result and standing specs are built in index.html and leaderboard.html. Invitation links are `SITE_URL?invite=Name`; index.html reads `invite` into `INVITER` for the welcome panel. Cards are drawn on canvas, so web fonts must be loaded first (document.fonts.load) and the logo's Yellowtail script is drawn as canvas text between the stick and puck images.
 - Leaderboard time frames (leaderboard.html): `period` = season | month | week (Mon-Sun), `pStart` = first day; URL params `period` and `from`; `when()` gives the kicker/label/phrase.
+- Email (Porkbun forwarding, receive only): `contact@stickpicks.hockey` is the public contact for players (privacy.html #contact); `alerts@stickpicks.hockey` receives GitHub notifications for this repository (custom routing). Never publish the owner's personal address.
 - privacy.html: Privacy Policy + Terms of Use (sections #privacy, #terms, #contact). Update it (and its 'Last updated' date) whenever data collection or third-party services change.
 - badges.html: the full badge collection grouped by BADGE_GROUPS (teams.js), with filters and a <dialog> per badge. The profile's badge card shows rarestBadges(earned,5), badgesInReach(r,3) and a link here. New badges must be added to BADGE_GROUPS, BADGE_SHOW, BADGE_ORDER and BADGE_BRAG.
 - Stale pages: a page left open (a Safari tab, or the Home Screen app in the background) keeps running the code it loaded. `teams.js` calls `registration.update()` whenever a page comes back on screen and reloads on `controllerchange` (skipped on the very first install), so a deploy replaces old code. Sign-in errors that are really dropped connections (`isNetworkError()`: Safari "Load failed", Chrome "Failed to fetch") show `NETWORK_MSG`; sign-in retries once on one.
@@ -112,10 +119,21 @@ Owner is not a professional developer: explain changes in plain language, and sa
 - New tables need explicit grants. `service_role` needs `select, insert, update` (and `delete` where the job deletes) or the Action fails with `42501 permission denied`.
 - PostgREST returns at most 1000 rows by default. Use aggregate functions instead of pulling raw picks.
 - Supabase's built-in email sender allows only a few emails per hour (confirmations + password resets).
-- GitHub pauses scheduled workflows after 60 days without repository activity. `keepalive.yml` re-enables them on the 1st of each month; if GitHub emails that a workflow was disabled, re-enable it in the Actions tab.
+- GitHub pauses scheduled workflows after 60 days without repository activity. `keepalive.yml` re-enables all of them (update-games, keepalive, monitor, backup, weekly-report, reminders; add new scheduled workflows to its list) on the 1st of each month; if GitHub emails that a workflow was disabled, re-enable it in the Actions tab.
 
 ## Testing
 
 There's no automated test suite. When changing pages, check them in a browser with real or stubbed Supabase data, including a phone-width viewport (~390px) and dark mode. Verify scoring changes against the examples table in `rules.html`. After editing `supabase/schema.sql`, re-read it for idempotency before telling the owner to run it in Supabase's SQL Editor.
 
 Sign-in trouble: Supabase's dashboard (**Logs → Auth**, or Logs Explorer on `edge_logs`, whose request headers carry the user agent and `x_client_info` = the supabase-js version) shows which device and library version is calling `/token`. A storm of `refresh_token` 400/429s from one device means a stale page is looping; it rate-limits that device's network, and Safari reports the blocked sign-in as "Load failed".
+
+## Backups: restoring
+Download the backup from Actions → "Back up the database" → a run → Artifacts (a zip holding `stickpicks-backup-YYYY-MM-DD.tgz.gpg`).
+1. Decrypt and unpack: `gpg --decrypt stickpicks-backup-DATE.tgz.gpg > backup.tgz` (asks for BACKUP_PASSPHRASE), then `tar -xzf backup.tgz`.
+2. Inside: `public.dump` (site tables, functions, policies, data), `auth.dump` (sign-in accounts, data only), `row-counts.txt`.
+3. Restore into a Supabase project (PostgreSQL 17 tools; use the Session pooler connection string as `$DB`):
+   accounts first, `pg_restore --data-only --disable-triggers -d "$DB" auth.dump`, then the site,
+   `pg_restore --clean --if-exists --no-owner -d "$DB" public.dump`. Compare table sizes with `row-counts.txt`.
+   To restore one table only: `pg_restore --data-only -t team_picks -d "$DB" public.dump` (empty it first).
+Restoring over the live project replaces current data: try it on a spare Supabase project first.
+

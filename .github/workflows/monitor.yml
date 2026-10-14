@@ -1,0 +1,78 @@
+name: Site monitor
+
+# Every hour: is stickpicks up, and is the data still flowing?
+#  - the site answers at stickpicks.hockey
+#  - the database answers, and the 15-minute update job has run recently (its heartbeat: it stamps
+#    site_settings.updated_at on every run, all year round)
+#  - the update job's recent runs didn't all fail
+#  - news headlines aren't stale (a warning only: ESPN's feed can be quiet)
+# If something's wrong it opens ONE issue labelled "site-monitor" (GitHub emails you), and closes it by itself once
+# everything is healthy again, so you're not emailed every hour while a problem lasts.
+on:
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the site, the database and the update job
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          problems=()
+          site=https://stickpicks.hockey/
+          if ! curl -fsS --max-time 30 "$site" | grep -q "stickpicks"; then problems+=("The site isn't answering at $site."); fi
+
+          # the public database address and publishable key are already in config.js (safe to share)
+          url=$(grep -o 'https://[a-z0-9]*\.supabase\.co' config.js | head -1)
+          key=$(grep -o 'sb_publishable_[A-Za-z0-9_-]*' config.js | head -1)
+          beat=$(curl -fsS --max-time 30 "$url/rest/v1/site_settings?select=updated_at&key=eq.season" -H "apikey: $key" | jq -r '.[0].updated_at // empty' || true)
+          if [ -z "$beat" ]; then
+            problems+=("The database isn't answering (or the update job has never run).")
+          else
+            age=$(( ( $(date -u +%s) - $(date -u -d "$beat" +%s) ) / 60 ))
+            echo "Update job last ran $age minutes ago ($beat)"
+            if [ "$age" -gt 120 ]; then problems+=("The 15-minute update job last ran $age minutes ago ($beat UTC), so scores and schedules aren't being updated. Check the Update NHL games workflow; GitHub may have switched it off, or Supabase may be paused.") ; fi
+          fi
+
+          failed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow update-games.yml --limit 4 --json conclusion -q '[.[] | select(.conclusion=="failure")] | length') || failed=0
+          if [ "${failed:-0}" -ge 4 ]; then problems+=("The last 4 runs of the Update NHL games workflow failed. Open the latest run to see why (often the NHL changed its feed, or a secret expired)."); fi
+
+          news=$(curl -fsS --max-time 30 "$url/rest/v1/news?select=fetched_at&order=fetched_at.desc&limit=1" -H "apikey: $key" | jq -r '.[0].fetched_at // empty' || true)
+          if [ -n "$news" ] && [ $(( ( $(date -u +%s) - $(date -u -d "$news" +%s) ) / 3600 )) -gt 24 ]; then
+            echo "::warning::No new headlines saved for over a day (last: $news). The ticker may look stale."
+          fi
+
+          if [ ${#problems[@]} -eq 0 ]; then echo "healthy=true" >> "$GITHUB_OUTPUT"; echo "All good."; exit 0; fi
+          echo "healthy=false" >> "$GITHUB_OUTPUT"
+          { echo "Checked $(date -u '+%b %-d, %H:%M UTC'). Something needs a look:"; echo
+            for p in "${problems[@]}"; do echo "- $p"; done
+            echo; echo "This issue closes by itself once the hourly check passes again. Workflow runs: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions"
+          } > "$RUNNER_TEMP/report.md"
+          cat "$RUNNER_TEMP/report.md"
+
+      - name: Open an issue (once) if something's wrong, or close it once things are healthy
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEALTHY: ${{ steps.check.outputs.healthy }}
+        run: |
+          if [ -z "$HEALTHY" ]; then echo "The check itself didn't finish (see the step above); GitHub emails you about this run."; exit 1; fi
+          gh label create site-monitor --color B60205 --description "Opened by the hourly site monitor" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --label site-monitor --state open --json number -q '.[0].number')
+          if [ "$HEALTHY" = "true" ]; then
+            if [ -n "$open" ]; then gh issue close "$open" --repo "$GITHUB_REPOSITORY" --comment "✅ Back to normal as of $(date -u '+%b %-d, %H:%M UTC')."; fi
+          elif [ -z "$open" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --label site-monitor --title "⚠️ stickpicks needs a look" --body-file "$RUNNER_TEMP/report.md"
+          else
+            echo "Issue #$open is already open; not emailing again."
+          fi

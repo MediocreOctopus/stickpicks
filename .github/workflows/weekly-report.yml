@@ -1,0 +1,37 @@
+name: Weekly report
+
+# Every Monday morning: players, sign-ups, picks, the top of the board and (optionally) site visits for the last
+# 7 days, from scripts/weekly_report.py. It's posted as a GitHub issue labelled "weekly-report", which emails it to
+# you, and then closed straight away so they don't pile up (find old ones under Issues → Closed).
+# This repository is public, so the report only has totals and the public leaderboard.
+# Optional secret GOATCOUNTER_TOKEN adds site visits (stickpicks.goatcounter.com → Settings → API → new token with
+# "Read statistics").
+on:
+  schedule:
+    - cron: "3 14 * * 1"   # Mondays 14:03 UTC: 7am Pacific in summer, 6am in winter
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Put the report together
+        run: python3 scripts/weekly_report.py > "$RUNNER_TEMP/report.md" && cat "$RUNNER_TEMP/report.md" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GOATCOUNTER_TOKEN: ${{ secrets.GOATCOUNTER_TOKEN }}
+      - name: Email it (as an issue, then close it)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create weekly-report --color 1C2B45 --description "The Monday stickpicks report" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+          url=$(gh issue create --repo "$GITHUB_REPOSITORY" --label weekly-report \
+                  --title "📊 stickpicks weekly report · $(date -u '+%b %-d, %Y')" --body-file "$RUNNER_TEMP/report.md")
+          gh issue close "$url" --repo "$GITHUB_REPOSITORY"
