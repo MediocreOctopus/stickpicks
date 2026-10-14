@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
 <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
 <meta name="description" content="Free NHL prediction game. Call every game for any team, W, L, or OTL plus combined goals, and climb the leaderboard.">
+<link rel="canonical" href="https://stickpicks.hockey/sheet.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="stickpicks">
 <meta property="og:title" content="stickpicks · NHL Predictions">
@@ -159,7 +160,13 @@ async function chooseTeam(code){
   if(!viewing){ try{ localStorage.setItem("nhl-picks-last-team",code); }catch(e){} }
   const url=new URL(location.href); url.searchParams.set("team",code); history.replaceState(null,"",url);
   applyTheme(code);
-  document.title=viewing?`${VIEW_USER}’s ${TEAMS[code].name} pick sheet · stickpicks`:`${TEAMS[code].name} pick sheet · stickpicks`;
+  const name=TEAMS[code].name, nick=teamNick(code);
+  setPageMeta({   // search engines: one page per team; another player's sheet isn't listed
+    title: viewing ? `${VIEW_USER}’s ${name} pick sheet · stickpicks` : `${name} pick'em · stickpicks`,
+    description: `Free ${name} pick'em. Call every ${nick} game (win, loss or overtime loss, plus the combined goals) and race other ${nick} fans up the ${nick} leaderboard. No money, no ads.`,
+    canonical: `sheet.html?team=${code}`,
+    noindex: !!viewing,
+  });
   document.getElementById("title").textContent=TEAMS[code].name;
   document.getElementById("kicker").textContent=viewing?`${VIEW_USER}’s ${SEASON_LABEL} pick sheet`:`${SEASON_LABEL} pick sheet`;
   if(viewing){

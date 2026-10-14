@@ -1,0 +1,6 @@
+# stickpicks: search engines are welcome everywhere. One player's pages (profile, Locker Room, Chiclets statement,
+# compare, another player's sheet) carry a noindex tag instead, so they stay out of search results.
+User-agent: *
+Allow: /
+
+Sitemap: https://stickpicks.hockey/sitemap.xml
