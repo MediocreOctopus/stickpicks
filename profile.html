@@ -247,6 +247,7 @@ function msg(id,text,kind=""){ const el=$(id); el.textContent=text; el.className
 function busy(form,on){ form.querySelectorAll("button[type=submit]").forEach(b=>b.disabled=on); }
 const friendly=e=>{
   const m=(e?.message||"").toLowerCase();
+  if(isNetworkError(e)) return NETWORK_MSG;
   if(m.includes("should be different")) return "That’s already your password. Choose a new one.";
   if(m.includes("reauthentication")||m.includes("recent")) return "For security, sign out and back in, then try again.";
   // Supabase has two different limits: emails sent (sign-ups, resets, email changes) and requests from one device

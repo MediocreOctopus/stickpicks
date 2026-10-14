@@ -559,6 +559,7 @@ $("backToIn").addEventListener("click",()=>{ show("pSignedOut"); setTab("in"); }
 
 const friendly=e=>{
   const m=(e?.message||"").toLowerCase();
+  if(isNetworkError(e)) return NETWORK_MSG;
   if(m.includes("invalid login")) return "That email and password don’t match. Try again, or reset your password.";
   if(m.includes("email not confirmed")) return "Please confirm your email first: open the confirmation link we sent you.";
   if(m.includes("already registered")||m.includes("already been registered")) return "That email already has an account. Sign in instead, or reset your password.";
@@ -573,7 +574,9 @@ $("fIn").addEventListener("submit", async e=>{
   const email=$("inEmail").value.trim(), password=$("inPass").value;
   if(!email||!password) return msg("inMsg","Enter your email and password.","err");
   busy(e.target,true); msg("inMsg","Signing in…");
-  const {error}=await sb.auth.signInWithPassword({email,password});
+  let {error}=await sb.auth.signInWithPassword({email,password});
+  // Phones drop connections often (switching Wi-Fi/cell, waking up): try once more before showing an error
+  if(isNetworkError(error)){ await new Promise(r=>setTimeout(r,1500)); ({error}=await sb.auth.signInWithPassword({email,password})); }
   busy(e.target,false);
   if(error) msg("inMsg",friendly(error),"err"); else { msg("inMsg",""); $("inPass").value=""; }
 });
