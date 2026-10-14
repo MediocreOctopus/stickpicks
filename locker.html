@@ -50,7 +50,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
   <header class="lr-banner">
     <span class="lr-face" id="lrFace" aria-hidden="true"></span>
     <div class="lr-who">
-      <small class="tb-kicker lr-kicker"><span id="lrIco"></span>Locker Room</small>
+      <small class="tb-kicker">Locker Room</small>
       <h1 class="lr-name" id="lrName">Your locker</h1>
       <a class="lr-profile" id="lrProfile" href="profile.html">Profile &amp; settings ›</a>
     </div>
@@ -109,7 +109,6 @@ const today=()=>new Date().toISOString().slice(0,10);
 function render(s){
   const av=avatarFromProfile(s.me), bal=s.ledger.length ? s.ledger[0].balance : 0;
   $("lrFace").replaceChildren(avatarEl(av, s.me.username, 84));
-  $("lrIco").replaceChildren(lockerIcon(22, lockerLabel(s.me)));
   $("lrName").textContent=s.me.username;
   const b=$("lrBal"); b.replaceChildren(chicletIcon(30), Object.assign(document.createElement("b"),{textContent:bal.toLocaleString()}));
   b.classList.remove("hidden");

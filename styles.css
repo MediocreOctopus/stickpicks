@@ -185,14 +185,17 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 
 /* News ticker */
 .ticker{display:flex;align-items:stretch;background:var(--board);color:#fff;font-size:.9rem;overflow:hidden;min-height:38px}
-.ticker-label{flex:none;display:flex;align-items:center;gap:6px;padding:0 12px;background:var(--goal);font:700 .85rem "Oswald",sans-serif;letter-spacing:.08em;text-transform:uppercase;z-index:1}
+/* the label: a red felt patch with cream stitching, "NHL" in block letters and "News" in the logo script */
+.ticker-label{flex:none;display:flex;align-items:center;gap:4px;margin:5px 8px 5px 10px;padding:2px 13px 0;border-radius:5px;background:#9B1C1F;color:#EFE6D2;
+  outline:1.5px dashed #EFE6D2;outline-offset:-4px;font:400 1.2rem/1 "Yellowtail",cursive;z-index:1}
+.ticker-label b{font:700 .74rem "Oswald",sans-serif;letter-spacing:.12em;text-transform:uppercase;vertical-align:2px}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
 .ticker-track{display:inline-flex;white-space:nowrap;animation:tick var(--dur,90s) linear infinite;padding-left:12px}
 .ticker:hover .ticker-track,.ticker:focus-within .ticker-track{animation-play-state:paused}
 .ticker a{color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:8px;padding:9px 18px 9px 0}
 .ticker a:hover{text-decoration:underline}
-.ticker a::after{content:"";width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.4);margin-left:10px}
-.ticker time{color:rgba(255,255,255,.6);font-size:.8rem}
+.ticker a::after{content:"";width:10px;height:6px;border-radius:50%;background:#0B0F16;box-shadow:inset 0 1.5px 0 #3B3F47,0 0 0 1px rgba(239,230,210,.35);margin-left:14px}   /* a puck between headlines */
+.ticker time{color:var(--gold);font-size:.8rem}
 .ticker a:focus-visible{outline:2px solid #fff;outline-offset:-2px}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){
@@ -295,6 +298,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
    Phones and the installed app: headline, account card, Continue button, install bar, today's games. */
 .homegrid{display:grid;grid-template-columns:1.15fr .85fr;grid-template-areas:"intro account" "upnext upnext" "today today" "promo promo";column-gap:32px;align-items:start;padding-top:20px}
 .homegrid .intro{grid-area:intro}
+.homegrid > *{min-width:0}   /* the day strips (Today's games, Upcoming Picks) hold a whole season of panels; keep columns to the page width */
 .homegrid #account{grid-area:account}
 .homegrid #today{grid-area:today;margin-top:36px}
 .homegrid #upnext{grid-area:upnext;margin-top:36px}
@@ -698,7 +702,8 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .av-b-team{--av-frame:radial-gradient(circle closest-side,var(--bt1) 0 83%,var(--bt2) 83% 93%,var(--bt1) 93%);
   box-shadow:0 0 0 max(1px,calc(var(--av-size) * .02)) rgba(244,237,220,.75)}
 .av-b-gold{--av-frame:conic-gradient(from 210deg,#8A6420,#F5D77A,#B8892E,#FFF0B3,#A87A24,#F5D77A,#8A6420);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
-.av-b-champion{--av-frame:radial-gradient(circle closest-side,#D9A33A 0 84%,#C8302B 84% 92%,#E9C46A 92%);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
+/* championship: gold with a stripe in your favourite team's colour (--bc, set in applyAvatarBorder; red until one is chosen) */
+.av-b-champion{--av-frame:radial-gradient(circle closest-side,#D9A33A 0 84%,var(--bc,#C8302B) 84% 92%,#E9C46A 92%);box-shadow:0 0 0 1px rgba(60,40,0,.35)}
 @property --av-spin{syntax:"<angle>";inherits:false;initial-value:0deg}
 .av-b-halloffame{--av-frame:conic-gradient(from var(--av-spin),#8A6420,#FFF6CF,#C9962E,#F5D77A,#7A5518,#FFF0B3,#B8892E,#8A6420);
   box-shadow:0 0 calc(var(--av-size) * .14) rgba(233,196,106,.55),0 0 0 1px rgba(60,40,0,.35);animation:av-spin 3.2s linear infinite}
@@ -901,9 +906,6 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .reach-tile b{font:600 .72rem/1.15 var(--display);letter-spacing:.08em;text-transform:uppercase}
 .reach-tile .bprog-bar{width:80%;height:6px;margin-top:auto}
 /* Upcoming Picks: a navy day header with a red-and-cream hem above each day's games */
-.upday{position:relative;padding:8px 14px 13px;background:var(--banner);color:var(--wool);font:600 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
-[data-scheme="dark"] .upday{background:var(--banner-road)}
-.upday::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(to bottom,var(--sleeve-a) 0 2.5px,transparent 2.5px 3.5px,var(--sleeve-b) 3.5px 6px)}
 .uprows .upgame .gdate b{font:600 .95rem var(--display);letter-spacing:.02em}
 @media (max-width:760px){ .uprows .upgame .gdate b{font:italic .78rem var(--serif);letter-spacing:0} }
 /* ───── Leaderboard banner: the pick sheet's sweater banner, keeping the script headline ───── */
@@ -951,7 +953,6 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 /* the Locker Room patch (lockerIcon() in teams.js) */
 .locker-ico{display:inline-flex;flex:none;width:var(--lk,36px);height:var(--lk,36px)}
 .locker-ico svg{width:100%;height:100%;display:block}
-.lr-kicker{display:inline-flex;align-items:center;gap:7px}
 .acct-locker-text{display:grid;line-height:1.25}
 .acct-locker-text b{font:600 .95rem var(--display);letter-spacing:.1em;text-transform:uppercase}
 .acct-locker-text small{font:italic .82rem var(--serif);color:var(--muted)}
@@ -1325,6 +1326,7 @@ html.playoffs{--btn:var(--ice); --btn-ink:var(--cup); --goal:var(--gold); --logo
   --logo-wood:#9AA2AB; --logo-grain:#6B737C;   /* a silver stick (deeper silver so it shows on cream; bright silver in dark mode) */
   --banner:var(--ice); --banner-road:var(--ice); --sleeve-a:var(--cup); --sleeve-b:var(--gold)}   /* every banner: black with silver and gold stripes */
 html.playoffs .ticker{background:var(--ice)}
+html.playoffs .ticker-label{background:var(--gold);color:var(--ice);outline-color:var(--ice)}   /* a gold patch with black stitching */
 html.playoffs .medal.red{background:var(--cup-dark)}
 html.playoffs[data-scheme="dark"] .tabbar a[aria-current="page"],html.playoffs[data-scheme="dark"] .tabbar a[aria-current="page"] > svg{color:var(--gold);stroke:var(--gold)}
 html.playoffs .invite-patch{background:var(--gold);color:var(--ice);outline-color:rgba(16,21,31,.6)} html.playoffs button.invite-patch:hover{background:#E8B44A;color:var(--ice);outline-color:var(--ice)}

@@ -36,7 +36,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
 
 <!-- News ticker (hidden until headlines load) -->
 <div class="ticker hidden" id="ticker" role="region" aria-label="NHL news headlines">
-  <div class="ticker-label">NHL News</div>
+  <div class="ticker-label"><b>NHL</b> News</div>
   <div class="ticker-viewport"><div class="ticker-track" id="tickerTrack"></div></div>
 </div>
 
@@ -75,10 +75,18 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
       <div class="installbar hidden" id="installBar"></div>
     </section>
 
-    <!-- Upcoming Picks: the next few days of games on your sheets, grouped by day, picked right here -->
+    <!-- Your picks, one day at a time (days with games on your sheets): swipe sideways or use ‹ › for the next or
+         previous day. Upcoming games are picked right here; past days show results and points. -->
     <section class="section upnext hidden" id="upnext" aria-live="polite">
-      <div class="section-head"><h2>Upcoming Picks</h2><span id="upnextNote"></span></div>
-      <div class="uprows" id="upnextRows"></div>
+      <div class="section-head">
+        <h2 id="upTitle">Today’s picks</h2>
+        <div class="daynav">
+          <span id="upnextNote"></span>
+          <button type="button" class="daybtn" id="upPrev" aria-label="Previous day with games on your sheets" disabled>‹</button>
+          <button type="button" class="daybtn" id="upNext" aria-label="Next day with games on your sheets" disabled>›</button>
+        </div>
+      </div>
+      <div class="daystrip" id="upnextRows" tabindex="0" aria-label="Your picks by day. Swipe for other days."></div>
       <p class="upnext-hint">Picks lock at puck drop. <a class="hidden" id="upnextRemind" href="profile.html#reminders">Get a reminder</a></p>
     </section>
 
@@ -736,12 +744,6 @@ function readLocal(team){
     return Object.fromEntries(Object.entries(raw).map(([k,v])=>[k, typeof v==="string"?{o:v}:v]).filter(([,v])=>v&&(v.o||v.g!=null)));
   }catch(e){ return {}; }
 }
-const shortDay=iso=>{
-  const d=new Date(iso), today=new Date(), tmr=new Date(); tmr.setDate(today.getDate()+1);
-  if(ymd(d)===ymd(today)) return "Today";
-  if(ymd(d)===ymd(tmr)) return "Tomorrow";
-  return d.toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"});
-};
 const clock=iso=>iso?new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}):"Time TBD";
 
 /* ───────── Since your last visit ───────── */
@@ -807,49 +809,85 @@ async function loadRecap(teams){
   box.classList.remove("hidden");
 }
 
-/* ───────── Upcoming Picks: pick the next few days of games right here ───────── */
-// Same rules and saving as the pick sheet: picks are from the sheet team's side, kept on this
-// device, and saved to your account when signed in. Picks lock at puck drop (the database enforces it).
-const UP_DAYS=3, GOAL_MAX=20;
-let upGames={}, upPicks={}, upPending={};
+/* ───────── Upcoming Picks: your games one day at a time ───────── */
+// Every day this season with a game on your sheets, one panel per day in a sideways strip (like Today's games).
+// It opens on today (or the next day you have a game); swipe or ‹ › for other days. Upcoming games are picked right
+// here with the same rules and saving as the pick sheet: picks are from the sheet team's side, kept on this device,
+// and saved to your account when signed in. Picks lock at puck drop (the database enforces it). Past days show the
+// final score and the points each pick earned.
+const GOAL_MAX=20;
+let upGames={}, upPicks={}, upPending={}, upDays=[], upIdx=0;   // upDays: [{day, el}]
+const upStrip=$("upnextRows");
 async function loadUpNext(teams){
   const sec=$("upnext");
   teams=[...new Set(teams)].filter(t=>t && TEAMS[t]);
   if(playoffOn()){ sec.classList.add("hidden"); return; }   // playoff mode: the playoff sheet replaces Upcoming Picks
   if(!sb || !teams.length || Object.keys(upPending).length){ if(!teams.length) sec.classList.add("hidden"); return; }
-  const now=new Date(), until=new Date(now.getTime()+UP_DAYS*24*60*60*1000), list=teams.join(",");
-  const {data,error}=await sb.from("games").select("game_id,game_date,start_utc,home,away,schedule_state,period_type")
-    .eq("season",SEASON).eq("game_type",2).gt("start_utc",now.toISOString()).lt("start_utc",until.toISOString())
+  const list=teams.join(",");
+  const {data,error}=await sb.from("games").select("game_id,game_date,start_utc,home,away,home_score,away_score,schedule_state,period_type")
+    .eq("season",SEASON).eq("game_type",2).not("start_utc","is",null)
     .or(`home.in.(${list}),away.in.(${list})`).order("start_utc");
   if(error){ sec.classList.add("hidden"); return; }
+  const games=data.filter(g=>g.schedule_state!=="PPD");
   upPicks={}; teams.forEach(t=>upPicks[t]=readLocal(t));
   const items=[];
-  data.filter(g=>g.schedule_state!=="PPD").forEach(g=>teams.forEach(t=>{ if(g.home===t||g.away===t) items.push({g,team:t}); }));
-  if(currentUser && data.length){   // signed in: your account is the source of truth for these games
-    const {data:tp}=await sb.from("team_picks").select("team,game_id,pick,goals").in("game_id",data.map(g=>g.game_id));
-    items.forEach(({g,team})=>{
-      const r=(tp||[]).find(x=>x.team===team && x.game_id===g.game_id), id=String(g.game_id);
-      if(r) upPicks[team][id]={o:r.pick||undefined,g:r.goals??undefined}; else delete upPicks[team][id];
-    });
+  games.forEach(g=>teams.forEach(t=>{ if(g.home===t||g.away===t) items.push({g,team:t}); }));
+  if(currentUser && items.length){   // signed in: your account is the source of truth for these games
+    const tp=await fetchAllRows(()=>sb.from("team_picks").select("team,game_id,pick,goals").eq("user_id",currentUser.id).in("team",teams).order("game_id")).catch(()=>null);
+    if(tp){
+      const mine=new Map(tp.map(r=>[r.team+"|"+r.game_id,r]));
+      items.forEach(({g,team})=>{
+        const r=mine.get(team+"|"+g.game_id), id=String(g.game_id);
+        if(r) upPicks[team][id]={o:r.pick||undefined,g:r.goals??undefined}; else delete upPicks[team][id];
+      });
+    }
   }
-  upGames=Object.fromEntries(data.map(g=>[String(g.game_id),g]));
-  const box=$("upnextRows"); box.innerHTML="";
-  if(!items.length){
-    const p=document.createElement("p"); p.className="upnext-empty";
-    p.textContent=`No games on your sheets in the next ${UP_DAYS} days.`; box.appendChild(p);
-  }
-  // a navy day header ("Today", "Tomorrow", "Sun, Oct 11") above each day's games
-  let lastDay=null;
-  items.forEach(({g,team})=>{
-    const day=shortDay(g.start_utc);
-    if(day!==lastDay){ const h=document.createElement("div"); h.className="upday"; h.textContent=day; box.appendChild(h); lastDay=day; }
-    box.appendChild(upRow(g,team));
+  upGames=Object.fromEntries(games.map(g=>[String(g.game_id),g]));
+  // one panel per calendar day (your time zone) with a game on your sheets
+  const byDay=new Map();
+  items.forEach(it=>{ const d=ymd(new Date(it.g.start_utc)); if(!byDay.has(d)) byDay.set(d,[]); byDay.get(d).push(it); });
+  const keep=upDays[upIdx]?.day;   // a refresh stays on the day you're looking at
+  upDays=[...byDay].map(([day,list])=>{
+    const el=document.createElement("div"); el.className="daypanel"; el.dataset.day=day;
+    const box=document.createElement("div"); box.className="uprows";
+    list.forEach(({g,team})=>box.appendChild(upRow(g,team)));
+    el.appendChild(box); return {day,el};
   });
-  upCount(); sec.classList.remove("hidden");
+  upStrip.replaceChildren(...upDays.map(d=>d.el));
+  if(!upDays.length){
+    const p=document.createElement("p"); p.className="upnext-empty uprows"; p.textContent="No games on your sheets yet this season.";
+    upStrip.replaceChildren(p); upStrip.style.height=""; $("upTitle").textContent="Your picks"; $("upnextNote").textContent="";
+    $("upPrev").disabled=$("upNext").disabled=true;
+  }
+  sec.classList.remove("hidden");
+  if(upDays.length){
+    const today=ymd(new Date());
+    let i=upDays.findIndex(d=>d.day===keep);
+    if(i<0) i=upDays.findIndex(d=>d.day>=today);
+    if(i<0) i=upDays.length-1;
+    upShow(i,true);
+  }
   // signed in, reminders possible here but not on yet: point to the switch on the profile
   const s=pushSupport(), remind=$("upnextRemind");
   remind.classList.toggle("hidden", !currentUser || !(s==="ok"||s==="ios-install") || await remindersOn(sb).catch(()=>false));
 }
+// Title, note, buttons and strip height follow the day in view ("Today’s picks", "Tomorrow’s picks", "Thursday, October 16").
+function upShow(i, jump){
+  upIdx=Math.max(0,Math.min(upDays.length-1,i)); const d=upDays[upIdx]; if(!d) return;
+  if(jump) upStrip.scrollLeft=upIdx*upStrip.clientWidth;
+  $("upTitle").textContent=dayTitle(d.day).replace(/games$/,"picks");
+  upDays.forEach((x,j)=>x.el.setAttribute("aria-hidden",String(j!==upIdx)));
+  $("upPrev").disabled=upIdx===0; $("upNext").disabled=upIdx===upDays.length-1;
+  upStrip.style.height=d.el.scrollHeight+"px";
+  upCount();
+}
+let upScrollTimer=null;
+upStrip.addEventListener("scroll",()=>{ clearTimeout(upScrollTimer); upScrollTimer=setTimeout(()=>{ const i=Math.round(upStrip.scrollLeft/upStrip.clientWidth); if(i!==upIdx) upShow(i); },90); }, {passive:true});
+const upGo=dir=>{ const at=Math.round(upStrip.scrollLeft/upStrip.clientWidth); upStrip.scrollTo({left:Math.max(0,Math.min(upDays.length-1,at+dir))*upStrip.clientWidth, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"}); };
+$("upPrev").addEventListener("click",()=>upGo(-1));
+$("upNext").addEventListener("click",()=>upGo(1));
+upStrip.addEventListener("keydown",e=>{ if(e.target!==upStrip) return; if(e.key==="ArrowRight"){ upGo(1); e.preventDefault(); } if(e.key==="ArrowLeft"){ upGo(-1); e.preventDefault(); } });
+addEventListener("resize",()=>{ const d=upDays[upIdx]; if(d){ upStrip.scrollLeft=upIdx*upStrip.clientWidth; upStrip.style.height=d.el.scrollHeight+"px"; } });
 function upRow(g, team){
   const t=TEAMS[team], home=g.home===team, oppCode=home?g.away:g.home, id=String(g.game_id);
   const row=document.createElement("div"); row.className="game upgame"+(home?" is-home":""); row.dataset.id=id; row.dataset.team=team;
@@ -858,7 +896,7 @@ function upRow(g, team){
   row.style.setProperty("--stripe",t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2));
   row.innerHTML=`
     <span class="gdate"><b>${clock(g.start_utc)}</b></span>
-    <span class="opp"><span class="oppline"><span class="sw"></span><a class="upname"></a></span><span class="gmeta"><span class="upstate"></span></span></span>
+    <span class="opp"><span class="oppline"><span class="sw"></span><a class="upname"></a></span><span class="gmeta"><span class="final"></span><span class="upstate"></span></span></span>
     <span class="picks" role="group">
       <button type="button" data-v="W" aria-pressed="false" aria-label="Win">W</button>
       <button type="button" data-v="L" aria-pressed="false" aria-label="Loss">L</button>
@@ -888,15 +926,30 @@ function upPaint(row, state){
   row.querySelector(".goals").classList.toggle("set", p?.g!=null);
   const locked=!g || hasStarted(g); row.classList.toggle("locked",locked);
   row.querySelectorAll(".picks button, .goals button, .gin").forEach(el=>el.disabled=locked);
-  const st=row.querySelector(".upstate");
+  const st=row.querySelector(".upstate"), fin=row.querySelector(".final"), badge=row.querySelector(".ptsbadge");
+  const sc=g ? scorePick(g,row.dataset.team,p) : null;   // past days: the final score and what your picks earned
+  fin.textContent=""; delete fin.dataset.r; badge.textContent=""; delete badge.dataset.p; badge.removeAttribute("title");
+  if(sc){
+    const home=g.home===row.dataset.team, us=home?g.home_score:g.away_score, them=home?g.away_score:g.home_score;
+    fin.dataset.r=sc.result; fin.textContent=`Final ${sc.result} ${us}–${them}${g.period_type==="OT"?" OT":g.period_type==="SO"?" SO":""} · ${sc.goals} goals`;
+    if(sc.outcomeHit!==null || sc.goalsHit!==null){ badge.textContent=`+${sc.points}`; badge.dataset.p=sc.points; badge.title=`${sc.points} point${sc.points===1?"":"s"}`; }
+  }
   if(state){ st.textContent=state.text; st.dataset.s=state.kind||""; }
+  else if(sc){ st.textContent = p ? "" : "Not picked"; st.dataset.s=""; }
   else if(locked){ st.textContent="Locked at puck drop"; st.dataset.s=""; }
   else{ const done=p?.o && p?.g!=null; st.textContent = done ? "Picked" : p ? "Half picked" : "Not picked yet"; st.dataset.s = done ? "ok" : "todo"; }
 }
+// The note for the day in view: games left to pick, or (once its games are final) the points earned
 function upCount(){
-  let left=0;
-  document.querySelectorAll("#upnextRows .upgame:not(.locked)").forEach(r=>{ const p=upPicks[r.dataset.team]?.[r.dataset.id]; if(!(p?.o && p?.g!=null)) left++; });
-  $("upnextNote").textContent = left ? `${left} left to pick` : document.querySelector("#upnextRows .upgame") ? "All picked ✓" : "";
+  const d=upDays[upIdx], note=$("upnextNote"); if(!d){ note.textContent=""; return; }
+  const rows=[...d.el.querySelectorAll(".upgame")], open=rows.filter(r=>!r.classList.contains("locked"));
+  if(open.length){
+    const left=open.filter(r=>{ const p=upPicks[r.dataset.team]?.[r.dataset.id]; return !(p?.o && p?.g!=null); }).length;
+    note.textContent = left ? `${left} left to pick` : "All picked ✓"; return;
+  }
+  let pts=0, final=0;
+  rows.forEach(r=>{ const sc=scorePick(upGames[r.dataset.id], r.dataset.team, upPicks[r.dataset.team]?.[r.dataset.id]); if(sc){ final++; pts+=sc.points; } });
+  note.textContent = final===rows.length ? `${pts} point${pts===1?"":"s"}` : "Picks locked";
 }
 function upSet(team, id, field, value){
   const p=upPicks[team], prev=p[id]?{...p[id]}:undefined, next={...(p[id]||{})};

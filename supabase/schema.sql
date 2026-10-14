@@ -1432,7 +1432,7 @@ insert into public.shop_items (id, slot, name, blurb, tier, price, sort) values
   ('border_hem',        'border', 'Hem Stripes',  'Red, cream and red, like the hem of a home sweater.',              'starter',   150, 20),
   ('border_team',       'border', 'Team Colors',  'Your favorite team''s colors (set your favorite team in Settings).', 'starter', 150, 30),
   ('border_gold',       'border', 'Gold',         'A polished gold ring.',                                             'premium',   800, 40),
-  ('border_champion',   'border', 'Championship', 'Gold and red, like a championship banner.',                         'premium',   800, 50),
+  ('border_champion',   'border', 'Championship', 'Gold and your team color, like a championship banner.',           'premium',   800, 50),
   ('border_halloffame', 'border', 'Hall of Fame', 'Shimmering gold that never stops moving. For the true grinders.',  'legendary', 1500, 60),
   ('sweater_alt',       'sweater', 'Alternate',         'Your sweater with the team''s two colors swapped.',                  'starter', 150, 110),
   ('sweater_barber',    'sweater', 'Barber Pole',       'Even stripes down the body and around the arms.',                    'classic', 400, 120),
