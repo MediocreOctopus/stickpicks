@@ -294,25 +294,26 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .tile-tag.is-last{background:var(--gold);border-color:var(--gold);color:#2A1C02}
 @media (prefers-reduced-motion:reduce){ .tile{transition:none} .tile:hover{transform:none} }
 .home .wrap{max-width:1040px}
-/* Desktop: intro beside the account card, today's games full width below.
-   Phones and the installed app: headline, account card, Continue button, install bar, today's games. */
-.homegrid{display:grid;grid-template-columns:1.15fr .85fr;grid-template-areas:"intro account" "upnext upnext" "today today" "promo promo";column-gap:32px;align-items:start;padding-top:20px}
-.homegrid .intro{grid-area:intro}
+/* Home layout, signed in or not: on computers the account card is a column on the left with Upcoming Picks and today's
+   games beside it; on phones the card comes first, then Upcoming Picks and today's games. The install bar sits on top.
+   (First-time visitors see the tagline as the title of the welcome card, #pWelcome h1.) */
+.homegrid{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);grid-template-areas:"install install" "account upnext" "account today" "promo promo";
+  grid-template-rows:auto auto 1fr auto;column-gap:32px;align-items:start;padding-top:20px}
+.homegrid .intro{display:contents}
+.homegrid .intro .installbar{grid-area:install}
 .homegrid > *{min-width:0}   /* the day strips (Today's games, Upcoming Picks) hold a whole season of panels; keep columns to the page width */
-.homegrid #account{grid-area:account}
+.homegrid #account{grid-area:account;position:sticky;top:16px}
 .homegrid #today{grid-area:today;margin-top:36px}
-.homegrid #upnext{grid-area:upnext;margin-top:36px}
+.homegrid #upnext{grid-area:upnext}
+.homegrid #upnext.hidden + #today{margin-top:0}
 .homegrid .promo{grid-area:promo}
 @media (max-width:760px){
-  .homegrid{grid-template-columns:1fr;grid-template-areas:"headline" "account" "upnext" "install" "today" "promo"}
-  .homegrid .intro{display:contents}   /* lets the account card sit between the headline and the install bar */
-  .homegrid .intro h1{grid-area:headline}
-  .homegrid #account{margin-top:22px}
-  .homegrid .intro .installbar{grid-area:install}
-  .homegrid #today,.homegrid #upnext{margin-top:28px}
+  .homegrid{grid-template-columns:1fr;grid-template-areas:"install" "account" "upnext" "today" "promo";grid-template-rows:none}
+  .homegrid #account{position:static;margin-top:6px}
+  .homegrid #upnext,.homegrid #today{margin-top:28px}
 }
-.intro h1{font:600 clamp(2.4rem,6.5vw,4rem)/1 "Oswald",sans-serif;text-transform:uppercase;margin:0;letter-spacing:.01em}
-.intro h1 em{font-style:normal;color:var(--goal)}
+#pWelcome h1{font:600 clamp(1.55rem,3.4vw,2rem)/1.05 "Oswald",sans-serif;text-transform:uppercase;letter-spacing:.01em;margin:0 0 14px}
+#pWelcome h1 em{font-style:normal;color:var(--goal)}
 .chips{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .chips li{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border:2px solid var(--ink);border-radius:4px;background:var(--panel);font:500 .85rem var(--display);letter-spacing:.08em;text-transform:uppercase}
 .chips b{font:700 1.05rem "Oswald",sans-serif;color:var(--goal)}
@@ -334,6 +335,11 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .card{background:var(--panel);border:2px solid var(--ink);border-radius:8px;padding:20px}
 .card h2{font:2rem/1.1 "Yellowtail",cursive;color:var(--goal);margin:0 0 6px}
 .card .hint{font-size:.88rem;color:var(--muted);margin:0 0 14px}
+/* welcome box: three small stitched patches (navy felt, cream stitching, like the badges and the Stitched border) */
+.promise{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;padding:0}
+.promise li{background:var(--banner);color:#EFE6D2;font:600 .7rem var(--display);letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 11px;border-radius:4px;outline:1.2px dashed rgba(239,230,210,.75);outline-offset:-3.5px}
+[data-scheme="dark"] .promise li{background:#EFE6D2;color:#1C2B45;outline-color:rgba(28,43,69,.6)}
 .tabs{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:16px}
 .tabs button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--display);letter-spacing:.1em;text-transform:uppercase;padding:9px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--btn,var(--board));color:var(--btn-ink,#fff)}
@@ -957,29 +963,15 @@ html.lbpage.neutral .lbhead{--stripe:var(--red)}   /* All teams: brand red sleev
 .acct-locker-text b{font:600 .95rem var(--display);letter-spacing:.1em;text-transform:uppercase}
 .acct-locker-text small{font:italic .82rem var(--serif);color:var(--muted)}
 .acct-locker > span:last-child{font:600 1.3rem var(--display);color:var(--muted)}
-/* Signed in: no headline pitch. On computers your card is a column on the left with Upcoming Picks and today's games
-   beside it; on phones your card comes first, then Upcoming Picks and today's games. */
-.signedin .homegrid{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);grid-template-areas:"install install" "account upnext" "account today" "promo promo";
-  grid-template-rows:auto auto 1fr auto}
-.signedin .homegrid .intro{display:contents}
-.signedin .homegrid .intro h1{display:none}
-.signedin .homegrid .intro .installbar{grid-area:install}
-.signedin .homegrid #account{margin-top:0;position:sticky;top:16px}
-.signedin .homegrid #upnext{margin-top:0}
-.signedin .homegrid #upnext.hidden + #today{margin-top:0}
-/* in that narrower column, Upcoming Picks rows use the phone's two lines (opponent + time, then the picks) */
-.signedin #upnext .game{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:8px 12px}
-.signedin #upnext .picks,.signedin #upnext .goals,.signedin #upnext .ptsbadge{margin-top:7px}
-.signedin #upnext .opp{order:1;flex:1 1 0;min-width:0}
-.signedin #upnext .gdate{order:2;flex:none;text-align:right;align-self:flex-start;padding-top:3px}
-.signedin #upnext .game::after{content:"";order:3;flex-basis:100%;height:0}
-.signedin #upnext .picks{order:4} .signedin #upnext .goals{order:5} .signedin #upnext .ptsbadge{order:6;margin-left:auto}
-.signedin #upnext .gdate b,.signedin #upnext .gdate small{display:inline;font:italic .78rem var(--serif);color:var(--muted);letter-spacing:0}
-@media (max-width:760px){
-  .signedin .homegrid{grid-template-columns:1fr;grid-template-areas:"install" "account" "upnext" "today" "promo";grid-template-rows:none}
-  .signedin .homegrid #account{position:static;margin-top:6px}
-  .signedin .homegrid #upnext{margin-top:28px}
-}.badge-toast-acts{display:flex;align-items:center;gap:14px;margin-top:2px}
+/* in the narrower right-hand column, Upcoming Picks rows use the phone's two lines (opponent + time, then the picks) */
+#upnext .game{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px;padding:8px 12px}
+#upnext .picks,#upnext .goals,#upnext .ptsbadge{margin-top:7px}
+#upnext .opp{order:1;flex:1 1 0;min-width:0}
+#upnext .gdate{order:2;flex:none;text-align:right;align-self:flex-start;padding-top:3px}
+#upnext .game::after{content:"";order:3;flex-basis:100%;height:0}
+#upnext .picks{order:4} #upnext .goals{order:5} #upnext .ptsbadge{order:6;margin-left:auto}
+#upnext .gdate b,#upnext .gdate small{display:inline;font:italic .78rem var(--serif);color:var(--muted);letter-spacing:0}
+.badge-toast-acts{display:flex;align-items:center;gap:14px;margin-top:2px}
 .badge-toast-acts .linkbtn{color:var(--ink)}
 .pf-acts{margin-left:auto}
 .pf-acts:empty{display:none}

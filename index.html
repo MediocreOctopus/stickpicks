@@ -70,7 +70,6 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
 
   <main class="homegrid">
     <section class="intro">
-      <h1>Pick the game.<br>Pick the goals.<br><em>Climb the board.</em></h1>
       <!-- "Get the stickpicks app": filled in by mountInstall() in teams.js when installing is possible -->
       <div class="installbar hidden" id="installBar"></div>
     </section>
@@ -115,7 +114,9 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
 
       <!-- Signed out: a short pitch; the forms open on request -->
       <div id="pWelcome" class="hidden">
-        <h2>Play for the leaderboard</h2>
+        <h1>Pick the game. Pick the goals. <em>Climb the board.</em></h1>   <!-- the page's main heading, for first-time visitors -->
+        <!-- what sets stickpicks apart, for first-time visitors (styles.css .promise) -->
+        <ul class="promise" aria-label="The deal"><li>Leaderboard for every team</li><li>No money or betting</li><li>No ads</li></ul>
         <p class="hint">A free account saves your picks on every device and puts you in the rankings.</p>
         <div class="form-actions">
           <button class="btn" type="button" id="goUp">Create account</button>
@@ -485,13 +486,13 @@ function renderCards(box, data){
 /* ───────── Account panels ───────── */
 const PANELS=["pLoading","pWelcome","pSignedOut","pForgot","pRecover","pSignedIn","pOffline"];
 // The banner's small label and script title for each panel (signed in: your picture and name).
-const BANNERS={pLoading:["stickpicks","Loading…"], pWelcome:["Free to play","Join the board"], pSignedOut:["Your account","Sign in"],
+const BANNERS={pLoading:["stickpicks","Loading…"], pWelcome:["Free to play","Join stickpicks"], pSignedOut:["Your account","Sign in"],
   pForgot:["Your account","Reset password"], pRecover:["Your account","New password"], pSignedIn:["Welcome back","Welcome!"], pOffline:["stickpicks","Not connected"]};
 let panelNow="pLoading";
 // Invitation links (?invite=Name) say who sent them on the welcome panel.
 const INVITER=(()=>{ const n=new URL(location.href).searchParams.get("invite"); return n && USERNAME_RULE.test(n) ? n : null; })();
 if(INVITER){
-  BANNERS.pWelcome=[`${INVITER} invited you`,"Join the board"];
+  BANNERS.pWelcome=[`${INVITER} invited you`,"Join stickpicks"];
   document.querySelector("#pWelcome .hint").textContent=`${INVITER} wants you on the leaderboard. A free account saves your picks on every device and puts you in the rankings.`;
   addEventListener("load",()=>{ try{ window.goatcounter?.count?.({path:"invite-landing", title:"Arrived from an invitation", event:true}); }catch(e){} });
 }
