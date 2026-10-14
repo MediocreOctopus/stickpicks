@@ -204,7 +204,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
 </div>
 <div class="hem" aria-hidden="true"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
 <script src="config.js?v=__V__"></script>
 <script src="teams.js?v=__V__"></script>
 <script>
@@ -520,7 +520,9 @@ const friendly=e=>{
   if(m.includes("invalid login")) return "That email and password don’t match. Try again, or reset your password.";
   if(m.includes("email not confirmed")) return "Please confirm your email first: open the confirmation link we sent you.";
   if(m.includes("already registered")||m.includes("already been registered")) return "That email already has an account. Sign in instead, or reset your password.";
-  if(m.includes("rate limit")) return "Too many emails were sent recently. Please wait a few minutes and try again.";
+  // Supabase has two different limits: emails sent (sign-ups, resets) and requests from one device (sign-in attempts)
+  if(e?.code==="over_email_send_rate_limit" || m.includes("email rate limit")) return "Too many emails were sent recently. Please wait a few minutes and try again.";
+  if(e?.code==="over_request_rate_limit" || m.includes("rate limit")) return "Too many sign-in tries from this device. Please wait a few minutes and try again.";
   return e?.message || "Something went wrong. Please try again.";
 };
 
