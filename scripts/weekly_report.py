@@ -20,26 +20,18 @@ def season():
     m = re.search(r'SEASON\s*:\s*"(\d{8})"', open(os.path.join(ROOT, "config.js"), encoding="utf-8").read())
     return m.group(1) if m else "20262027"
 
-def api(path, method="GET", body=None, headers=None):
-    req = urllib.request.Request(f"{URL}/rest/v1/{path}", method=method,
-        data=json.dumps(body).encode() if body is not None else None,
-        headers={"apikey": KEY, "Authorization": f"Bearer {KEY}", "Content-Type": "application/json", **(headers or {})})
+def public_key():
+    """The site's publishable key from config.js (safe to share), for what any visitor can see (the leaderboard)."""
+    m = re.search(r"sb_publishable_[A-Za-z0-9_-]+", open(os.path.join(ROOT, "config.js"), encoding="utf-8").read())
+    return m.group(0) if m else ""
+
+def api(path, body, key=None):
+    key = key or KEY
+    headers = {"apikey": key, "Content-Type": "application/json"}
+    if key.startswith("eyJ"): headers["Authorization"] = f"Bearer {key}"   # legacy JWT keys; sb_ keys go only in apikey
+    req = urllib.request.Request(f"{URL}/rest/v1/{path}", method="POST", data=json.dumps(body).encode(), headers=headers)
     with urllib.request.urlopen(req, timeout=30) as r:
-        return r.headers, json.loads(r.read() or "null")
-
-def count(table, filters=""):
-    """Rows matching the filters, counted by the database (nothing is downloaded)."""
-    h, _ = api(f"{table}?select=*&limit=1{filters}", headers={"Prefer": "count=exact", "Range": "0-0"})
-    return int(h.get("Content-Range", "*/0").split("/")[-1] or 0)
-
-def distinct(table, column, filters=""):
-    """How many different values of a column match the filters (read a page at a time)."""
-    seen, start = set(), 0
-    while True:
-        _, rows = api(f"{table}?select={column}{filters}", headers={"Range": f"{start}-{start + 999}"})
-        seen.update(r[column] for r in rows)
-        if len(rows) < 1000: return len(seen)
-        start += 1000
+        return json.loads(r.read() or "null")
 
 problems = []
 def safe(label, fn, *args):
@@ -50,9 +42,10 @@ def safe(label, fn, *args):
 
 def goatcounter(start, end):
     if not GC_TOKEN: return None
-    q = urllib.parse.urlencode({"start": start.isoformat(), "end": end.isoformat()})
+    hour = lambda t: t.replace(minute=0, second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")   # GoatCounter wants whole hours
+    q = urllib.parse.urlencode({"start": hour(start), "end": hour(end)})
     out = {}
-    for name, path in (("total", f"/api/v0/stats/total?{q}"), ("pages", f"/api/v0/stats/hits?{q}&limit=5"),
+    for name, path in (("total", f"/api/v0/stats/total?{q}"), ("pages", f"/api/v0/stats/hits?{q}&limit=10"),
                        ("refs", f"/api/v0/stats/toprefs?{q}&limit=5")):
         try:
             req = urllib.request.Request(GC_SITE + path, headers={"Authorization": f"Bearer {GC_TOKEN}", "Content-Type": "application/json"})
@@ -65,17 +58,14 @@ def main():
     if not URL or not KEY: sys.exit("Missing SUPABASE_URL or SUPABASE_SECRET_KEY.")
     now = dt.datetime.now(dt.timezone.utc)
     since = now - dt.timedelta(days=7)
-    iso = urllib.parse.quote(since.isoformat())
     s = season()
     lines = [f"Week of {since:%b} {since.day} – {now:%b} {now.day}, {now.year} (the 7 days to {now:%H:%M} UTC).", ""]
 
-    players = safe("players", count, "profiles")
-    new = safe("new players", count, "profiles", f"&created_at=gte.{iso}")
-    active = safe("active players", distinct, "team_picks", "user_id", f"&updated_at=gte.{iso}")
-    picks = safe("picks", count, "team_picks", f"&updated_at=gte.{iso}")
-    po_picks = safe("playoff picks", count, "playoff_picks", f"&updated_at=gte.{iso}")
-    bought = safe("shop purchases", count, "chiclet_spends", f"&bought_at=gte.{iso}")
-    reminders = safe("reminder devices", count, "push_subscriptions")
+    # totals from the database's weekly_report_stats() (schema.sql section 20): the secret key never reads picks directly
+    stats = safe("player and pick totals", api, "rpc/weekly_report_stats", {"p_since": since.isoformat()})
+    num = lambda k: stats.get(k, "?") if isinstance(stats, dict) else "?"
+    players, new, active, picks = num("players"), num("new_players"), num("active_players"), num("picks")
+    po_picks, bought, reminders = num("playoff_picks"), num("purchases"), num("reminder_devices")
     lines += ["## Players", "",
               "| | |", "|---|---|",
               f"| Players (with a username) | **{players}** |",
@@ -89,7 +79,7 @@ def main():
     lines += [f"| Shop purchases this week | {bought} |", ""]
 
     try:
-        _, board = api("rpc/leaderboard", "POST", {"p_season": s, "p_team": None})
+        board = api("rpc/leaderboard", {"p_season": s, "p_team": None}, public_key())   # public, like the site
         board = sorted(board or [], key=lambda r: -int(r["points"]))[:5]
         if board:
             lines += ["## Top of the All-Teams board", "", "| # | Player | Sheet | Points |", "|---|---|---|---|"]
@@ -101,7 +91,7 @@ def main():
     except urllib.error.URLError as e:
         lines += [f"_Couldn't read the leaderboard: {e}_", ""]
 
-    gc = goatcounter(since.date(), now.date())
+    gc = goatcounter(since, now)
     lines += ["## Site visits", ""]
     if gc is None:
         lines += ["_Add a GOATCOUNTER_TOKEN secret to include visits (stickpicks.goatcounter.com → Settings → API)._", ""]
@@ -109,9 +99,13 @@ def main():
         t = gc.get("total", {})
         if "error" in t: lines.append(f"_Couldn't read GoatCounter: {t['error']}_")
         else: lines.append(f"**{t.get('total', '?')}** page views this week.")
-        hits = gc.get("pages", {}).get("hits") or []
-        if hits:
-            lines += ["", "Most visited:", ""] + [f"- {h.get('path')}: {h.get('count')}" for h in hits[:5]]
+        pages = {}   # "/" and "/index.html" are the same page
+        for h in gc.get("pages", {}).get("hits") or []:
+            path = "/" if h.get("path") in ("/", "/index.html") else h.get("path")
+            pages[path] = pages.get(path, 0) + (h.get("count") or 0)
+        if pages:
+            top = sorted(pages.items(), key=lambda kv: -kv[1])[:5]
+            lines += ["", "Most visited:", ""] + [f"- {p}: {c}" for p, c in top]
         refs = gc.get("refs", {}).get("stats") or []
         if refs:
             lines += ["", "Where visitors came from:", ""] + [f"- {r.get('name') or '(direct)'}: {r.get('count')}" for r in refs[:5]]

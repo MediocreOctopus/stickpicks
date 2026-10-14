@@ -64,7 +64,9 @@ jobs:
   # already published, so fix forward (or revert the commit); the email says which page and what went wrong.
   live-check:
     needs: deploy
-    runs-on: ubuntu-latest
+    # Ubuntu 24, not "latest": the browser / PostgreSQL tool installs are tied to the OS version, and ubuntu-latest moves
+    # to Ubuntu 26 from October 19, 2026. Move this up once those tools support it.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7

@@ -1554,4 +1554,24 @@ end $$;
 revoke all on function public.equip_item(text, text) from public, anon;
 grant execute on function public.equip_item(text, text) to authenticated;
 
+
+-- 20) The weekly report (scripts/weekly_report.py, run by .github/workflows/weekly-report.yml with the secret key).
+-- Totals only: the secret key can call this, but still can't read anyone's profile, picks or purchases directly.
+create or replace function public.weekly_report_stats(p_since timestamptz)
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object(
+    'players',          (select count(*) from public.profiles),
+    'new_players',      (select count(*) from public.profiles where created_at >= p_since),
+    'active_players',   (select count(distinct user_id) from (
+                           select user_id from public.team_picks where updated_at >= p_since
+                           union select user_id from public.playoff_picks where updated_at >= p_since) a),
+    'picks',            (select count(*) from public.team_picks where updated_at >= p_since),
+    'playoff_picks',    (select count(*) from public.playoff_picks where updated_at >= p_since),
+    'purchases',        (select count(*) from public.chiclet_spends where bought_at >= p_since),
+    'reminder_devices', (select count(*) from public.push_subscriptions)
+  );
+$$;
+revoke all on function public.weekly_report_stats(timestamptz) from public, anon, authenticated;
+grant execute on function public.weekly_report_stats(timestamptz) to service_role;
+
 notify pgrst, 'reload schema';
