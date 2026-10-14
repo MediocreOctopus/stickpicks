@@ -67,7 +67,7 @@ jobs:
           ls -lh "$RUNNER_TEMP"/stickpicks-backup-*.gpg
           echo "DAY=$day" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: stickpicks-backup-${{ env.DAY }}
           path: ${{ runner.temp }}/stickpicks-backup-*.tgz.gpg
