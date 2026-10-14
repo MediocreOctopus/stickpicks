@@ -244,6 +244,7 @@ const AVATAR_BASE=((window.PICKS_CONFIG||{}).SUPABASE_URL||"").replace(/\/$/,"")
 function avatarFromProfile(p){ return p ? {kind:p.avatar_kind||null, team:p.avatar_team||null, number:p.avatar_number??null, url:p.avatar_url||null,
   border:p.border||null, fav:p.fav_team||null, style:p.sweater_style||null, skater:p.skater||null} : null; }
 // Shop borders (bought with Chiclets; the worn one is profiles.border). Drawn in CSS: .avatar.av-b-<id>.
+// Team Colors and Championship use the favourite team (fav), so pass it wherever an avatar is drawn.
 const AVATAR_BORDERS=["border_stitch","border_hem","border_team","border_gold","border_champion","border_halloffame"];
 function applyAvatarBorder(el, border, fav){
   if(!AVATAR_BORDERS.includes(border)) return;
@@ -252,6 +253,10 @@ function applyAvatarBorder(el, border, fav){
     const t=TEAMS[fav];
     el.style.setProperty("--bt1", t ? t.board : "#9B1C1F");
     el.style.setProperty("--bt2", t ? (t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)) : "#F4EDDC");
+  }
+  if(border==="border_champion"){   // gold with a stripe in the favourite team's colour (one that shows against gold; brand red until one is chosen)
+    const t=TEAMS[fav];
+    el.style.setProperty("--bc", t ? firstReadable("#D9A33A",[t.board,t.brand,t.accent,"#1C2B45"],1.6) : "#C8302B");
   }
 }
 // Builds a round avatar <span>: av = {kind, team, number, url, border, fav}; falls back to the username's initial.
