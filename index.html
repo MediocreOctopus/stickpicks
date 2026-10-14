@@ -948,8 +948,9 @@ function upCount(){
     note.textContent = left ? `${left} left to pick` : "All picked ✓"; return;
   }
   let pts=0, final=0;
+  const picked=rows.some(r=>upPicks[r.dataset.team]?.[r.dataset.id]);
   rows.forEach(r=>{ const sc=scorePick(upGames[r.dataset.id], r.dataset.team, upPicks[r.dataset.team]?.[r.dataset.id]); if(sc){ final++; pts+=sc.points; } });
-  note.textContent = final===rows.length ? `${pts} point${pts===1?"":"s"}` : "Picks locked";
+  note.textContent = !picked ? "Nothing picked" : final===rows.length ? `${pts} point${pts===1?"":"s"}` : "Picks locked";
 }
 function upSet(team, id, field, value){
   const p=upPicks[team], prev=p[id]?{...p[id]}:undefined, next={...(p[id]||{})};
