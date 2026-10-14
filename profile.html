@@ -230,7 +230,7 @@ window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{lo
   </div>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
 <script src="config.js?v=__V__"></script>
 <script src="teams.js?v=__V__"></script>
 <script>
@@ -246,9 +246,11 @@ const friendly=e=>{
   const m=(e?.message||"").toLowerCase();
   if(m.includes("should be different")) return "That’s already your password. Choose a new one.";
   if(m.includes("reauthentication")||m.includes("recent")) return "For security, sign out and back in, then try again.";
-  if(m.includes("rate limit")) return "Too many emails were sent recently. Please wait a few minutes and try again.";
+  // Supabase has two different limits: emails sent (sign-ups, resets, email changes) and requests from one device
+  if(e?.code==="over_email_send_rate_limit" || m.includes("email rate limit")) return "Too many emails were sent recently. Please wait a few minutes and try again.";
+  if(e?.code==="over_request_rate_limit" || m.includes("rate limit")) return "Too many tries from this device. Please wait a few minutes and try again.";
   if(m.includes("already been registered")||m.includes("already registered")) return "That email already has an account.";
-  if(m.includes("could not find the function")||m.includes("does not exist")) return "This needs the latest database update. Run supabase/schema.sql in Supabase’s SQL Editor, then try again.";
+  if(m.includes("could not find the function")||m.includes("does not exist")) return "That didn’t work right now. Please try again later.";
   return e?.message || "Something went wrong. Please try again.";
 };
 
