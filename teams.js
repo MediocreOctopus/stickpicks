@@ -269,10 +269,10 @@ function avatarEl(av, name, px){
     const num=Math.max(0,Math.min(99,parseInt(av.number,10)||0));
     el.classList.add("avatar-sweater");
     el.style.setProperty("--av-ring",firstReadable("#F4EDDC",[j2,j1],1.5));   // white stripes would vanish on the cream ring
-    // on striped styles the number gets an outline in the body colour so it reads across the stripes
-    const edge = style==="sweater_barber" || style==="sweater_chest" ? ` stroke="${j1}" stroke-width="4" paint-order="stroke"`
-      : style==="sweater_playoff" ? ` stroke="${PLAYOFF_GOLD}" stroke-width="2" paint-order="stroke"` : "";   // Playoff Black: silver number edged in gold
-    const numText = av.number==="" ? "" : `<text x="50" y="73" text-anchor="middle" fill="${style==="sweater_playoff"?PLAYOFF_SILVER:inkOn(j1)}"${edge}>${num}</text>`;   // "" = no number (the shop's skater preview)
+    // the number sits high on the chest, just under the collar; it gets an outline in the body colour so it reads
+    // where it crosses a chest band, yoke or stripe (Playoff Black: silver number edged in gold)
+    const edge = style==="sweater_playoff" ? ` stroke="${PLAYOFF_GOLD}" stroke-width="2" paint-order="stroke"` : ` stroke="${j1}" stroke-width="4" paint-order="stroke"`;
+    const numText = av.number==="" ? "" : `<text x="50" y="59" text-anchor="middle" fill="${style==="sweater_playoff"?PLAYOFF_SILVER:inkOn(j1)}"${edge}>${num}</text>`;   // "" = no number (the shop's skater preview)
     el.innerHTML=`<svg viewBox="0 0 100 100">${jerseyMarkup(style,{j1,j2,j3})}${numText}</svg>`;
   }else if(name){
     el.textContent=name[0].toUpperCase();
@@ -610,7 +610,7 @@ BADGES.push(
    art:()=>{ const t=TEAMS[BADGE_FAV_TEAM];
      const j1=t ? t.board : BI.r, j2=t ? (t.stripe||firstReadable(t.board,[t.accent,t.brand,"#FFFFFF"],2)) : BI.c;
      return `<g transform="translate(8.5 9.2) scale(.47)">${jerseyMarkup(null,{j1,j2,j3:"#FFFFFF"})}`+
-       `<text x="50" y="73" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="600" font-size="30" letter-spacing="-.6" fill="${inkOn(j1)}">1</text></g>`; }},
+       `<text x="50" y="59" text-anchor="middle" font-family="Oswald,Arial Narrow,sans-serif" font-weight="600" font-size="30" letter-spacing="-.6" fill="${inkOn(j1)}">1</text></g>`; }},
   {id:"mixedfeelings", name:"Mixed Feelings", ring:"navy", how:"Start a sheet for your least favorite team (set it in Settings on your profile).",
    // a felt heart patch torn in two: a red half and a navy half, each still edged with cream stitching,
    // and loose threads hanging across the tear
