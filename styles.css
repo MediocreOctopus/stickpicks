@@ -389,6 +389,11 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 
 .home footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font:italic .85rem var(--serif)}
 .home footer a{color:var(--muted)}
+.home footer .social{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px;font:600 .72rem Oswald,sans-serif;letter-spacing:.1em;text-transform:uppercase;font-style:normal}
+.home footer .social a{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1.5px solid currentColor;border-radius:999px;color:var(--ink,#1C2B45);text-decoration:none}
+.home footer .social a:hover{background:var(--ink,#1C2B45);color:var(--bg,#F4EDDC)}
+.home footer .social svg{width:14px;height:14px;color:#0085ff}
+.home footer .social a:hover svg{color:inherit}
 .home .wrap{padding-bottom:28px}
 
 /* Sheet: the row a home-page "Pick" button jumped to */
