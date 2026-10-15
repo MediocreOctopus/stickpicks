@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>stickpicks Bluesky starter kit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&display=swap">
+<style>
+  :root{--navy:#1C2B45;--red:#9B1C1F;--cream:#F4EDDC;--panel:#FBF7EE;--line:#DDD3BF;--muted:#5D6473;--sky:#0085ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--navy);font:16px/1.45 Barlow,system-ui,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+  h1{font:700 1.6rem Oswald,sans-serif;text-transform:uppercase;margin:0 0 4px}
+  h2{font:700 1.15rem Oswald,sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:30px 0 8px;border-bottom:3px double var(--navy);padding-bottom:4px}
+  .lede{font:italic .98rem "Libre Caslon Text",Georgia,serif;color:var(--muted);margin:0 0 6px}
+  .box{background:var(--panel);border:2px solid var(--navy);border-radius:8px;padding:14px 16px;margin:10px 0}
+  .box b.k{display:block;font:600 .72rem Oswald,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:2px}
+  ol{margin:6px 0 0 1.2em;padding:0} li{margin:4px 0}
+  code{background:#efe6d2;padding:1px 5px;border-radius:3px;font-size:.9em}
+  .post{margin:16px 0}
+  .when{font:600 .78rem Oswald,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+  .when span{color:var(--muted)}
+  /* a Bluesky-style post (white card, round avatar, blue links) */
+  .bsky{display:flex;gap:10px;background:#fff;border:1px solid #d4dbe2;border-radius:10px;padding:12px 14px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#0b0f14}
+  .av{width:42px;height:42px;border-radius:50%;flex:none;background:var(--cream)}
+  .main{min-width:0;flex:1}
+  .who b{font-weight:700} .who span{color:#6f869f;font-size:.92em}
+  .txt{margin-top:2px;font-size:.97rem;line-height:1.4;overflow-wrap:anywhere}
+  .lnk{color:var(--sky)}
+  .cardlink{margin-top:10px;border:1px solid #d4dbe2;border-radius:8px;overflow:hidden}
+  .ogimg{height:120px;background:url("https://stickpicks.hockey/og-image.png") center/cover,#efe6d2}
+  .ogt{padding:8px 10px;font-size:.85rem} .ogt b{display:block} .ogt span{color:#6f869f}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .count{font-size:.8rem;color:var(--muted)}
+  button{background:var(--navy);color:#EFE6D2;border:0;border-radius:4px;padding:6px 12px;font:600 .75rem Oswald,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+  button.done{background:#2E7D4F}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>stickpicks on Bluesky</h1>
+  <p class="lede">Your profile, your @stickpicks.hockey name, and a first week of posts that match the real NHL schedule (Oct 14–22). Every link is tagged <code>?ref=bluesky</code>, so visits show up in the Monday report.</p>
+
+  <h2>1 · Create the account</h2>
+  <div class="box">
+    <ol>
+      <li>Sign up at <b>bsky.app</b> (free). Use contact@stickpicks.hockey as the email.</li>
+      <li><b>Display name:</b> stickpicks</li>
+      <li><b>Profile picture:</b> the stickpicks app icon (the “sp” script on knit). Use <code>icon-512.png</code> from the site.</li>
+      <li><b>Banner:</b> <code>bluesky-banner.png</code> (in this marketing folder; made at Bluesky's 1500×500 size).</li>
+      <li><b>Bio</b> (<span id="biolen">164</span>/256 characters): <button type="button" data-i="bio">Copy bio</button>
+        <div class="bsky" style="margin-top:8px"><div class="main"><div class="txt">Free NHL pick&#x27;em 🏒 Call every game (W, L or OTL + total goals) and climb your team&#x27;s own leaderboard. No money, no betting, no ads. Made by a fan. stickpicks.hockey</div></div></div></li>
+    </ol>
+  </div>
+
+  <h2>2 · Use your domain as your name: @stickpicks.hockey</h2>
+  <div class="box">
+    <ol>
+      <li>In Bluesky: <b>Settings → Account → Handle → “I have my own domain”</b>, and type <code>stickpicks.hockey</code>.</li>
+      <li>Bluesky shows a <b>TXT record</b> with Host <code>_atproto</code> and a value starting <code>did=did:plc:…</code>.</li>
+      <li>In Porkbun: <b>Domain Management → stickpicks.hockey → DNS → Add a record</b>: Type <b>TXT</b>, Host <code>_atproto</code>, Answer: paste the <code>did=…</code> value. Leave every existing record alone.</li>
+      <li>Back in Bluesky, press <b>Verify DNS Record</b>, then <b>Update</b>. Your name becomes <b>@stickpicks.hockey</b>.</li>
+    </ol>
+    <p class="lede" style="margin-top:8px">It's the same kind of step as the Google verification. I can check from here that the record is visible once you've added it.</p>
+  </div>
+
+  <h2>3 · The first week of posts</h2>
+  <p class="lede">Post the intro and pin it to your profile (the ··· menu → Pin to your profile). Bluesky turns each link into a preview card like the ones below. Reply to anyone who comments, and follow and chat with hockey accounts you like; that's how new accounts get found.</p>
+  <article class="post"><div class="when">Wed Oct 14 · pin this one <span>· Intro</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">Hi, hockey Bluesky 👋 I built stickpicks, a free NHL pick&#x27;em.<br><br>Pick any team, call each game (W, L or OTL) plus the total goals, and climb a leaderboard just for that team&#x27;s fans.<br><br>No money, no betting, no ads, no app to download.<br><br><span class="lnk">stickpicks.hockey/?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">261 / 300</span><button type="button" data-i="0">Copy text</button></div></article>
+<article class="post"><div class="when">Thu Oct 15 · afternoon <span>· 11-game night</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">11 games tonight 🏒<br><br>Rangers–Devils, Sabres at Leafs, Kraken in Tampa, Flames in Vegas…<br><br>Who are you taking? Call the result and the total goals before puck drop:<br><span class="lnk">stickpicks.hockey/?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">192 / 300</span><button type="button" data-i="1">Copy text</button></div></article>
+<article class="post"><div class="when">Fri Oct 16 <span>· Quiet night</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">Just two tonight: Penguins at Avalanche and Bruins at Ducks.<br><br>Good night to get ahead. Saturday has 14 games, and picks lock at each puck drop.<br><br><span class="lnk">stickpicks.hockey/?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">175 / 300</span><button type="button" data-i="2">Copy text</button></div></article>
+<article class="post"><div class="when">Sat Oct 17 · morning <span>· Big Saturday</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">14-game Saturday 🚨<br><br>That&#x27;s 14 chances at points: 1 for the right result, 1 for the exact total goals. Shootout winners get the extra goal, just like the official score.<br><br>Get your picks in: <span class="lnk">stickpicks.hockey/?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">219 / 300</span><button type="button" data-i="3">Copy text</button></div></article>
+<article class="post"><div class="when">Sun Oct 18 <span>· Why team boards</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">Why does every team get its own leaderboard on stickpicks?<br><br>Because beating every hockey fan alive is impossible, but being the best Kraken (or Leafs, or Wild) fan on the board is very doable.<br><br>Find your team: <span class="lnk">stickpicks.hockey/teams.html?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">250 / 300</span><button type="button" data-i="4">Copy text</button></div></article>
+<article class="post"><div class="when">Mon Oct 19 · fill in from your Monday report <span>· Weekly shout-out</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">Week 1 on the boards 🏆<br><br>Top of the All-Teams board: [player] ([team]) with [x] points.<br><br>Think you can catch them? Every team&#x27;s board is still wide open.<br><br><span class="lnk">stickpicks.hockey/leaderboard.html?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">200 / 300</span><button type="button" data-i="5">Copy text</button></div></article>
+<article class="post"><div class="when">Tue Oct 20 · afternoon <span>· Tip: OTL</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">11 games tonight, including Wings at Kraken and Hurricanes at Canucks.<br><br>Quick tip: OTL means your team loses in overtime or a shootout. Lots of people forget it&#x27;s there. That pick can be worth a point.<br><br><span class="lnk">stickpicks.hockey/?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">233 / 300</span><button type="button" data-i="6">Copy text</button></div></article>
+<article class="post"><div class="when">Wed Oct 21 <span>· Breakaway</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">Waiting for puck drop? stickpicks has a little hockey game called Breakaway: jump the pucks, duck the shots, beat your high score.<br><br>Free, no download, works on your phone.<br><br><span class="lnk">stickpicks.hockey/intermission.html?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">220 / 300</span><button type="button" data-i="7">Copy text</button></div></article>
+<article class="post"><div class="when">Thu Oct 22 · afternoon <span>· No account needed</span></div>
+  <div class="bsky"><img class="av" src="https://stickpicks.hockey/icon-192.png" alt=""><div class="main">
+  <div class="who"><b>stickpicks</b> <span>@stickpicks.hockey</span></div><div class="txt">12 games tonight, including Mammoth at Kraken and Wings at Canucks.<br><br>You don&#x27;t need an account to start picking. Try a few games first, and sign up when you want your name on the board.<br><br><span class="lnk">stickpicks.hockey/?ref=bluesky</span></div>
+  <div class="cardlink"><div class="ogimg"></div><div class="ogt"><b>stickpicks · Free NHL Hockey Pick'em</b><span>stickpicks.hockey</span></div></div></div></div>
+  <div class="foot"><span class="count">217 / 300</span><button type="button" data-i="8">Copy text</button></div></article>
+
+  <h2>4 · Keeping it going</h2>
+  <div class="box">
+    <ol>
+      <li><b>Game nights:</b> one post on busy nights (“11 games tonight…”) with a matchup or two.</li>
+      <li><b>Mondays:</b> a top-of-the-boards shout-out from your weekly report.</li>
+      <li><b>Now and then:</b> a tip (OTL, exact goals, team boards), a new badge, or Breakaway.</li>
+      <li>Never use NHL or team logos in images; team names in words are fine.</li>
+    </ol>
+  </div>
+</div>
+<script>
+  const TEXTS=["Hi, hockey Bluesky \ud83d\udc4b I built stickpicks, a free NHL pick'em.\n\nPick any team, call each game (W, L or OTL) plus the total goals, and climb a leaderboard just for that team's fans.\n\nNo money, no betting, no ads, no app to download.\n\nstickpicks.hockey/?ref=bluesky", "11 games tonight \ud83c\udfd2\n\nRangers\u2013Devils, Sabres at Leafs, Kraken in Tampa, Flames in Vegas\u2026\n\nWho are you taking? Call the result and the total goals before puck drop:\nstickpicks.hockey/?ref=bluesky", "Just two tonight: Penguins at Avalanche and Bruins at Ducks.\n\nGood night to get ahead. Saturday has 14 games, and picks lock at each puck drop.\n\nstickpicks.hockey/?ref=bluesky", "14-game Saturday \ud83d\udea8\n\nThat's 14 chances at points: 1 for the right result, 1 for the exact total goals. Shootout winners get the extra goal, just like the official score.\n\nGet your picks in: stickpicks.hockey/?ref=bluesky", "Why does every team get its own leaderboard on stickpicks?\n\nBecause beating every hockey fan alive is impossible, but being the best Kraken (or Leafs, or Wild) fan on the board is very doable.\n\nFind your team: stickpicks.hockey/teams.html?ref=bluesky", "Week 1 on the boards \ud83c\udfc6\n\nTop of the All-Teams board: [player] ([team]) with [x] points.\n\nThink you can catch them? Every team's board is still wide open.\n\nstickpicks.hockey/leaderboard.html?ref=bluesky", "11 games tonight, including Wings at Kraken and Hurricanes at Canucks.\n\nQuick tip: OTL means your team loses in overtime or a shootout. Lots of people forget it's there. That pick can be worth a point.\n\nstickpicks.hockey/?ref=bluesky", "Waiting for puck drop? stickpicks has a little hockey game called Breakaway: jump the pucks, duck the shots, beat your high score.\n\nFree, no download, works on your phone.\n\nstickpicks.hockey/intermission.html?ref=bluesky", "12 games tonight, including Mammoth at Kraken and Wings at Canucks.\n\nYou don't need an account to start picking. Try a few games first, and sign up when you want your name on the board.\n\nstickpicks.hockey/?ref=bluesky", "Free NHL pick'em \ud83c\udfd2 Call every game (W, L or OTL + total goals) and climb your team's own leaderboard. No money, no betting, no ads. Made by a fan. stickpicks.hockey"];
+  document.addEventListener("click",async e=>{
+    const b=e.target.closest("button[data-i]"); if(!b) return;
+    const t=b.dataset.i==="bio" ? TEXTS[TEXTS.length-1] : TEXTS[+b.dataset.i];
+    try{ await navigator.clipboard.writeText(t); b.textContent="Copied ✓"; b.classList.add("done"); setTimeout(()=>{ b.textContent=b.dataset.i==="bio"?"Copy bio":"Copy text"; b.classList.remove("done"); },1600); }
+    catch(err){ b.textContent="Select the text instead"; }
+  });
+</script>
+</body>
+</html>

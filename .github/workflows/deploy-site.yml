@@ -45,9 +45,9 @@ jobs:
         run: |
           V="$(date -u +%Y%m%d%H%M)-${GITHUB_SHA::7}"
           mkdir -p _site
-          # the public site only: leave out the database, scripts, workflows and notes
+          # the public site only: leave out the database, scripts, workflows, notes and marketing files
           rsync -a ./ _site/ --exclude '.git' --exclude '.github' --exclude '_site' --exclude 'supabase' \
-            --exclude 'scripts' --exclude 'README.md' --exclude 'CLAUDE.md'
+            --exclude 'scripts' --exclude 'marketing' --exclude 'README.md' --exclude 'CLAUDE.md'
           sed -i "s/__V__/$V/g" _site/*.html _site/sw.js
           if grep -l "__V__" _site/*.html _site/sw.js; then echo "A version placeholder was left unstamped"; exit 1; fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
