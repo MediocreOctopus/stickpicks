@@ -43,9 +43,9 @@ Owner is not a professional developer: explain changes in plain language, and sa
 | `.github/workflows/reminders.yml` | 1st and 15th: opens `.github/reminders/MM-DD.md` as an issue labelled `reminder` (04-01 playoffs, 07-01 new season, 09-15 preseason). Manual run with an input name to test one. |
 | `.github/dependabot.yml` | Weekly grouped PR updating the `uses:` versions in the workflows. |
 | `scripts/check_site.py` | Pre-deploy checks (stdlib Python; run it locally with `python scripts/check_site.py`): page files exist and carry `?v=__V__`, no top-level name declared twice on a page (config.js + teams.js + game.js + inline scripts share one scope), links/anchors, sitemap vs teams.js, robots, manifest, sw.js SHELL. Script-handled anchors are listed in `SCRIPT_ANCHORS`. |
-| `og-image.png` | Link-preview image (logo on knit with hem stripes). Every page's `og:image` uses the absolute URL `https://stickpicks.hockey/og-image.png`; update it if the site moves. |
+| `og-image.png` | Link-preview image, 1200x630 (logo on knit with hem stripes, "Free NHL pick'em · a leaderboard for every team"; source `marketing/og-image.html`, rendered like the Bluesky banner). Every page's `og:image` uses the absolute URL `https://stickpicks.hockey/og-image.png`; update it if the site moves. |
 | `styles.css` | All styles for every page. Theme colors are CSS custom properties set per team by `applyTheme()`. |
-| `marketing/` | Outreach assets, never deployed: `bluesky-banner.html` → `bluesky-banner.png` (1500x500; render with headless Edge `--headless=new --window-size=1500,500 --screenshot=...`; keep the bottom-left clear, Bluesky's avatar covers it). |
+| `marketing/` | Outreach assets, never deployed: `bluesky-banner.html` → `bluesky-banner.png` (1500x500) and `og-image.html` → the site's `/og-image.png` (1200x630), same design. Render with headless Edge: `--headless=new --window-size=W,H --screenshot=...` at the image's size. On the banner keep the bottom-left clear (Bluesky's avatar covers it). |
 | `scripts/update-games.mjs` | Syncs all 32 schedules + scores from the NHL feed into `games`, and ESPN headlines into `news`. |
 | `supabase/schema.sql` | Entire database: tables, row-level security, grants, functions. |
 | `supabase/migrate-from-kraken-version.sql` | One-time legacy migration. Leave alone. |
