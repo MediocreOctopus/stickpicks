@@ -9,6 +9,8 @@ Checks:
   - links between pages point at files that exist; #anchors on other pages exist (warning only: some are made by JS)
   - sitemap.xml is valid, only lists real pages, and has a pick sheet and a leaderboard for every team in teams.js
   - robots.txt points at the sitemap; manifest.webmanifest is valid and its icons exist; sw.js only caches real files
+  - Press Box (pressbox.js, rules in UPDATES.md): versions in order with no repeats, real dates, known tags, named
+    updates have an intro, no "you"/"your"/"we" in the wording, PRESS_BOX_LATEST in teams.js matches the newest entry
 
 With --extract DIR it also writes each page's inline scripts to DIR (one .js file per block) so the workflow can run
 `node --check` on them, catching syntax errors in the pages themselves.
@@ -161,10 +163,62 @@ def check_misc():
             if not exists(name): err("sw.js", f"caches {name}, which doesn't exist (the app would fail to install)")
     if not exists("CNAME") or read("CNAME").strip() != "stickpicks.hockey": err("CNAME", "should contain stickpicks.hockey")
 
+def check_pressbox():
+    """Press Box entries (pressbox.js) follow the style guide in UPDATES.md."""
+    import datetime
+    if not exists("pressbox.js"): return err("pressbox.js", "missing (the Press Box page needs it)")
+    src = read("pressbox.js")
+    blocks = re.split(r"\n  \{\n", src)[1:]   # one block per entry: each entry starts with "  {" on its own line
+    if not blocks: return err("pressbox.js", "no entries found (each entry starts with '  {' on its own line)")
+    STR = r'"((?:[^"\\]|\\.)*)"'
+    prev, prev_date, versions = None, None, []
+    for b in blocks:
+        def field(k):
+            m = re.search(r"^    " + k + r": " + STR + ",", b, re.M)
+            return m.group(1) if m else None
+        v, name, date, intro = field("version"), field("name"), field("date"), field("intro")
+        where = f"pressbox.js ({v or 'an entry'})"
+        if not v or not re.fullmatch(r"\d{2}\.\d+", v):
+            err(where, f'version "{v}" should look like 26.1 (season year, a dot, a number)'); continue
+        key = tuple(int(x) for x in v.split("."))
+        if v in versions: err(where, f"version {v} is used twice")
+        versions.append(v)
+        if prev and key >= prev: err(where, "entries must be newest first, each with a lower version than the one above it")
+        prev = key
+        try: d = datetime.date.fromisoformat(date or "")
+        except ValueError: err(where, f'date "{date}" should be written like "2026-10-21"'); d = None
+        if d and prev_date and d > prev_date: err(where, "its date is later than the entry above it (newest first)")
+        if d: prev_date = d
+        if d and d > datetime.date.today() + datetime.timedelta(days=1): warn(where, f"dated {date}, which is in the future")
+        if name and not intro: err(where, f'named update "{name}" needs an intro (UPDATES.md section 4)')
+        if key[1] == 0 and not name: err(where, f"{v} starts a season, so it needs a name (UPDATES.md section 1)")
+        items = re.findall(r'\["(\w+)", ' + STR + r"\]", b)
+        if not items: err(where, "has no lines (items)")
+        order, last = {"new": 0, "improved": 1, "fixed": 2}, -1
+        for tag, _ in items:
+            if tag not in order: err(where, f'unknown tag "{tag}" (use new, improved or fixed)'); continue
+            if order[tag] < last: err(where, "lines should go New, then Improved, then Fixed")
+            last = order[tag]
+        for text in [intro or "", name or ""] + [t for _, t in items]:
+            w = re.search(r"\b(you|your|you're|youre|yours|yourself|we|we're|our|ours)\b", text, re.I)
+            if w: err(where, f'"{w.group(0)}" in "{text[:60]}": Press Box wording never addresses the reader or says "we" (UPDATES.md section 4)')
+    if versions:
+        m = re.search(r'^const PRESS_BOX_LATEST="([^"]+)";', read("teams.js"), re.M)
+        if not m: err("teams.js", "PRESS_BOX_LATEST is missing (it lights the footer's Press Box dot)")
+        elif m.group(1) != versions[0]:
+            err("teams.js", f"PRESS_BOX_LATEST is {m.group(1)} but the newest Press Box entry is {versions[0]}; set it to {versions[0]}")
+        season = re.search(r'SEASON:\s*"(\d{4})', read("config.js"))
+        if season and versions[0].split(".")[0] != season.group(1)[2:]:
+            warn("pressbox.js", f"the newest entry is {versions[0]} but the season in config.js is {season.group(1)}: the season's first update should be {season.group(1)[2:]}.0")
+    for page in sorted(f for f in os.listdir(ROOT) if f.endswith(".html")):
+        s = read(page); i = s.find("<footer")
+        if i >= 0 and 'href="pressbox.html"' not in s[i:s.find("</footer>", i)]:
+            err(page, "the footer is missing the Press Box link")
+
 def main():
     extract = None
     if "--extract" in sys.argv: extract = sys.argv[sys.argv.index("--extract") + 1]
-    check_pages(extract); check_sitemap(); check_misc()
+    check_pages(extract); check_sitemap(); check_misc(); check_pressbox()
     gh = os.environ.get("GITHUB_ACTIONS") == "true"
     for f, m in warnings: print(f"::warning file={f}::{m}" if gh else f"warning  {f}: {m}")
     for f, m in errors: print(f"::error file={f}::{m}" if gh else f"ERROR    {f}: {m}")

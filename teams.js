@@ -1596,6 +1596,22 @@ function markTopNav(){
   document.querySelector(".teammenu-btn")?.classList.toggle("is-current", ["teams.html","sheet.html","compare.html","playoffs.html","bracket.html"].includes(page));
 }
 document.addEventListener("DOMContentLoaded",()=>{ showRememberedChiclets(); markTopNav(); });
+
+// Press Box (pressbox.html): the footer link gets a small "New" dot until the player has opened the latest update.
+// Only for returning players (a first visit doesn't need it). Keep PRESS_BOX_LATEST equal to the newest version in
+// pressbox.js; scripts/check_site.py stops the deploy if they differ.
+const PRESS_BOX_LATEST="26.1";
+function markPressBox(){
+  const a=document.querySelector('footer a[href="pressbox.html"]');
+  if(!a || a.getAttribute("aria-current")) return;
+  let seen=null, returning=false;
+  try{
+    seen=localStorage.getItem("stickpicks-pressbox-seen");
+    returning=!!(seen || localStorage.getItem("nhl-picks-last-team") || localStorage.getItem("stickpicks-me"));
+  }catch(e){}
+  if(returning && seen!==PRESS_BOX_LATEST){ a.classList.add("pb-new"); a.setAttribute("aria-label","Press Box, new update"); }
+}
+document.addEventListener("DOMContentLoaded", markPressBox);
 async function chicletBalance(sb, username){
   if(!sb || !username) return null;
   const {data,error}=await sb.rpc("chiclets_balance",{p_username:username});

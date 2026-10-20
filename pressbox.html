@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" class="home rulespage pressboxpage">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Press Box · stickpicks</title>
+<meta name="theme-color" content="#EFE6D2" media="(prefers-color-scheme: light)" data-look="home">
+<meta name="theme-color" content="#1C2B45" media="(prefers-color-scheme: dark)" data-look="road">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<meta name="description" content="What's new on stickpicks: features, improvements, and fixes.">
+<link rel="canonical" href="https://stickpicks.hockey/pressbox.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="stickpicks">
+<meta property="og:title" content="Press Box · stickpicks">
+<meta property="og:description" content="What's new on stickpicks: features, improvements, and fixes.">
+<meta property="og:image" content="https://stickpicks.hockey/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="stickpicks">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=swap" rel="stylesheet">
+<script>/* Look: auto (follow the device) | home (light) | road (dark). Runs before the page draws. */
+(function(){var look="auto",mq=matchMedia("(prefers-color-scheme: dark)");try{look=localStorage.getItem("stickpicks-look")||"auto"}catch(e){}
+function apply(){var dark=look==="road"||(look==="auto"&&mq.matches);document.documentElement.setAttribute("data-scheme",dark?"dark":"light");
+document.querySelectorAll('meta[name="theme-color"][data-look]').forEach(function(m){m.media=(m.dataset.look==="road")===dark?"all":"not all"})}
+apply();if(mq.addEventListener)mq.addEventListener("change",apply);
+window.stickpicksLook={get:function(){return look},set:function(v){look=v;try{localStorage.setItem("stickpicks-look",v)}catch(e){}apply()}}})();
+/* Playoff colours (silver, black and gold) when playoff mode is on: see playoffOn() in teams.js */
+try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po&&(po.phase==="live"||po.phase==="done"||(po.phase==="countdown"&&po.choice==="playoffs")))document.documentElement.classList.add("playoffs")}catch(e){}</script>
+<link rel="stylesheet" href="styles.css?v=__V__">
+</head>
+<body>
+<div class="hem-top" aria-hidden="true"></div>
+<div class="wrap">
+  <nav class="topbar" aria-label="Main">
+    <a class="brand" href="index.html" aria-label="stickpicks home">stickpicks</a>
+    <div class="topnav">
+      <div class="teammenu" id="teamMenu"></div>
+      <a href="leaderboard.html" class="navlb">Leaderboard</a>
+      <a href="intermission.html" class="navint">Intermission</a>
+      <a href="rules.html" class="navrules">Rules</a>
+      <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
+    </div>
+  </nav>
+
+  <header class="teams-banner rules-banner">
+    <small class="tb-kicker">stickpicks</small>
+    <h1>Press Box</h1>
+    <p>What's new on stickpicks: features, improvements, and fixes.</p>
+  </header>
+
+  <div class="pb-list" id="pbList"></div>
+  <footer>stickpicks is a fan-made prediction game, not affiliated with the NHL or its teams. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a> · <a href="pressbox.html" aria-current="page">Press Box</a> · <a href="privacy.html#contact">Contact</a></footer>
+</div>
+<div class="hem" aria-hidden="true"></div>
+<script src="config.js?v=__V__"></script>
+<script src="teams.js?v=__V__"></script>
+<script src="pressbox.js?v=__V__"></script>
+<script>
+mountTeamMenu(document.getElementById("teamMenu"));
+// One entry per update, newest first (data and rules: pressbox.js and UPDATES.md)
+(function(){
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const TAG={new:"New",improved:"Improved",fixed:"Fixed"};
+  const day=d=>new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  document.getElementById("pbList").innerHTML=PRESS_BOX.map((u,i)=>`
+    <article class="pb-entry${u.name?" pb-named":""}" id="v${esc(u.version)}">
+      <header class="pb-head">
+        <span class="pb-ver" aria-label="Version ${esc(u.version)}">${esc(u.version)}</span>
+        <div class="pb-title">
+          ${u.name?`<h2 class="pb-name">${esc(u.name)}</h2>`:`<h2 class="pb-num">Update ${esc(u.version)}</h2>`}
+          <time datetime="${esc(u.date)}">${day(u.date)}${i===0?' <b class="pb-latest">Latest</b>':""}</time>
+        </div>
+      </header>
+      ${u.intro?`<p class="pb-intro">${esc(u.intro)}</p>`:""}
+      <ul class="pb-items">${u.items.map(([t,x])=>`<li><span class="pb-tag ${t}">${TAG[t]}</span><span>${esc(x)}</span></li>`).join("")}</ul>
+    </article>`).join("");
+  try{ localStorage.setItem("stickpicks-pressbox-seen",PRESS_BOX[0].version); }catch(e){}
+})();
+</script>
+<!-- Visitor counts: GoatCounter (no cookies, no personal data). Page addresses are counted without usernames. -->
+<script>window.goatcounter={path:function(){var t=new URLSearchParams(location.search).get("team");return location.pathname+(t?"?team="+t:"")}};</script>
+<script data-goatcounter="https://stickpicks.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>

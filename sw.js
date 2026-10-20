@@ -11,8 +11,8 @@ const CACHE = `stickpicks-${VERSION}`;
 const V = `?v=${VERSION}`;
 
 const SHELL = [
-  "./", "index.html", "teams.html", "profile.html", "sheet.html", "leaderboard.html", "rules.html", "intermission.html", "compare.html", "privacy.html", "badges.html", "chiclets.html", "shop.html", "locker.html", "playoffs.html", "bracket.html",
-  `styles.css${V}`, `teams.js${V}`, `config.js${V}`, `game.js${V}`, `logo.svg${V}`,
+  "./", "index.html", "teams.html", "profile.html", "sheet.html", "leaderboard.html", "rules.html", "intermission.html", "compare.html", "privacy.html", "badges.html", "chiclets.html", "shop.html", "locker.html", "playoffs.html", "bracket.html", "pressbox.html",
+  `styles.css${V}`, `teams.js${V}`, `config.js${V}`, `game.js${V}`, `logo.svg${V}`, `pressbox.js${V}`,
   "manifest.webmanifest", "icon-32.png", "icon-180.png", "icon-192.png", "icon-512.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"
 ];
