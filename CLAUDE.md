@@ -175,6 +175,25 @@ reactions, group reminders, a lifetime Bronze/Silver/Gold level, drop-worst-week
 Rejected: live win odds, confidence points, and crowd picks shown before puck drop (betting-adjacent, or they undo
 hidden picks).
 
+**App stores: on hold until stickpicks has enough Android players (owner's decision, 2026-10-21).** stickpicks is
+already an installable web app (service worker, install button / iPhone Add to Home Screen tip, offline notice,
+puck-drop reminders), so a store adds discoverability, not features.
+- **Google Play (the realistic next step):** wrap the existing web app as an Android app (Trusted Web Activity, e.g.
+  via PWABuilder/Bubblewrap; the site update shows up in the app automatically). Needs the owner's own $25 one-time
+  Google Play developer account (the owner creates and pays; never Claude) and a `/.well-known/assetlinks.json` file
+  on stickpicks.hockey proving ownership (the custom domain made this possible).
+- **The blocker:** new personal developer accounts must run a closed test with **at least 12 testers opted in for 14
+  days in a row** before going public. Testers must be on Android with a Google account and install the test build
+  from Play (website users don't count). Then Google reviews a production-access application (how testers were found,
+  feedback, changes). An organization account (business + D-U-N-S number) is exempt, but not worth it for now.
+  Re-check Google's current rules in the Play Console help before starting.
+- **When to revisit:** once there are roughly 30–50 regular players, so 12 Android testers are easy to find (ask on
+  Bluesky and in a Press Box entry, or invite active players from the leaderboards).
+- **Apple App Store:** later still: $99/year, needs a Mac or a paid cloud build, and Apple often rejects
+  website-in-a-wrapper apps; league play's app-like features would help approval.
+- **Either store:** stricter about trademarks than the open web. The listing and screenshots must say fan-made / not
+  affiliated with the NHL, with no league or team logos.
+
 **stickpicks.com (owned by someone else; watching in case it frees up).** Registered 2014-11-03 through RegistryGate
 GmbH, paid through **2026-11-03 19:26 UTC**. Calendar checks on Oct 26 and Nov 4, 2026: "check stickpicks.com".
 - How to check: `https://rdap.verisign.com/com/v1/domain/stickpicks.com` (public). Read the expiration date and
