@@ -55,6 +55,7 @@ Owner is not a professional developer: explain changes in plain language, and sa
 
 ## Data model (Supabase)
 
+- **New tables need explicit grants (Supabase change, Oct 30, 2026).** Supabase no longer gives new tables in `public` Data API access automatically. Every `create table public.…` added to `schema.sql` must, in the same section, enable RLS, add its policies, and `grant` exactly the access the site needs (e.g. `grant select on public.x to anon, authenticated;` for public reads, `grant select, insert, update, delete on public.x to authenticated;` for player-owned rows guarded by RLS, and the writes `service_role` needs for the GitHub jobs). Without them, supabase-js returns "permission denied". Tables reached only through `security definer` functions need no table grant (e.g. `badge_case`, `brackets`, `chiclet_awards`). The 17 tables that existed before Oct 30, 2026 kept their old automatic grants; `schema.sql` doesn't yet list all of them, so running it on a brand-new project may miss a few. Check the live grants in the SQL editor and write them into `schema.sql` before relying on it for a rebuild (backups restored with `pg_restore` keep their grants). This matters first for league play's new tables (groups).
 - `games` (PK `game_id`): season, game_type (2 regular season, 3 playoffs), ot_periods (once final: overtime periods played, 0 in regulation, 2 = double OT; from the feed's `periodDescriptor`, see `otPeriods()` in `scripts/update-games.mjs`; the schedule feed's `gameOutcome` only ever says "OT"; the playoff badges Free Hockey / More Free Hockey / Even More Free Hockey need ot_periods ≥ 1 / 2 / 3, so a 4OT game earns all three), game_date, start_utc, home, away, home_score, away_score, game_state, schedule_state (`PPD` = postponed), period_type (`REG`/`OT`/`SO`, set only when final), venue, neutral_site. Public read; only `service_role` writes.
 - `team_picks` (PK user_id, team, game_id): `pick` (W/L/OTL, nullable), `goals` (0–30, nullable); at least one must be set. RLS: owner only, and only while `pick_is_open(game_id, team)` is true (before puck drop, team actually plays in that game).
 - `profiles` (PK user_id): `username`, 3–20 of `[A-Za-z0-9_]`, unique case-insensitively; `avatar_kind` (null/`sweater`/`photo`), `avatar_team`, `avatar_number` (0–99), `avatar_url` (checked by `profiles_avatar_valid`: photos must be in `avatars/<user_id>/`). Public read. Query it with `select("*")` so pages don't break before a schema update.
@@ -148,3 +149,40 @@ Download the backup from Actions → "Back up the database" → a run → Artifa
    To restore one table only: `pg_restore --data-only -t team_picks -d "$DB" public.dump` (empty it first).
 Restoring over the live project replaces current data: try it on a spare Supabase project first.
 
+
+## Roadmap and things being watched
+
+Kept here (not only in one PC's Claude memory) so every device and session knows them. Dates are also on the
+stickpicks Google Calendar.
+
+**League play: update 27.0 "League Play". Deadline: everything complete and live by July 1, 2027.** That date is the
+owner's deadline for the whole update (built, previewed, tested, live in one push), not a start date; the owner plans
+to finish before it. It is also the yearly new-season switch-over, so finish with room to spare. Start when the owner
+says "start league play": plan all 9 parts together and show previews first. Calendar checkpoints: Apr 1 (3 months
+left), Jun 1 (1 month), Jun 24 (1 week). The 9 parts (numbered as in the owner's original priority list):
+1. Private groups: create one, share one link, own leaderboard; groups renew automatically each season.
+2. Rank movement arrows (▲3 / ▼1) on every leaderboard row.
+3. More on the "your spot" card: % right, this week's points, "2 points behind #3".
+7. New-player checklist (first pick, username, sweater, invite a friend).
+8. Season timeline bar on the home page (opening night → today → playoffs; doubles as the playoff countdown).
+9. Quick-pick helper ("fill tonight's games" with home teams or crowd favourites, then edit).
+11. Week-by-week columns on the season leaderboard.
+12. Top player on finished game cards ("Tkachuk · 3 G, 1 A") from the NHL feed.
+13. Wrapped: an end-of-season recap.
+
+Not chosen for now: crowd picks shown after puck drop + a "Called It" badge, a group feed with automatic posts and
+reactions, group reminders, a lifetime Bronze/Silver/Gold level, drop-worst-week, a ties tooltip.
+Rejected: live win odds, confidence points, and crowd picks shown before puck drop (betting-adjacent, or they undo
+hidden picks).
+
+**stickpicks.com (owned by someone else; watching in case it frees up).** Registered 2014-11-03 through RegistryGate
+GmbH, paid through **2026-11-03 19:26 UTC**. Calendar checks on Oct 26 and Nov 4, 2026: "check stickpicks.com".
+- How to check: `https://rdap.verisign.com/com/v1/domain/stickpicks.com` (public). Read the expiration date and
+  status. Expiration moved past 2026-11-03 = renewed. "redemption period" or "pending delete" = heading for release.
+  404 = free to register now (at Porkbun).
+- Usual .com timeline if not renewed: up to ~45 days registrar grace → 30-day redemption → 5 days pending delete →
+  released (earliest roughly mid-December 2026 to late January 2027).
+- Backorders (the owner places them; never create accounts or pay): DropCatch.com, SnapNames, NameJet (pay only if
+  caught, ~$59+), GoDaddy Domain Backorder (small up-front fee). Several at once raises the odds.
+- If the owner ever gets it: don't move the site. Add a permanent (301) URL forward at Porkbun from stickpicks.com
+  and www.stickpicks.com to https://stickpicks.hockey (include path). Nothing in the repo, Pages or Supabase changes.
