@@ -393,6 +393,7 @@ a.plain{display:inline-flex;align-items:center;text-decoration:none}
 .home footer .social a{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1.5px solid currentColor;border-radius:999px;color:var(--ink,#1C2B45);text-decoration:none}
 .home footer .social a:hover{background:var(--ink,#1C2B45);color:var(--bg,#F4EDDC)}
 .home footer .social svg{width:14px;height:14px;color:#0085ff}
+.home footer .social a.ig svg{color:#D62976}
 .home footer .social a:hover svg{color:inherit}
 .home .wrap{padding-bottom:28px}
 

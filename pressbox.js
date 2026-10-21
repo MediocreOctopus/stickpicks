@@ -3,6 +3,15 @@
 // When adding one, also set PRESS_BOX_LATEST in teams.js to the new version (it lights the footer's New dot).
 const PRESS_BOX = [
   {
+    version: "26.2",
+    name: "",
+    date: "2026-10-20",
+    intro: "",
+    items: [
+      ["new", "stickpicks is on Instagram: @stickpicks.hockey. Link at the bottom of the home page, next to Bluesky."],
+    ],
+  },
+  {
     version: "26.1",
     name: "",
     date: "2026-10-20",

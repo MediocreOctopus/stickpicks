@@ -120,11 +120,15 @@ Draft one post per social media account for **every** new entry. Accounts today:
 | Account | Limit | Link tag |
 |---|---|---|
 | Bluesky · @stickpicks.hockey | 300 characters (link and emoji included) | `?ref=bluesky` |
+| Instagram · @stickpicks.hockey | 2,200-character caption; **needs a picture** (1080×1350); links in captions don't work, so say "link in bio" | `?ref=instagram` (the profile link) |
 
 When a new account is added (Instagram, Threads, X, TikTok…), add a row here with its limit and its own `?ref=` tag,
 and draft for it from then on.
 
-**The link** goes straight to the entry: `stickpicks.hockey/pressbox.html?ref=bluesky#v26.1` (the `?ref=` tag before
+**Instagram** posts need a picture of the update: make it with `python marketing/instagram/build.py pressbox 26.2`
+(any version: it reads the entry from `pressbox.js`; long updates show their first 6 lines). The caption ends with "link in bio" instead of a link.
+
+**The link** (Bluesky and other accounts with clickable links) goes straight to the entry: `stickpicks.hockey/pressbox.html?ref=bluesky#v26.1` (the `?ref=` tag before
 the `#`, so visits show up by account in the Monday report). The `#v26.1` part opens the page at that entry.
 
 **Writing the post:**
