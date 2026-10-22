@@ -41,7 +41,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
       <div class="teammenu" id="teamMenu"></div>
       <a href="leaderboard.html" class="navlb">Leaderboard</a>
       <a href="intermission.html" class="navint">Intermission</a>
-      <a href="rules.html" class="navrules">Rules</a>
+      <a href="rules.html" class="navrules"><b class="nr-the">The</b> Rules</a>
       <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
@@ -72,12 +72,15 @@ mountChicletNav(makeClient());   // your Chiclets counter, top right
   let last=null; try{ last=localStorage.getItem("nhl-picks-last-team"); }catch(e){}
   const started=code=>{ try{ const v=JSON.parse(localStorage.getItem(`nhl-picks-${SEASON}-${code}`)||"{}"); return v && Object.keys(v).length>0; }catch(e){ return false; } };
   const root=document.getElementById("divisions");
-  DIVISIONS.forEach(div=>{
-    const codes=Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name));
-    const sec=document.createElement("section"); sec.className="division";
+  // Your teams first (the last one you opened, then any with picks on this device), then every division
+  const mine=Object.keys(TEAMS).filter(c=>c===last || started(c)).sort((a,b)=>(b===last)-(a===last) || TEAMS[a].name.localeCompare(TEAMS[b].name));
+  const sections=(mine.length ? [["Your teams", mine, "yours"]] : []).concat(DIVISIONS.map(div=>[`${div} Division`,
+    Object.keys(TEAMS).filter(c=>TEAMS[c].div===div).sort((a,b)=>TEAMS[a].name.localeCompare(TEAMS[b].name)), ""]));
+  sections.forEach(([title, codes, cls])=>{
+    const sec=document.createElement("section"); sec.className="division"+(cls?" "+cls:"");
     const head=document.createElement("div"); head.className="section-head";
-    const h=document.createElement("h2"); h.textContent=`${div} Division`;
-    const n=document.createElement("span"); n.textContent=`${codes.length} teams`;
+    const h=document.createElement("h2"); h.textContent=title;
+    const n=document.createElement("span"); n.textContent=`${codes.length} team${codes.length===1?"":"s"}`;
     head.append(h,n); sec.appendChild(head);
     const grid=document.createElement("div"); grid.className="tiles";
     codes.forEach(c=>{

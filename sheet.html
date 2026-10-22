@@ -41,7 +41,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
       <div class="teammenu" id="teamMenu"></div>
       <a href="leaderboard.html" class="navlb" id="lblink">Leaderboard</a>
       <a href="intermission.html" class="navint">Intermission</a>
-      <a href="rules.html" class="navrules">Rules</a>
+      <a href="rules.html" class="navrules"><b class="nr-the">The</b> Rules</a>
       <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
@@ -59,7 +59,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
             <span class="sh-chip" id="scorechip">Score 0 pts</span>
             <span class="sh-chip hidden" id="actual"></span>
             <span class="sh-chip save" id="savestate" data-s="local">Saved on this device</span>
-            <label class="sh-switch" id="switchTeam"><span aria-hidden="true">Switch team</span><select id="teamsel" aria-label="Switch team"></select></label>
+            <label class="sh-switch" id="switchTeam"><span aria-hidden="true"><b>Switch</b> Team</span><select id="teamsel" aria-label="Switch team"></select></label>
           </div>
         </div>
         <div class="sh-rec">
@@ -222,6 +222,7 @@ function jumpToGame(){
   jumpGame=null;
   const url=new URL(location.href); url.searchParams.delete("game"); history.replaceState(null,"",url);
   if(!row) return;
+  if(row.classList.contains("earlier")) row.closest(".month")?.querySelector(".fold-bar")?.click();   // unfold to reach it
   row.scrollIntoView({block:"center"});
   row.classList.add("flash");
   row.querySelector(".picks button:not(:disabled)")?.focus({preventScroll:true});
@@ -383,6 +384,25 @@ function renderSheet(){
     row.querySelector(".goals").setAttribute("aria-label",`Combined goals for game ${i+1}, ${vs} ${opp}`);
     row.querySelector(".gin").setAttribute("aria-label",`Predicted combined goals, game ${i+1}`);
     list.appendChild(row);
+  });
+  foldPast();
+}
+// Your own sheet opens at the next game: finished games fold away behind a "Show … finished games" bar at the top of
+// their month (a month that's all done folds completely). Another player's sheet shows everything.
+function foldPast(){
+  if(viewing) return;
+  const G=byId();
+  groups.forEach(gr=>{
+    const done=gr.ids.filter(id=>G[id] && hasStarted(G[id]));
+    if(!done.length) return;
+    const sec=gr.el, list=sec.children[1], all=done.length===gr.ids.length;
+    done.forEach(id=>sec.querySelector(`.game[data-id="${CSS.escape(id)}"]`)?.classList.add("earlier"));
+    sec.classList.add("folded"); if(all) sec.classList.add("done");
+    const b=document.createElement("button"); b.type="button"; b.className="fold-bar"; b.setAttribute("aria-expanded","false");
+    const label=open=>`${open?"Hide":"Show"} ${done.length} ${all?"":"earlier "}finished game${done.length===1?"":"s"}`;
+    b.innerHTML=`<span></span><i aria-hidden="true"></i>`; b.firstChild.textContent=label(false);
+    b.addEventListener("click",()=>{ const open=sec.classList.toggle("folded")===false; b.setAttribute("aria-expanded",String(open)); b.firstChild.textContent=label(open); });
+    list.prepend(b);
   });
 }
 

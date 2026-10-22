@@ -93,13 +93,13 @@ function mountTeamMenu(root){
   // Playoff mode: one Playoff Sheet button instead (and swap back and forth if the mode changes on this page)
   if(!root.dataset.poWatch){ root.dataset.poWatch="1"; document.addEventListener("playoffs:changed",()=>{ root.replaceChildren(); mountTeamMenu(root); markTopNav(); }); }
   if(playoffOn()){
-    const a=document.createElement("a"); a.className="teammenu-btn po-sheetbtn"; a.href="playoffs.html"; a.textContent="Playoff Sheet";
+    const a=document.createElement("a"); a.className="teammenu-btn po-sheetbtn"; a.href="playoffs.html"; a.innerHTML="<b>Playoff</b> Sheet"; a.setAttribute("aria-label","Playoff Sheet");
     root.append(a);
     return {open(){ location.href="playoffs.html"; }, close(){}};
   }
   const btn=document.createElement("button");
   btn.type="button"; btn.className="teammenu-btn"; btn.setAttribute("aria-expanded","false"); btn.setAttribute("aria-controls","teamMenuPanel");
-  btn.textContent="Pick Team";
+  btn.innerHTML="<b>Pick</b> Team";
   // The panel: a navy sweater banner, then the four divisions with each team's mini sweater,
   // then a link to the full Pick Teams page.
   ensureJerseyDefs();
@@ -1273,6 +1273,9 @@ function announceBadges(userId, earned, who){
   const key=`stickpicks-badges-${userId}`;
   let seen=null; try{ seen=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}
   try{ localStorage.setItem(key, JSON.stringify(earned)); }catch(e){}
+  // First time on this device (a new phone, a cleared browser): a new player's first badge or two are announced, but a
+  // returning player's whole collection is recorded quietly instead of popping up as "23 new badges"
+  if(!seen && earned.length>2) return;
   const fresh = seen ? earned.filter(id=>!seen.includes(id)) : earned;
   if(!fresh.length) return;
   document.querySelector(".badge-toast")?.remove();
@@ -1290,6 +1293,7 @@ function announceBadges(userId, earned, who){
   x.addEventListener("click",()=>t.remove());
   t.append(badgeEl(fresh[0],52), text, x);
   document.body.appendChild(t);
+  confettiBurst();
   // fades after 12 seconds, unless you're pointing at it or using it
   let hold=false; t.addEventListener("pointerenter",()=>hold=true); t.addEventListener("focusin",()=>hold=true);
   setTimeout(()=>{ if(hold) return; t.classList.add("out"); setTimeout(()=>t.remove(), 600); }, 12000);
@@ -1556,9 +1560,30 @@ function chicletChip(n, href, cls=""){
 // The last count is remembered on this device (with whose it is), so the counter shows straight away on every page,
 // including pages that don't load the database (Rules, Privacy); mountChicletNav() then brings it up to date.
 const CHICLETS_KEY="stickpicks-chiclets";
+const BALANCE_PAGES=["locker.html","chiclets.html","shop.html"];   // their banners already show the balance in big type
 function showChicletNav(n){
   const box=document.getElementById("navChiclets"); if(!box) return;
+  if(BALANCE_PAGES.includes((location.pathname.split("/").pop()||"index.html").toLowerCase())) return box.classList.add("hidden");
   box.replaceChildren(chicletChip(n, "locker.html")); box.classList.remove("hidden");
+}
+// A little "+3" that floats up off the counter when the balance has gone up since this device last saw it
+function chicletPop(box, gained){
+  if(!box || box.classList.contains("hidden") || !(gained>0)) return;
+  const p=document.createElement("span"); p.className="chiclet-pop"; p.setAttribute("aria-hidden","true"); p.textContent=`+${gained}`;
+  box.append(p); setTimeout(()=>p.remove(), 1800);
+}
+// A short burst of felt confetti in the brand colours (new badges). Skipped when the device asks for less motion.
+function confettiBurst(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box=document.createElement("div"); box.className="confetti"; box.setAttribute("aria-hidden","true");
+  const colours=["#E8463F","#EFE6D2","#D9A33A","#1C2B45","#9B1C1F"];
+  for(let i=0;i<46;i++){
+    const c=document.createElement("i");
+    c.style.cssText=`left:${Math.random()*100}%;background:${colours[i%colours.length]};--dx:${(Math.random()*2-1)*120}px;`+
+      `--rot:${Math.random()*720-360}deg;animation-delay:${Math.random()*.35}s;animation-duration:${1.4+Math.random()*.9}s`;
+    box.append(c);
+  }
+  document.body.append(box); setTimeout(()=>box.remove(), 2800);
 }
 function showRememberedChiclets(){
   try{
@@ -1579,7 +1604,9 @@ async function mountChicletNav(sb){
     if(!me?.username) return box.classList.add("hidden");
     const n=await chicletBalance(sb, me.username);
     if(n==null) return;
+    let before=null; try{ const c=JSON.parse(localStorage.getItem(CHICLETS_KEY)||"null"); if(c?.name===me.username) before=c.n; }catch(e){}
     showChicletNav(n);
+    if(Number.isFinite(before) && n>before) chicletPop(box, n-before);
     try{ localStorage.setItem(CHICLETS_KEY, JSON.stringify({name:me.username, n})); }catch(e){}
   }catch(e){}
 }
@@ -1600,7 +1627,7 @@ document.addEventListener("DOMContentLoaded",()=>{ showRememberedChiclets(); mar
 // Press Box (pressbox.html): the footer link gets a small "New" dot until the player has opened the latest update.
 // Only for returning players (a first visit doesn't need it). Keep PRESS_BOX_LATEST equal to the newest version in
 // pressbox.js; scripts/check_site.py stops the deploy if they differ.
-const PRESS_BOX_LATEST="26.2";
+const PRESS_BOX_LATEST="26.3";
 function markPressBox(){
   const a=document.querySelector('footer a[href="pressbox.html"]');
   if(!a || a.getAttribute("aria-current")) return;

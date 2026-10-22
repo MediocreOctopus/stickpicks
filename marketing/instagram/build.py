@@ -186,7 +186,7 @@ def pressbox(version, name=None, lines=None):
         items = lines or re.findall(r'\["(\w+)", ' + STR + r"\]", b)
         fit, used = [], 0
         for it in items:
-            if fit and used + len(it[1]) > 300: break
+            if fit and used + len(it[1]) > (230 if f("intro") else 300): break   # an intro line takes room too
             fit.append(it); used += len(it[1])
         more = len(items) - len(fit)
         d = datetime.date.fromisoformat(f("date"))

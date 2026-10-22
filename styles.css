@@ -1508,3 +1508,200 @@ html.lbpage.poboard,html.playoffs.lbpage.neutral{--title:var(--gold)}
 }
 footer a.pb-new::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--alarm);
   margin-left:4px;vertical-align:5px;box-shadow:0 0 0 2px var(--bg)}
+
+/* ═════════ 26.3 polish: felt patches, livelier headings, pressable buttons, small celebrations ═════════ */
+/* The Chiclets counter in the top bar: a gold felt patch with navy stitching (hidden on the Locker Room and Chiclets
+   pages, whose banners show the balance; see showChicletNav() in teams.js) */
+.navchiclets{position:relative}
+.navchiclets .chiclet-chip{border:0;border-radius:6px;padding:4px 11px 3px 7px;background:var(--gold);color:var(--navy);
+  outline:1.5px dashed rgba(28,43,69,.55);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.22)}
+.navchiclets a.chiclet-chip:hover{background:#E8B44A;color:var(--navy)}
+.navchiclets a.chiclet-chip:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+/* "+3" floating up off the counter when the balance has gone up */
+.chiclet-pop{position:absolute;right:4px;top:-4px;pointer-events:none;font:700 1rem var(--display);color:var(--win);
+  text-shadow:0 1px 0 var(--bg),0 0 6px var(--bg);animation:chicletPop 1.7s ease-out forwards}
+@keyframes chicletPop{0%{opacity:0;transform:translateY(6px) scale(.8)}15%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-26px) scale(1)}}
+/* phones: "THE Rules" on the navy sleeve patch, a sibling of the Pick Team button and the NHL News label
+   ("The" only shows on phones; wider screens keep the plain RULES link) */
+.topnav .nr-the{display:none}
+@media (max-width:560px){
+  .topbar{--sleeve2:var(--wool)} [data-scheme="dark"] .topbar{--sleeve2:var(--navy)}
+  .topnav > a.navrules{display:inline-flex;align-items:center;gap:5px;border:0;border-radius:6px;padding:5px 12px 3px 25px;color:var(--btn-ink);text-decoration:none;
+    background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 9px,transparent 9px 12px,var(--sleeve2) 12px 16px,transparent 16px),var(--btn);
+    outline:1.5px dashed color-mix(in srgb, var(--btn-ink) 80%, transparent);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.25);
+    font:400 1.35rem/1 "Yellowtail",cursive;letter-spacing:0;text-transform:none}
+  .topnav .nr-the{display:inline;font:700 .74rem var(--display);letter-spacing:.14em;text-transform:uppercase;vertical-align:3px}
+  .topnav > a.navrules:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+  .topnav > a.navrules[aria-current="page"]{box-shadow:0 3px 0 rgba(0,0,0,.25),0 7px 0 -4px var(--goal)}
+}
+/* "Pick Team" (desktop, tablets and phones held sideways): the navy sleeve patch with cream stitching,
+   "PICK" in block letters and "Team" in the logo script, like the NHL News label */
+.teammenu-btn{border:0;border-radius:6px;padding:5px 14px 3px 27px;outline:1.5px dashed color-mix(in srgb, var(--btn-ink) 80%, transparent);outline-offset:-4px;
+  box-shadow:0 3px 0 rgba(0,0,0,.25);font:400 1.5rem/1 "Yellowtail",cursive;letter-spacing:0;text-transform:none;gap:7px}
+.teammenu-btn b{font:700 .86rem var(--display);letter-spacing:.14em;text-transform:uppercase;vertical-align:4px}
+.teammenu-btn::after{width:.3em;height:.3em;margin-left:2px}
+.teammenu-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.teammenu-btn.is-current{box-shadow:0 3px 0 rgba(0,0,0,.25),0 8px 0 -2px var(--goal)}
+/* Section headings: a sleeve-stripe underline (red and navy) instead of the thin double line, and a script accent */
+.section-head,.rules h2{border-bottom:0;padding-bottom:10px;
+  background:linear-gradient(to bottom,var(--goal) 0 4px,transparent 4px 6px,var(--ink) 6px 9px) left bottom/100% 9px no-repeat}
+#todayTitle::after,#upTitle::after{font:400 1.35rem/1 "Yellowtail",cursive;text-transform:none;letter-spacing:0;color:var(--goal);margin-left:10px}
+#todayTitle::after{content:"on the ice"} #upTitle::after{content:"get ahead"}
+@media (max-width:400px){ #todayTitle::after,#upTitle::after{display:none} }
+/* Live games: a pulsing red dot */
+.gcard .live{display:inline-flex;align-items:center;gap:7px;font:700 .8rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+.gcard .live::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor;animation:livePulse 1.5s infinite}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--goal) 60%, transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+/* Felt buttons that press down */
+.btn{box-shadow:0 3px 0 rgba(0,0,0,.22);transition:transform .08s,box-shadow .08s,filter .12s}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+.btn.ghost{box-shadow:0 3px 0 color-mix(in srgb, var(--ink) 25%, transparent)}
+.you-pill,.invite-patch{box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.you-pill:active,.invite-patch:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+/* Road-sweater banners: a faint knit texture and a soft light from above */
+.teams-banner,.sheethead,.pf-banner,.lr-banner{background-image:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='12'%3E%3Cpath d='M0 0 L7.5 9 L15 0' fill='none' stroke='%23fff' stroke-opacity='.05' stroke-width='3'/%3E%3C/svg%3E"),
+  radial-gradient(ellipse at 35% -20%,rgba(255,255,255,.14),transparent 62%)}
+/* Leaderboard: the title banner, then your spot as an arena scoreboard, then one bar (board switch | time frame),
+   then the table at full width (no sidebar) */
+.lbpage .lb-layout{display:block}
+.lbhead .sh-in{align-items:flex-end}
+.lbhead .sh-chips{margin:0 0 4px}
+.you{position:relative;top:0;margin:0 0 16px;padding:14px 16px 16px;background:#0F1726;color:#EFE6D2;border:3px solid #2A3A58;border-radius:12px;
+  box-shadow:0 6px 0 rgba(0,0,0,.25)}
+.you::before,.you::after{content:none}
+.you .you-label{color:var(--gold)}
+.you > p{color:#C9CFDB;margin:8px 0 0}
+.you > .btn{width:auto;margin-top:12px;background:var(--wool);border-color:var(--wool);color:var(--navy)}
+.sb-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sb-who{display:grid;gap:6px;min-width:0}
+.you .you-team{margin:0;color:#EFE6D2;font:600 .95rem var(--display);letter-spacing:.03em}
+.sb-note{font:italic .82rem var(--serif);color:#9BA6BA}
+.you .you-acts{display:flex;flex-direction:row;gap:10px;margin:0}
+.sb-cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.sb-cell{background:#16223A;border-radius:8px;padding:10px 6px 8px;text-align:center;box-shadow:inset 0 0 0 1px rgba(239,230,210,.08)}
+.sb-cell b{display:block;font:700 2.3rem/1 var(--display);color:#F2C14E;text-shadow:0 0 12px rgba(242,193,78,.35);font-variant-numeric:tabular-nums}
+.sb-cell b small{font-size:.9rem;color:#C9A646;text-shadow:none}
+.sb-cell span{display:block;margin-top:5px;font:600 .64rem var(--display);letter-spacing:.18em;text-transform:uppercase;color:#9BA6BA}
+.sb-cell.rank b{color:#FBF7EE;text-shadow:0 0 12px rgba(255,255,255,.3)}
+/* Felt-patch buttons (Share my spot: cream; Invite friends: red), the same shape as Pick Team and the NHL News label */
+.felt-patch{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:4px 14px;border:0;border-radius:7px;cursor:pointer;
+  background:#EFE6D2;color:#1C2B45;outline:1.5px dashed rgba(28,43,69,.5);outline-offset:-5px;box-shadow:0 3px 0 rgba(0,0,0,.3);
+  font:600 .76rem var(--display);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;text-decoration:none}
+.felt-patch.red{background:#C8302B;color:#FBF7EE;outline-color:rgba(251,247,238,.8)}
+.felt-patch:hover{filter:brightness(1.08)}
+.felt-patch:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.felt-patch:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+html.playoffs .felt-patch.red{background:var(--gold);color:var(--ice);outline-color:rgba(16,21,31,.6)}
+/* The controls bar: "SWITCH Board" is the Pick Team sleeve patch; the time frame is a navy switch with a gold choice */
+.lb-bar{--sleeve2:var(--wool);display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;margin:0 0 14px}
+[data-scheme="dark"] .lb-bar{--sleeve2:var(--navy)}
+.lb-bar .sh-switch{gap:6px;padding:5px 30px 3px 27px;border:0;border-radius:6px;color:var(--btn-ink);
+  background:linear-gradient(to right,transparent 0 5px,var(--sleeve-a) 5px 9px,transparent 9px 12px,var(--sleeve2) 12px 16px,transparent 16px),var(--btn);
+  outline:1.5px dashed color-mix(in srgb, var(--btn-ink) 80%, transparent);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.25);
+  font:400 1.45rem/1 "Yellowtail",cursive;letter-spacing:0;text-transform:none}
+.lb-bar .sh-switch b{font:700 .84rem var(--display);letter-spacing:.14em;text-transform:uppercase;vertical-align:4px}
+.lb-bar .sh-switch::after{position:absolute;right:13px;top:50%;margin-top:-5px;width:.3em;height:.3em}
+.lb-bar .sh-switch:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.lb-bar .lb-when{margin:0;gap:8px 12px}
+.lb-bar .lb-period{border:0;padding:3px;background:var(--banner);box-shadow:0 3px 0 rgba(0,0,0,.2)}
+[data-scheme="dark"] .lb-bar .lb-period{background:var(--banner-road);box-shadow:0 0 0 1.5px var(--wool)}
+.lb-bar .lb-period button{color:var(--wool);padding:6px 15px;font-size:.78rem}
+.lb-bar .lb-period button[aria-pressed="true"]{background:var(--gold);color:var(--navy)}
+.lb-bar .lb-step{color:var(--ink)}
+.lb-bar .lb-step button{border-color:var(--ink);color:var(--ink)}
+@media (max-width:560px){
+  .sb-cells{gap:6px} .sb-cell{padding:9px 2px 7px} .sb-cell b{font-size:1.75rem} .sb-cell span{font-size:.58rem;letter-spacing:.12em}
+  .you .you-acts{width:100%} .you .you-acts > *{flex:1 1 0;min-width:0;padding:4px 8px}
+  .lb-bar{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .lb-bar .sh-switch{justify-self:start}
+  .lb-bar .lb-when{display:grid;gap:8px}
+  .lb-bar .lb-period{display:flex}
+  .lb-bar .lb-period button{flex:1;padding:7px 8px}
+  .lb-bar .lb-step{justify-content:center}
+}
+/* Leaderboard names never break mid-word: a long one ends in "…" */
+.lb td.name{white-space:nowrap;overflow-wrap:normal}
+.lb-who{max-width:15rem}
+.lb-who > span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:560px){ .lb td.name{min-width:0;padding-left:2px;padding-right:2px} .lb-who{max-width:9.4rem;gap:6px} .lb td.rank{width:2.2rem} }
+/* New badge: felt confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:confettiFall 1.8s cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes confettiFall{to{transform:translate(var(--dx),105vh) rotate(var(--rot));opacity:.9}}
+@media (prefers-reduced-motion:reduce){ .chiclet-pop,.gcard .live::before,.confetti{animation:none} .confetti{display:none} }
+
+/* ═════════ 26.3 phone pass: thumb-size picks, tidier sheet controls, folding finished games, grids ═════════ */
+/* Pick buttons at least 44px on phones (W / L / OTL and the goals − / +), on the pick sheet and the home page */
+@media (max-width:560px){
+  .picks{gap:6px}
+  .picks button{width:2.9rem;height:2.75rem;font-size:1rem}
+  .goals{height:2.75rem}
+  .gbtn{width:2.75rem;font-size:1.3rem}
+  .gin{width:2.4rem;font-size:1.05rem}
+  .glabel{display:none}
+  .game .picks,.game .goals,#upnext .picks,#upnext .goals{margin-top:8px}
+}
+/* Pick sheet controls: "SWITCH Team" as a cream felt patch on the team banner; All / Home / Away / Unpicked as the
+   navy switch with a gold choice (like Season / Month / Week); More as a matching patch */
+.sheethead .sh-switch{gap:6px;padding:5px 30px 3px 14px;border:0;border-radius:6px;background:var(--wool);color:var(--navy);
+  outline:1.5px dashed rgba(28,43,69,.5);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.28);font:400 1.35rem/1 "Yellowtail",cursive;letter-spacing:0;text-transform:none}
+.sheethead .sh-switch b{font:700 .8rem var(--display);letter-spacing:.14em;text-transform:uppercase;vertical-align:3px}
+.sheethead .sh-switch::after{position:absolute;right:13px;top:50%;margin-top:-5px;width:.3em;height:.3em}
+.sheethead .sh-switch:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.28)}
+.sh-seg{border:0;border-radius:999px;padding:3px;background:var(--banner);box-shadow:0 3px 0 rgba(0,0,0,.2)}
+[data-scheme="dark"] .sh-seg{background:var(--banner-road);box-shadow:0 0 0 1.5px var(--wool)}
+.sh-seg button{color:var(--wool);border-radius:999px;padding:7px 13px}
+.sh-seg button[aria-pressed="true"]{background:var(--gold);color:var(--navy)}
+.sh-morebtn{border:0;border-radius:6px;background:var(--wool);color:var(--navy);outline:1.5px dashed rgba(28,43,69,.5);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.2);padding:7px 12px}
+.sh-morebtn[aria-expanded="true"]{background:var(--gold);color:var(--navy)}
+.sheetpage .month-head{border-bottom:0;padding-bottom:10px;
+  background:linear-gradient(to bottom,var(--goal) 0 4px,transparent 4px 6px,var(--ink) 6px 9px) left bottom/100% 9px no-repeat}
+@media (max-width:560px){ .sh-seg button{padding:7px 10px} }
+/* Finished games fold away behind a bar at the top of their month (your own sheet opens at the next game) */
+.month.folded .game.earlier{display:none}
+.fold-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;border:0;border-bottom:1px solid var(--line);
+  background:color-mix(in srgb, var(--ink) 6%, var(--panel));color:var(--ink);cursor:pointer;
+  font:600 .76rem var(--display);letter-spacing:.14em;text-transform:uppercase}
+.fold-bar i{width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.fold-bar[aria-expanded="true"] i{transform:translateY(2px) rotate(-135deg)}
+.fold-bar:hover{background:color-mix(in srgb, var(--ink) 11%, var(--panel))}
+/* Pick Team: two sweater tiles per row on phones (sweater on top, name under it); "Your teams" first */
+@media (max-width:560px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tile{flex-direction:column;justify-content:flex-start;text-align:center;gap:6px;min-height:0;padding:12px 8px 20px}
+  .tile-jersey{width:58px;height:58px}
+  .tile-text{justify-items:center}
+  .tile-name{font-size:.86rem}
+  .tile-tag{justify-self:center}
+}
+.division.yours .section-head h2::after{content:"jump back in";font:400 1.3rem/1 "Yellowtail",cursive;text-transform:none;letter-spacing:0;color:var(--goal);margin-left:10px}
+/* Shop: two items per row on phones */
+@media (max-width:560px){
+  .shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}
+  .shop-card{padding:12px 8px}
+  .shop-pv{width:76px;height:76px}
+  .shop-blurb{font-size:.76rem;min-height:0}
+  .shop-act .btn{width:100%;padding:8px 6px;font-size:.72rem;letter-spacing:.06em;white-space:nowrap}
+}
+/* Locker Room "Your gear": one row per slot on phones (picture on the left, words on the right) */
+@media (max-width:560px){
+  .lr-slots{grid-template-columns:1fr;gap:8px}
+  .lr-slot{grid-template-columns:auto minmax(0,1fr) auto;justify-items:start;align-items:center;text-align:left;gap:2px 12px;padding:10px 12px}
+  .lr-slot-pv{grid-row:1 / span 3;margin:0}
+  .lr-slot small,.lr-slot b,.lr-slot-own{grid-column:2}
+}
+/* Card headings (profile, Locker Room, Chiclets cards): the sleeve-stripe underline */
+.pf-card h2{border-bottom:0;padding-bottom:10px;
+  background:linear-gradient(to bottom,var(--goal) 0 3px,transparent 3px 5px,var(--ink) 5px 8px) left bottom/100% 8px no-repeat}
+/* Badges "Back to your profile": a cream felt patch */
+.bb-back{border:0!important;border-radius:6px;padding:7px 12px;background:var(--wool);color:var(--navy)!important;
+  outline:1.5px dashed rgba(28,43,69,.5);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.28)}
+.bb-back:hover{filter:brightness(1.06)}
+/* Home, signed in, on phones: the next picks come first, then your card, then today's games */
+@media (max-width:760px){
+  .signedin .homegrid{grid-template-areas:"install" "upnext" "account" "today" "promo"}
+  .signedin .homegrid #upnext{margin-top:4px}
+  .signedin .homegrid #account{margin-top:30px}
+}

@@ -41,7 +41,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
       <div class="teammenu" id="teamMenu"></div>
       <a href="leaderboard.html" class="navlb">Leaderboard</a>
       <a href="intermission.html" class="navint">Intermission</a>
-      <a href="rules.html" class="navrules">Rules</a>
+      <a href="rules.html" class="navrules"><b class="nr-the">The</b> Rules</a>
       <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="index.html#signin" class="navaccount" data-me>Sign in</a></span>
     </div>
   </nav>
@@ -52,19 +52,8 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
       <div class="sh-main">
         <div class="sh-kicker" id="lbKicker">Leaderboard</div>
         <h1 class="lb-headline" id="headline">All-Teams</h1>
-        <div class="sh-chips">
-          <span class="sh-chip" id="updated">Loading…</span>
-          <label class="sh-switch"><span aria-hidden="true">Switch board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>        </div>
-        <!-- Time frame: the whole season, one month or one week (‹ › steps back through earlier ones) -->
-        <div class="lb-when">
-          <div class="lb-period" role="group" aria-label="Time frame">
-            <button type="button" data-period="season">Season</button><button type="button" data-period="month">Month</button><button type="button" data-period="week">Week</button>
-          </div>
-          <div class="lb-step hidden" id="lbStep">
-            <button type="button" id="pPrev" aria-label="Earlier">‹</button><span id="pLabel" aria-live="polite"></span><button type="button" id="pNext" aria-label="Later">›</button>
-          </div>
-        </div>
       </div>
+      <div class="sh-chips"><span class="sh-chip" id="updated">Loading…</span></div>
     </div>
     <div class="sh-hem" aria-hidden="true"><i style="width:100%"></i></div>
   </header>
@@ -74,9 +63,23 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
     <button type="button" data-board="playoffs" aria-pressed="false">Playoff sheet</button><button type="button" data-board="bracket" aria-pressed="false">Bracket</button><button type="button" data-board="regular" aria-pressed="false">Regular season</button>
   </nav>
 
-  <!-- Your standing sits in a sidebar to the left of the table (above it on phones) -->
+  <!-- Your spot, then the controls bar, then the full-width table -->
   <div class="lb-layout">
+  <!-- Your spot: an arena scoreboard (rank, points, results, goals) -->
   <aside class="you hidden" id="you" aria-live="polite" aria-label="Your standing"></aside>
+  <!-- The board switch and the time frame, in one bar above the table -->
+  <div class="lb-bar">
+    <label class="sh-switch"><span aria-hidden="true"><b>Switch</b> Board</span><select id="teamsel" aria-label="Show leaderboard for"></select></label>
+    <!-- Time frame: the whole season, one month or one week (‹ › steps back through earlier ones) -->
+    <div class="lb-when">
+      <div class="lb-period" role="group" aria-label="Time frame">
+        <button type="button" data-period="season">Season</button><button type="button" data-period="month">Month</button><button type="button" data-period="week">Week</button>
+      </div>
+      <div class="lb-step hidden" id="lbStep">
+        <button type="button" id="pPrev" aria-label="Earlier">‹</button><span id="pLabel" aria-live="polite"></span><button type="button" id="pNext" aria-label="Later">›</button>
+      </div>
+    </div>
+  </div>
   <div class="lb-main">
   <div class="lb-wrap" id="tablewrap">
     <table class="lb">
@@ -183,7 +186,7 @@ function setBoard(b, reload=true){
   document.querySelectorAll("#boardTabs button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.board===board)));
   const po=board!=="regular";
   document.querySelector(".lb-when").classList.toggle("hidden",po);
-  document.querySelector(".lbhead .sh-switch").classList.toggle("hidden",po);
+  document.querySelector(".lb-bar .sh-switch").classList.toggle("hidden",po);
   headCells.forEach((th,i)=>{ const h=po ? (PO_HEADS[board][i]||regularHeads[i]) : regularHeads[i];
     th.textContent=h[0]; if(h[1]===undefined) delete th.dataset.short; else th.dataset.short=h[1]; th.title=h[2]||""; });
   document.getElementById("teamCol").classList.toggle("hidden", board==="playoffs");
@@ -293,7 +296,7 @@ function render(list){
     if(pts!==prevPts){ rank=i+1; prevPts=pts; }
     const tr=document.createElement("tr");
     const isMe = myName && r.username.toLowerCase()===myName.toLowerCase();
-    if(isMe){ tr.className="me"; mine.push({rank, pts, team:r.team}); }
+    if(isMe){ tr.className="me"; mine.push({rank, pts, team:r.team, res:[Number(r.outcome_points),Number(r.outcome_graded)], gls:[Number(r.goals_points),Number(r.goals_graded)]}); }
     tr.innerHTML=`
       <td class="rank"><span class="rk${rank<=3&&pts>0?" r"+rank:""}">${rank}</span></td>
       <td class="name"></td>
@@ -344,7 +347,7 @@ function renderPlayoffBoard(list){
   list.forEach((r,i)=>{
     const pts=Number(r.points); if(pts!==prevPts){ rank=i+1; prevPts=pts; }
     const isMe = myName && r.username.toLowerCase()===myName.toLowerCase();
-    if(isMe) mine={rank, pts};
+    if(isMe) mine={rank, pts, a:bracket ? Number(r.series_right) : Number(r.winner_points), b:bracket ? Number(r.lengths_right) : Number(r.goals_points)};
     const tr=document.createElement("tr"); if(isMe) tr.className="me";
     const wins = bracket ? Number(r.series_right) : Number(r.winner_points);
     tr.innerHTML=`<td class="rank"><span class="rk${rank<=3&&pts>0?" r"+rank:""}">${rank}</span></td><td class="name"></td><td class="teamcell${bracket?"":" hidden"}"></td>
@@ -364,13 +367,34 @@ function renderPlayoffBoard(list){
   const name = bracket ? "bracket" : "playoff sheet";
   if(!myName){ el("div","you-label","Join the board"); el("p",null,`Sign in and choose a username to get your ${name} on the board.`); const a=el("a","btn","Sign in"); a.href="index.html#signin"; return; }
   if(!mine){ el("div","you-label",`Your ${name}`); el("p",null, bracket ? "You don’t have a bracket on the board." : "You haven’t made any playoff picks yet."); const a=el("a","btn", bracket ? "Open the bracket" : "Pick playoff games"); a.href=bracket?"bracket.html":"playoffs.html"; return; }
-  el("div","you-label",`Your ${name}`);
-  const main=el("div","you-main");
-  const rk=document.createElement("div"); rk.className="you-rank"; rk.textContent=`#${mine.rank}`;
-  const of=document.createElement("span"); of.textContent=` of ${list.length}`; rk.append(of);
-  const info=document.createElement("div"); info.className="you-info";
-  const p=document.createElement("div"); p.className="you-pts"; p.textContent=`${mine.pts} point${mine.pts===1?"":"s"}`; info.append(p);
-  main.append(rk,info);
+  youEl.append(scoreHead(`Your ${name}`, null, "").el);
+  youEl.append(scoreCells([[mine.rank, list.length, "Rank", "rank"], [mine.pts, null, mine.pts===1 ? "Point" : "Points"],
+    [mine.a, null, bracket ? "Series right" : "Winners"], [mine.b, null, bracket ? "Lengths right" : "Goals"]]));
+}
+
+/* ───────── Your spot: an arena scoreboard ───────── */
+// The top row: label, your team (on the All-Teams board), an optional note, and a spot for the two buttons
+function scoreHead(label, teamCode, note){
+  const el=document.createElement("div"); el.className="sb-head";
+  const who=document.createElement("div"); who.className="sb-who";
+  const l=document.createElement("div"); l.className="you-label"; l.textContent=label; who.append(l);
+  if(teamCode){ const t=document.createElement("div"); t.className="you-team"; const nm=document.createElement("span"); nm.textContent=TEAMS[teamCode]?.name||teamCode; t.append(swatch(teamCode), nm); who.append(t); }
+  if(note){ const n=document.createElement("div"); n.className="sb-note"; n.textContent=note; who.append(n); }
+  const acts=document.createElement("div"); acts.className="you-acts";
+  el.append(who, acts);
+  return {el, acts};
+}
+// The lit cells: [value, out of (or null), label, extra class]
+function scoreCells(cells){
+  const row=document.createElement("div"); row.className="sb-cells";
+  for(const [v, of, label, cls] of cells){
+    const c=document.createElement("div"); c.className="sb-cell"+(cls?" "+cls:"");
+    const b=document.createElement("b"); b.textContent = of===0 ? "—" : String(v);
+    if(of) { const sm=document.createElement("small"); sm.textContent=`/${of}`; b.append(sm); }
+    const sp=document.createElement("span"); sp.textContent=label;
+    c.append(b, sp); row.append(c);
+  }
+  return row;
 }
 
 /* ───────── Your standing (sidebar card) ───────── */
@@ -385,9 +409,9 @@ function renderYou(total, mine){
     else { el("p",null,"Sign in and choose a username to get your sheets on the leaderboard."); link("index.html#signin","Sign in"); }
     return;
   }
-  // Share my spot and Invite friends: felt pills in one row (stacked in the desktop sidebar)
+  // Share my spot and Invite friends: two felt patches (top right of the scoreboard)
   let actsEl=null; const acts=()=>actsEl ||= el("div","you-acts");
-  const w=when(), invite=()=>acts().append(shareButton("Invite friends", inviteSpec(myName), "invite-patch you-invite"));
+  const w=when(), invite=()=>acts().append(shareButton("Invite friends", inviteSpec(myName), "felt-patch red you-invite"));
   if(!mine.length){
     el("div","you-label","Your sheets");
     el("p",null, period!=="season"
@@ -398,26 +422,17 @@ function renderYou(total, mine){
     return;
   }
   const best=mine[0]; // the list is sorted, so the first match is the best
-  el("div","you-label", (team ? "Your spot" : "Your best sheet") + (period==="season" ? "" : ` · ${w.kicker.toLowerCase()}`));
   const teamName=TEAMS[best.team]?.name||best.team;
-  // Rank beside the team and points (side by side on phones, stacked in the desktop sidebar)
-  const main=el("div","you-main");
-  const r=document.createElement("div"); r.className="you-rank"; r.textContent=`#${best.rank}`;
-  const of=document.createElement("span"); of.textContent=` of ${total}`; r.append(of);
-  const info=document.createElement("div"); info.className="you-info";
-  if(!team){
-    const t=document.createElement("div"); t.className="you-team"; t.append(swatch(best.team));
-    const nm=document.createElement("span"); nm.textContent=teamName; t.append(nm); info.append(t);
-  }
-  const pts=document.createElement("div"); pts.className="you-pts"; pts.textContent=`${best.pts} point${best.pts===1?"":"s"}`; info.append(pts);
-  main.append(r, info);
-  if(mine.length>1) el("p","you-note",`You have ${mine.length} sheets on the board, highlighted in the table.`);
+  const head=scoreHead((team ? "Your spot" : "Your best sheet") + (period==="season" ? "" : ` · ${w.kicker.toLowerCase()}`), team ? null : best.team, mine.length>1 ? `${mine.length} sheets on the board, highlighted below` : "");
+  youEl.append(head.el); actsEl=head.acts;
+  youEl.append(scoreCells([[best.rank, total, "Rank", "rank"], [best.pts, null, best.pts===1 ? "Point" : "Points"],
+    [best.res[0], best.res[1], "Results"], [best.gls[0], best.gls[1], "Goals"]]));
   // Share your spot: links straight to this board and time frame
   const board = team ? `${teamName} leaderboard` : "All-Teams leaderboard";
   acts().append(shareButton("Share my spot", {kind:"standing", title:`stickpicks ${board}`, url:SITE_URL+"leaderboard.html"+location.search,
     text:`I’m #${best.rank} of ${total} on the stickpicks ${board} ${w.phrase}, with ${best.pts} point${best.pts===1?"":"s"} on my ${teamName} sheet. Think you can pick better?`,
     card:{kicker:`${w.kicker} · ${team ? teamName : "All-Teams"} board`, title:`#${best.rank} of ${total}`,
-      sub:`${myName} · ${best.pts} point${best.pts===1?"":"s"} on the ${teamName} sheet.`}}, "you-pill you-share"));
+      sub:`${myName} · ${best.pts} point${best.pts===1?"":"s"} on the ${teamName} sheet.`}}, "felt-patch you-share"));
   invite();
 }
 

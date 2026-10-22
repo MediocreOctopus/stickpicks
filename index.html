@@ -48,7 +48,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
       <div class="teammenu" id="teamMenu"></div>
       <a href="leaderboard.html" class="navlb">Leaderboard</a>
       <a href="intermission.html" class="navint">Intermission</a>
-      <a href="rules.html" class="navrules">Rules</a>
+      <a href="rules.html" class="navrules"><b class="nr-the">The</b> Rules</a>
       <span class="navme"><span class="navchiclets hidden" id="navChiclets"></span><a href="#account" class="navaccount" id="navAccount" data-me>Sign in</a></span>
     </div>
   </nav>
@@ -471,7 +471,7 @@ function renderCards(box, data){
     const left=document.createElement("span"), right=document.createElement("span");
     if(g.schedule_state==="PPD"){ left.textContent="Postponed"; }
     else if(final){ const ot=otLabel(g)||(g.period_type!=="REG"?g.period_type:""); left.innerHTML=`<b>Final${ot?" · "+ot:""}</b>`; }
-    else if(started){ left.className="live"; left.textContent="In progress"; }
+    else if(started){ left.className="live"; left.textContent="Live"; }   // a pulsing red dot (CSS)
     else { left.textContent = g.start_utc ? new Date(g.start_utc).toLocaleTimeString([], {hour:"numeric",minute:"2-digit",timeZoneName:"short"}) : "Time TBD"; }
     right.textContent = open ? "Picks open" : started && !final ? "Picks locked" : "";
     st.append(left,right); card.appendChild(st);
