@@ -177,6 +177,15 @@ reactions, group reminders, a lifetime Bronze/Silver/Gold level, drop-worst-week
 Rejected: live win odds, confidence points, and crowd picks shown before puck drop (betting-adjacent, or they undo
 hidden picks).
 
+**Scoring and new picks: to explore for 27.0 (owner's request, 2026-10-21; not started, nothing decided).** Look into
+making stickpicks more interactive: more things to pick per game, different point values per pick type (owner's
+example: right W or L = 1, exact combined goals = 2, right OTL = 3), and possibly negative points for forgetting to pick.
+Plan it together with league play (27.0 is a new season, so a scoring change can start cleanly on day one; never change
+scoring mid-season). Notes for that study: Chiclets already take −1 per skipped game (max −5 a week) but leaderboard
+points have no penalty; "confidence points" was rejected before as betting-adjacent, and player-stat picks can look
+like sportsbook props, so keep new picks game-level and fun (no odds, no money, no wagering language). Update the Rules
+page, the scoring functions in schema.sql and teams.js, Wrapped/badges that count points, and announce in Press Box.
+
 **App stores: on hold until stickpicks has enough Android players (owner's decision, 2026-10-21).** stickpicks is
 already an installable web app (service worker, install button / iPhone Add to Home Screen tip, offline notice,
 puck-drop reminders), so a store adds discoverability, not features.
