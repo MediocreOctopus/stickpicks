@@ -46,14 +46,14 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
     </div>
   </nav>
 
-  <!-- Sweater banner: the shop and your balance -->
-  <header class="teams-banner badges-banner ch-banner">
-    <div class="ch-banner-in">
-      <div><small class="tb-kicker">Chiclets</small><h1>Shop</h1></div>
-      <p class="ch-bal" id="shopBal"></p>
+  <!-- The concession board: "PRO Shop" and your balance on a lit panel, like the arena menu board -->
+  <header class="shop-board">
+    <div class="shop-board-top">
+      <h1 class="shop-sign"><b>Pro</b> Shop</h1>
+      <a class="jb-cell shop-bal" id="shopBalCell" href="chiclets.html"><b class="jb-dig gold" id="shopBal">—</b><span>Your Chiclets</span></a>
     </div>
+    <p class="shop-note" id="shopNote">Earned with picks, never with money. Everything here is just for looks and never changes a score. <a href="chiclets.html">Your statement</a></p>
   </header>
-  <p class="shop-note" id="shopNote">Spend the Chiclets you earn picking games. Everything here is just for looks and never changes your score. <a href="chiclets.html">Your statement</a></p>
 
   <main id="shop"><p class="hint">Loading…</p></main>
 
@@ -91,9 +91,8 @@ let me=null, items=[], soon=[], owned=new Set(), balance=0, signedIn=false;
 
 function setBalance(n){
   balance=Number(n||0);
-  const b=document.createElement("b"); b.textContent=balance.toLocaleString();
-  $("shopBal").replaceChildren(chicletIcon(40), b);
-  $("shopBal").setAttribute("aria-label", `Your balance: ${chicletsText(balance)}`);
+  $("shopBal").textContent=balance.toLocaleString();
+  $("shopBalCell").setAttribute("aria-label", `Your balance: ${chicletsText(balance)}. Open your statement.`);
 }
 const friendly=e=>{ const m=e?.message||String(e||""); return /function|does not exist/i.test(m) ? "The shop isn’t open yet. Please try again later." : m || "Something went wrong. Please try again."; };
 
@@ -115,7 +114,7 @@ async function start(){
     const [{data:mine},bal]=await Promise.all([sb.rpc("my_items"), chicletBalance(sb, me.username)]);
     owned=new Set((mine||[]).map(r=>r.item_id)); setBalance(bal);
   }else{
-    $("shopBal").textContent="";
+    $("shopBalCell").classList.add("hidden");
     $("shopNote").innerHTML = signedIn ? 'Choose a username in <a href="profile.html#settings">Settings</a> to start earning Chiclets.'
       : '<a href="index.html#signin">Sign in</a> to earn Chiclets by picking games, then spend them here. Free to play, no real money.';
   }
@@ -139,6 +138,18 @@ function preview(item, px){
 
 function render(){
   const root=$("shop"); root.innerHTML="";
+  const next = me?.username ? items.filter(i=>!owned.has(i.id) && i.price>balance).sort((a,b)=>a.price-b.price)[0] : null;
+  if(next){
+    const sv=document.createElement("section"); sv.className="pf-card shop-saving";
+    sv.innerHTML=`<h2>Saving for <em class="lr-accent">almost there</em></h2><div class="lr-next"><span class="lr-next-pv"></span><div class="lr-next-info"><b></b>`+
+      `<span class="bprog-bar shop-save"><i></i></span><small></small></div></div>`;
+    if(next.price-balance>next.price*.4) sv.querySelector("em").textContent="keep picking";
+    sv.querySelector(".lr-next-pv").append(preview(next, 54));
+    sv.querySelector("b").textContent=next.name;
+    sv.querySelector(".bprog-bar i").style.width=Math.round(balance/next.price*100)+"%";
+    sv.querySelector("small").textContent=`${(next.price-balance).toLocaleString()} more Chiclets to go · ${next.price.toLocaleString()} Chiclets`;
+    root.append(sv);
+  }
   SLOTS.forEach(s=>{
     const list=items.filter(i=>i.slot===s.slot); if(!list.length) return;
     const sec=document.createElement("section"); sec.className="bgroup shop-group"; sec.id=s.slot;   // shop.html#sweater etc.

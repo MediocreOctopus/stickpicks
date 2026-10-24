@@ -1627,7 +1627,7 @@ document.addEventListener("DOMContentLoaded",()=>{ showRememberedChiclets(); mar
 // Press Box (pressbox.html): the footer link gets a small "New" dot until the player has opened the latest update.
 // Only for returning players (a first visit doesn't need it). Keep PRESS_BOX_LATEST equal to the newest version in
 // pressbox.js; scripts/check_site.py stops the deploy if they differ.
-const PRESS_BOX_LATEST="26.3";
+const PRESS_BOX_LATEST="26.4";
 function markPressBox(){
   const a=document.querySelector('footer a[href="pressbox.html"]');
   if(!a || a.getAttribute("aria-current")) return;

@@ -9,6 +9,7 @@ Checks:
   - links between pages point at files that exist; #anchors on other pages exist (warning only: some are made by JS)
   - sitemap.xml is valid, only lists real pages, and has a pick sheet and a leaderboard for every team in teams.js
   - robots.txt points at the sitemap; manifest.webmanifest is valid and its icons exist; sw.js only caches real files
+  - no temporary files (names starting with _) in the site folder
   - Press Box (pressbox.js, rules in UPDATES.md): versions in order with no repeats, real dates, known tags, named
     updates have an intro, no "you"/"your"/"we" in the wording, PRESS_BOX_LATEST in teams.js matches the newest entry
 
@@ -215,10 +216,16 @@ def check_pressbox():
         if i >= 0 and 'href="pressbox.html"' not in s[i:s.find("</footer>", i)]:
             err(page, "the footer is missing the Press Box link")
 
+def check_scratch():
+    """Temporary files (previews, mock-ups, test screenshots: names starting with _) never go on the live site."""
+    for f in sorted(os.listdir(ROOT)):
+        if f.startswith("_") and os.path.isfile(path(f)):
+            err(f, "looks like a temporary preview or test file (name starts with _); delete it before pushing")
+
 def main():
     extract = None
     if "--extract" in sys.argv: extract = sys.argv[sys.argv.index("--extract") + 1]
-    check_pages(extract); check_sitemap(); check_misc(); check_pressbox()
+    check_pages(extract); check_sitemap(); check_misc(); check_pressbox(); check_scratch()
     gh = os.environ.get("GITHUB_ACTIONS") == "true"
     for f, m in warnings: print(f"::warning file={f}::{m}" if gh else f"warning  {f}: {m}")
     for f, m in errors: print(f"::error file={f}::{m}" if gh else f"ERROR    {f}: {m}")

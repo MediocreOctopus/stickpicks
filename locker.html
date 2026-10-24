@@ -46,15 +46,19 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
     </div>
   </nav>
 
-  <!-- Banner: you, in your gear, with your Chiclets -->
-  <header class="lr-banner">
-    <span class="lr-face" id="lrFace" aria-hidden="true"></span>
-    <div class="lr-who">
-      <small class="tb-kicker">Locker Room</small>
-      <h1 class="lr-name" id="lrName">Your locker</h1>
-      <a class="lr-profile" id="lrProfile" href="profile.html">Profile &amp; settings ›</a>
+  <!-- Banner: your locker. Vents, a brass name plate with your username, you in your gear, your Chiclets, a handle -->
+  <header class="lr-locker">
+    <span class="lr-vents" aria-hidden="true"></span>
+    <div class="lr-plate"><small>Locker Room</small><h1 class="lr-name" id="lrName">Your locker</h1></div>
+    <div class="lr-inside">
+      <span class="lr-face" id="lrFace" aria-hidden="true"></span>
+      <div class="lr-who">
+        <a class="lr-bal hidden" id="lrBal" href="chiclets.html" aria-label="Your Chiclets statement"></a>
+        <a class="lr-profile" id="lrProfile" href="profile.html">Profile &amp; settings ›</a>
+        <a class="lr-profile" id="lrStatement" href="chiclets.html">Your statement ›</a>
+      </div>
     </div>
-    <a class="lr-bal hidden" id="lrBal" href="chiclets.html" aria-label="Your Chiclets statement"></a>
+    <span class="lr-handle" aria-hidden="true"></span>
   </header>
 
   <main id="locker"><p class="hint">Loading…</p></main>
@@ -84,19 +88,20 @@ async function load(){
   if(!me?.username) return message("", 'Choose a username in <a href="profile.html#settings">Settings</a> to open your locker.');
   rememberMe(me.username, avatarFromProfile(me));
   await claimBadgeChiclets(sb);
-  const [ledger, mine, shop, badges]=await Promise.all([
+  const [ledger, mine, shop, badges, board]=await Promise.all([
     sb.rpc("chiclets_ledger",{p_username:me.username}).then(r=>r.data||[]),
     sb.rpc("my_items").then(r=>(r.data||[]).map(x=>x.item_id)),
     sb.from("shop_items").select("*").eq("active",true).order("sort").then(r=>r.data||[]),
     myBadges(sb, me.username).catch(()=>null),
+    sb.rpc("leaderboard",{p_season:SEASON,p_team:null}).then(r=>r.data||[]).catch(()=>[]),
     refreshPlayoffMode(sb),
   ]);
-  render({me, ledger:ledger.slice().reverse(), owned:new Set(mine), shop, badges});
+  render({me, ledger:ledger.slice().reverse(), owned:new Set(mine), shop, badges, board});
 }
 
 function message(text, html){ const p=document.createElement("p"); p.className="hint"; html ? p.innerHTML=html : p.textContent=text; $("locker").replaceChildren(p); }
 function signedOut(){
-  $("lrProfile").classList.add("hidden");
+  $("lrProfile").classList.add("hidden"); $("lrStatement").classList.add("hidden");
   $("lrFace").replaceChildren(avatarEl(null, "", 84));
   message("", 'Your locker holds your Chiclets, your gear and your badges. <a href="index.html#signin">Sign in</a> to open it.');
 }
@@ -112,7 +117,54 @@ function render(s){
   $("lrName").textContent=s.me.username;
   const b=$("lrBal"); b.replaceChildren(chicletIcon(30), Object.assign(document.createElement("b"),{textContent:bal.toLocaleString()}));
   b.classList.remove("hidden");
+  // ── Your season: a jumbotron strip (best rank and points on the All-Teams board, badges, Chiclets) ──
+  let rank=null, pts=0;
+  { let r=0, prev=null;
+    (s.board||[]).slice().sort((a,c)=>Number(c.points)-Number(a.points)).forEach((row,i)=>{
+      const p=Number(row.points); if(p!==prev){ r=i+1; prev=p; }
+      if(row.username.toLowerCase()===s.me.username.toLowerCase() && rank==null){ rank=r; pts=p; }
+    }); }
+  const season=document.createElement("section"); season.className="lr-season"; season.setAttribute("aria-label","Your season");
+  season.innerHTML=`<div class="jb-kick"><span>${SEASON_LABEL} · your season</span></div><div class="lr-season-cells"></div>`;
+  const cell=(v,label,cls,href)=>{ const c=document.createElement(href?"a":"div"); c.className="jb-cell lr-scell"; if(href) c.href=href;
+    const b=document.createElement("b"); b.className="jb-dig "+cls; b.textContent=v; const sp=document.createElement("span"); sp.textContent=label; c.append(b,sp); return c; };
+  season.querySelector(".lr-season-cells").append(
+    cell(rank ? `#${rank}` : "—", "Best rank", "wh", "leaderboard.html"),
+    cell(pts, "Points", "gold", "leaderboard.html"),
+    cell(s.badges ? s.badges.earned.length : "—", "Badges", "wh", "badges.html"),
+    cell(bal.toLocaleString(), "Chiclets", "gold", "chiclets.html"));
+
+  // ── Get started ("first shift"): a short checklist for new players; hidden once every step is done ──
+  let start=null;
+  if(s.badges){
+    const steps=[
+      ["Make your first pick", s.badges.earned.includes("faceoff"), "teams.html", "Pick a team"],
+      ["Choose a username", true, "", ""],
+      ["Pick a sweater and number", av?.kind==="sweater" && !!av.number, "profile.html#settings", "Settings"],
+      ["Invite a friend", s.badges.earned.includes("recruiter"), "", "invite"],
+    ];
+    const done=steps.filter(x=>x[1]).length;
+    if(done<steps.length){
+      start=card("Get started","lr-start");
+      const acc=document.createElement("em"); acc.className="lr-accent"; acc.textContent="first shift"; start.querySelector("h2").append(" ",acc);
+      const meter=document.createElement("div"); meter.className="lr-meter"; meter.setAttribute("aria-label",`${done} of ${steps.length} done`);
+      const f=document.createElement("i"); f.style.width=Math.round(done/steps.length*100)+"%"; meter.append(f);
+      const ul=document.createElement("ul"); ul.className="lr-steps";
+      steps.forEach(([label, ok, href, go],i)=>{
+        const li=document.createElement("li"); if(ok) li.className="done";
+        const n=document.createElement("i"); n.textContent=ok?"✓":String(i+1); n.setAttribute("aria-hidden","true");
+        const t=document.createElement("span"); t.textContent=label; if(ok) t.setAttribute("aria-label",label+", done");
+        li.append(n,t);
+        if(!ok && go==="invite") li.append(shareButton("Invite", inviteSpec(s.me.username), "lr-go"));
+        else if(!ok && href){ const a=document.createElement("a"); a.className="lr-go"; a.href=href; a.textContent=go+" ›"; li.append(a); }
+        ul.append(li);
+      });
+      start.append(meter, ul);
+    }
+  }
+
   const grid=document.createElement("div"); grid.className="lr-grid";
+  if(start) grid.append(start);
 
   // ── Chiclets: the last few changes ──
   const ch=card("Chiclets");
@@ -150,6 +202,7 @@ function render(s){
 
   // ── Your gear: what you're wearing in each slot ──
   const gear=card("Your gear","lr-gear");
+  { const acc=document.createElement("em"); acc.className="lr-accent"; acc.textContent="suited up"; gear.querySelector("h2").append(" ",acc); }
   const slots=document.createElement("div"); slots.className="lr-slots";
   ["border","sweater","skater"].forEach(slot=>{
     const worn=s.me[SLOT_FIELD[slot]], item=s.shop.find(i=>i.id===worn);
@@ -159,7 +212,8 @@ function render(s){
     const k=document.createElement("small"); k.textContent=SLOT_NAMES[slot];
     const nm=document.createElement("b"); nm.textContent=item ? item.name : SLOT_NONE[slot];
     const owned=s.shop.filter(i=>i.slot===slot && s.owned.has(i.id)).length;
-    const c=document.createElement("span"); c.className="lr-slot-own"; c.textContent = owned ? `${owned} owned · Change` : "Get one in the shop";
+    const c=document.createElement("span"); c.className="lr-slot-own"+(owned?" has":""); c.textContent = owned ? "Change" : "Shop";
+    a.setAttribute("aria-label", `${SLOT_NAMES[slot]}: ${item ? item.name : SLOT_NONE[slot]}. ${owned ? `${owned} owned, change it` : "Get one in the shop"}`);
     a.append(pv,k,nm,c); slots.append(a);
   });
   gear.append(slots);
@@ -187,7 +241,7 @@ function render(s){
   inv.append(ip, shareButton("Invite friends", inviteSpec(s.me.username), "invite-patch"));
   grid.append(inv);
 
-  $("locker").replaceChildren(grid);
+  $("locker").replaceChildren(season, grid);
 }
 
 // An item shown on you (same rules as the shop's previews)

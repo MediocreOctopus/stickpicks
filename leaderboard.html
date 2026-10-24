@@ -201,6 +201,9 @@ function setBoard(b, reload=true){
 document.querySelectorAll("#boardTabs button").forEach(b=>b.addEventListener("click",()=>setBoard(b.dataset.board)));
 
 function describe(){
+  // the scoreboard's light strip: the team's colour on a team board (a brighter one if it's too dark to glow), red on All-Teams
+  { const t=team&&TEAMS[team]; document.getElementById("you")?.style.setProperty("--jb-light",
+      t ? firstReadable("#0E1420",[t.stripe||t.accent,t.accent,t.brand,t.board,"#EFE6D2"],2.2) : "#E8463F"); }
   const url=new URL(location.href);
   if(board!=="regular"){
     ["team","period","from"].forEach(k=>url.searchParams.delete(k)); url.searchParams.set("board",board); history.replaceState(null,"",url);

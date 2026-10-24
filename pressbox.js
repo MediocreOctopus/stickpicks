@@ -3,6 +3,20 @@
 // When adding one, also set PRESS_BOX_LATEST in teams.js to the new version (it lights the footer's New dot).
 const PRESS_BOX = [
   {
+    version: "26.4",
+    name: "",
+    date: "2026-10-23",
+    intro: "",
+    items: [
+      ["new", "Every pick sheet opens on a jumbotron: the predicted record in lit W, L and OTL panels, with score, actual record and pace beside it."],
+      ["new", "The Locker Room is now a real locker: a brass name plate, a season scoreboard, and a short Get started checklist for new players."],
+      ["new", "The shop is now a concession board, with prices lit up like the arena menu and a Saving for bar for the next item."],
+      ["improved", "Team names on pick sheets now read like a sweater patch: the city in block letters and the nickname in script, in team colours."],
+      ["improved", "A segmented Picked bar shows how much of the sheet is filled in."],
+      ["improved", "The Leaderboard scoreboard gets the same jumbotron look, lit in each team's colours."],
+    ],
+  },
+  {
     version: "26.3",
     name: "",
     date: "2026-10-21",

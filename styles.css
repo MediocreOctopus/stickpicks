@@ -1705,3 +1705,193 @@ html.playoffs .felt-patch.red{background:var(--gold);color:var(--ice);outline-co
   .signedin .homegrid #upnext{margin-top:4px}
   .signedin .homegrid #account{margin-top:30px}
 }
+
+/* ═════════ 26.4 pick sheet jumbotron (sheet.html header): a hanging centre-ice scoreboard ═════════ */
+.jb{position:relative;margin-top:4px;padding:16px 16px 14px;border-radius:14px;color:#EFE6D2;background:linear-gradient(#1A2232,#0E1420);
+  border:3px solid #2C3A55;box-shadow:0 8px 0 rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08)}
+.jb::before{content:"";position:absolute;left:14px;right:14px;top:7px;height:4px;border-radius:2px;   /* the light strip, in the team's colour */
+  background:repeating-linear-gradient(90deg,var(--jb-light,var(--stripe)) 0 10px,transparent 10px 16px);opacity:.85;box-shadow:0 0 8px var(--jb-light,var(--stripe))}
+.jb-head{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;margin-top:8px}
+/* The team patch: city in block letters, nickname in the logo script (like the NHL News label and Switch Team), on a felt
+   patch in the team's colours stitched in its accent colour */
+.team-patch{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:0 9px;margin:0;padding:6px 16px 4px;border-radius:7px;max-width:100%;
+  background:var(--board);color:var(--board-ink,#fff);outline:2px dashed var(--stripe);outline-offset:-5px;box-shadow:0 4px 0 rgba(0,0,0,.35)}
+.team-patch b{font:700 .95rem var(--display);letter-spacing:.16em;text-transform:uppercase}
+.team-patch i{font:normal 2.2rem/1.05 "Yellowtail",cursive;padding-right:.1em}
+.jb .sh-switch{gap:6px;padding:5px 30px 3px 14px;border:0;border-radius:6px;background:var(--wool);color:var(--navy);
+  outline:1.5px dashed rgba(28,43,69,.5);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.3);font:400 1.3rem/1 "Yellowtail",cursive;letter-spacing:0;text-transform:none}
+.jb .sh-switch b{font:700 .76rem var(--display);letter-spacing:.14em;text-transform:uppercase;vertical-align:3px}
+.jb .sh-switch::after{position:absolute;right:13px;top:50%;margin-top:-5px;width:.3em;height:.3em}
+.jb .sh-switch:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.jb-kick{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:14px 2px 8px;
+  font:600 .62rem var(--display);letter-spacing:.2em;text-transform:uppercase;color:#9BA6BA}
+.jb-save{display:inline-flex;align-items:center;gap:6px;font:600 .62rem var(--display);letter-spacing:.16em;text-transform:uppercase;color:#C9D3DE;text-align:right}
+.jb-save::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:#8A93A3}
+.jb-save[data-s="ok"]{color:#7FE3B2} .jb-save[data-s="ok"]::before{background:#3FCF8E;box-shadow:0 0 8px #3FCF8E}
+.jb-save[data-s="busy"]::before{background:#F2C14E;box-shadow:0 0 8px #F2C14E}
+.jb-save[data-s="err"]{color:#FF8A93} .jb-save[data-s="err"]::before{background:#FF4D5E;box-shadow:0 0 8px #FF4D5E}
+/* lit panels: a dark screen with a fine bulb grid */
+.jb-cell{position:relative;overflow:hidden;background:#05080F;border-radius:7px;box-shadow:inset 0 0 0 2px #1B2538,inset 0 6px 14px rgba(0,0,0,.6);text-align:center}
+.jb-cell::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1.4px) 0 0/5px 5px}
+.jb-cell span,.jb-lab{display:block;font:600 .6rem var(--display);letter-spacing:.2em;text-transform:uppercase;color:#9BA6BA}
+.jb-dig{display:block;font:700 2.9rem/1 var(--display);letter-spacing:.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.jb-dig.gold{color:#F2C14E;text-shadow:0 0 6px rgba(242,193,78,.8),0 0 18px rgba(242,193,78,.45)}
+.jb-dig.red{color:#FF5A4E;text-shadow:0 0 6px rgba(255,90,78,.8),0 0 18px rgba(255,90,78,.4)}
+.jb-dig.wh{color:#FBF7EE;text-shadow:0 0 6px rgba(255,255,255,.6),0 0 16px rgba(255,255,255,.3)}
+.jb-grid{display:grid;gap:8px}
+.jb-rec{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jb-rec .jb-cell{padding:12px 4px 10px;display:flex;flex-direction:column;justify-content:center}
+.jb-rec .jb-cell span{margin-top:6px}
+.jb-side{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.jb-mini{padding:8px 4px 7px}
+.jb-mini .jb-dig{font-size:1.5rem;margin-top:3px}
+.jb-clock{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:12px}
+.jb-clock .jb-dig{font-size:1.15rem}
+.jb-bar{height:10px;border-radius:3px;background:#05080F;box-shadow:inset 0 0 0 1px #1B2538;overflow:hidden}
+.jb-bar i{display:block;height:100%;width:0;
+  background:repeating-linear-gradient(90deg,#F2C14E 0 6px,transparent 6px 8px);box-shadow:0 0 8px #F2C14E}
+/* desktop and tablets: W / L / OTL on the left, Score / Actual / Pace down the right like a scoreboard's side panels */
+@media (min-width:761px){
+  .jb{padding:18px 20px 16px}
+  .team-patch i{font-size:2.7rem} .team-patch b{font-size:1.1rem}
+  .jb-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:stretch}
+  .jb-rec .jb-dig{font-size:3.8rem}
+  .jb-side{grid-template-columns:1fr}
+  .jb-mini{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;text-align:left}
+  .jb-mini .jb-dig{margin-top:0;font-size:1.7rem}
+}
+@media (max-width:380px){ .jb-rec .jb-dig{font-size:2.4rem} .jb-mini .jb-dig{font-size:1.25rem} .team-patch i{font-size:1.9rem} }
+@media print{ .jb{background:none;color:#000;border-color:#999;box-shadow:none} .jb .sh-switch{display:none} }
+
+/* 26.4: the Leaderboard scoreboard (#you) gets the pick sheet's jumbotron look: metal frame, light strip, lit panels */
+.lbpage .you{background:linear-gradient(#1A2232,#0E1420);border:3px solid #2C3A55;border-radius:14px;padding:20px 16px 16px;
+  box-shadow:0 8px 0 rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.08)}
+.lbpage .you::before{content:"";position:absolute;left:14px;right:14px;top:7px;bottom:auto;width:auto;height:4px;border-radius:2px;
+  background:repeating-linear-gradient(90deg,var(--jb-light,#E8463F) 0 10px,transparent 10px 16px);opacity:.85;box-shadow:0 0 8px var(--jb-light,#E8463F)}
+.lbpage .you .you-label{font-size:.62rem;letter-spacing:.2em;color:#9BA6BA}
+.lbpage .sb-cell{position:relative;overflow:hidden;background:#05080F;border-radius:7px;box-shadow:inset 0 0 0 2px #1B2538,inset 0 6px 14px rgba(0,0,0,.6)}
+.lbpage .sb-cell::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1.4px) 0 0/5px 5px}
+.lbpage .sb-cell b{color:#F2C14E;text-shadow:0 0 6px rgba(242,193,78,.8),0 0 18px rgba(242,193,78,.45)}
+.lbpage .sb-cell.rank b{color:#FBF7EE;text-shadow:0 0 6px rgba(255,255,255,.6),0 0 16px rgba(255,255,255,.3)}
+.lbpage .sb-cell:nth-child(3) b,.lbpage .sb-cell:nth-child(4) b{color:#FBF7EE;text-shadow:0 0 6px rgba(255,255,255,.5),0 0 14px rgba(255,255,255,.25)}
+.lbpage .sb-cell b small{color:#9BA6BA;text-shadow:none}
+
+/* ═════════ 26.4 Locker Room: your locker, a season jumbotron, the first-shift checklist, gear patches ═════════ */
+.lr-locker{position:relative;margin-top:4px;padding:14px 22px 18px;border-radius:12px;color:var(--wool);border:3px solid #0E1626;box-shadow:0 8px 0 rgba(0,0,0,.25);
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 3px,transparent 3px 11px),linear-gradient(#22324F,#16223A)}
+.lr-vents{display:block;height:28px;margin:0 30px;border-radius:4px;background:repeating-linear-gradient(to bottom,#0B1322 0 4px,#2A3B5C 4px 8px);opacity:.85}
+.lr-plate{width:max-content;max-width:100%;margin:12px auto 0;padding:5px 20px 5px;border-radius:4px;text-align:center;color:#2A1C02;
+  background:linear-gradient(#E9C777,#B7882F);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 0 rgba(0,0,0,.35)}
+.lr-plate small{display:block;font:700 .56rem var(--display);letter-spacing:.24em;text-transform:uppercase}
+.lr-locker .lr-name{margin:0;color:#2A1C02;font:clamp(1.7rem,6vw,2.4rem)/1.05 "Yellowtail",cursive;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:.15em}
+.lr-inside{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center;margin-top:16px;padding-right:16px}
+.lr-inside .lr-face .avatar{filter:drop-shadow(0 6px 4px rgba(0,0,0,.4))}
+.lr-who{display:grid;gap:8px;justify-items:start}
+.lr-locker .lr-bal{border:0;border-radius:7px;padding:5px 14px 4px 9px;background:var(--gold);color:var(--navy);gap:6px;
+  outline:1.5px dashed rgba(28,43,69,.55);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.3)}
+.lr-locker .lr-bal b{font-size:1.5rem}
+.lr-locker .lr-bal:hover{background:#E8B44A}
+.lr-locker .lr-profile{margin:0;color:#C9D3DE;font-size:.7rem}
+.lr-handle{position:absolute;right:12px;top:58%;width:7px;height:48px;margin-top:-24px;border-radius:4px;background:linear-gradient(#D7DCE4,#8B95A5);box-shadow:0 1px 2px rgba(0,0,0,.5)}
+@media (min-width:761px){ .lr-inside{grid-template-columns:auto minmax(0,1fr);max-width:640px;margin:16px auto 0} }
+/* Your season: the jumbotron strip */
+.lr-season{position:relative;margin-top:14px;padding:18px 14px 14px;border-radius:12px;background:linear-gradient(#1A2232,#0E1420);
+  border:3px solid #2C3A55;box-shadow:0 6px 0 rgba(0,0,0,.25)}
+.lr-season::before{content:"";position:absolute;left:14px;right:14px;top:7px;height:4px;border-radius:2px;
+  background:repeating-linear-gradient(90deg,#E8463F 0 10px,transparent 10px 16px);box-shadow:0 0 8px #E8463F}
+.lr-season .jb-kick{margin:0 2px 8px}
+.lr-season-cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lr-scell{display:block;padding:10px 4px 8px;text-decoration:none}
+.lr-scell .jb-dig{font-size:2rem}
+.lr-scell span{margin-top:5px}
+.lr-scell:hover{box-shadow:inset 0 0 0 2px #3A4C70,inset 0 6px 14px rgba(0,0,0,.6)}
+@media (max-width:420px){ .lr-season-cells{gap:6px} .lr-scell .jb-dig{font-size:1.6rem} .lr-scell span{font-size:.52rem;letter-spacing:.12em} }
+@media (min-width:761px){ .lr-scell .jb-dig{font-size:2.6rem} }
+/* script accents in card headings */
+.lr-accent{font:400 1.35rem/1 "Yellowtail",cursive;font-style:normal;letter-spacing:0;text-transform:none;color:#C8302B}
+/* Get started: first shift */
+.lr-grid .lr-start{grid-column:1 / -1}
+.lr-meter{height:8px;border-radius:99px;background:color-mix(in srgb, var(--ink) 12%, transparent);overflow:hidden;margin:2px 0 12px}
+.lr-meter i{display:block;height:100%;background:linear-gradient(90deg,#0E7C66,#D9A33A)}
+.lr-steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.lr-steps li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px;border-radius:8px;
+  background:color-mix(in srgb, var(--ink) 6%, var(--panel));font-weight:600}
+.lr-steps li > i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 .8rem var(--display);font-style:normal;
+  background:var(--panel);border:2px dashed var(--muted);color:var(--muted)}
+.lr-steps li.done{color:var(--muted)} .lr-steps li.done span{text-decoration:line-through}
+.lr-steps li.done > i{background:#0E7C66;border:0;color:#fff}
+.lr-go{border:0;background:transparent;cursor:pointer;padding:4px 0;font:600 .7rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:#C8302B;text-decoration:none}
+.lr-go:hover{text-decoration:underline}
+.lr-go svg{display:none}
+/* Your gear: navy felt patches (no hangers) */
+.lr-gear .lr-slot{background:#1C2B45;color:#EFE6D2;border:0;border-radius:10px;outline:1.5px dashed rgba(239,230,210,.7);outline-offset:-5px;box-shadow:0 4px 0 rgba(0,0,0,.2)}
+.lr-gear .lr-slot:hover{filter:brightness(1.1)}
+.lr-gear .lr-slot small{color:#9BA6BA}
+.lr-gear .lr-slot-pv .avatar{box-shadow:0 0 0 3px #D9A33A;border-radius:50%}
+.lr-gear .lr-slot-own{justify-self:center;margin-top:4px;padding:2px 9px;border-radius:3px;background:rgba(239,230,210,.14);color:#EFE6D2;
+  font:600 .6rem var(--display);font-style:normal;letter-spacing:.14em;text-transform:uppercase}
+.lr-gear .lr-slot-own.has{background:#C8302B;color:#fff}
+@media (max-width:560px){ .lr-gear .lr-slot-own{justify-self:start} }
+[data-scheme="dark"] .lr-gear .lr-slot{background:#0E1626}
+
+/* ═════════ 26.4 Shop: the concession board (lit panels, glowing prices) ═════════ */
+.shop-board{position:relative;margin-top:4px;padding:22px 16px 14px;border-radius:14px;color:#EFE6D2;background:linear-gradient(#1A2232,#0E1420);
+  border:3px solid #2C3A55;box-shadow:0 8px 0 rgba(0,0,0,.28)}
+.shop-board::before{content:"";position:absolute;left:14px;right:14px;top:7px;height:4px;border-radius:2px;
+  background:repeating-linear-gradient(90deg,#F2C14E 0 10px,transparent 10px 16px);box-shadow:0 0 8px #F2C14E}
+.shop-board-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.shop-sign{display:inline-flex;align-items:baseline;gap:8px;margin:0;padding:6px 16px 4px;border-radius:7px;background:var(--navy);color:var(--wool);
+  outline:1.5px dashed rgba(239,230,210,.85);outline-offset:-5px;box-shadow:0 4px 0 rgba(0,0,0,.35);font:400 2.2rem/1.05 "Yellowtail",cursive}
+.shop-sign b{font:700 .95rem var(--display);letter-spacing:.16em;text-transform:uppercase;vertical-align:5px}
+.shop-bal{display:block;padding:7px 16px 6px;text-align:right;text-decoration:none}
+.shop-bal .jb-dig{font-size:2.1rem}
+.shop-bal span{margin-top:3px}
+.shop-bal.hidden{display:none}
+.shop-board .shop-note{margin:10px 2px 0;color:#9BA6BA}
+.shop-board .shop-note a{color:#EFE6D2}
+.shop-saving{margin-top:14px}
+.shop-saving h2{display:flex;align-items:baseline;gap:8px}
+/* each section is a lit menu board, one item per row */
+.shoppage .shop-group{background:linear-gradient(#1A2232,#0E1420);border:3px solid #2C3A55;border-radius:14px;box-shadow:0 6px 0 rgba(0,0,0,.25);overflow:hidden}
+.shoppage .shop-group .bgroup-head{background:transparent;padding:14px 16px 8px;border-bottom:1px solid #1B2538}
+.shoppage .shop-group .bgroup-head::after{content:none}
+.shoppage .shop-group .bgroup-head span{color:#F2C14E;letter-spacing:.2em}
+.shoppage .shop-group .bgroup-head small{font:600 .62rem var(--display);font-style:normal;letter-spacing:.18em;text-transform:uppercase;color:#9BA6BA}
+.shoppage .shop-slotnote{color:#9BA6BA;padding:10px 16px 0}
+.shoppage .shop-grid{display:grid;grid-template-columns:1fr;gap:0;padding:4px 8px 8px}
+@media (min-width:761px){ .shoppage .shop-grid{grid-template-columns:1fr 1fr;column-gap:20px} }
+.shoppage .shop-card{grid-template-columns:62px minmax(0,1fr) auto;grid-template-areas:"pv tier price" "pv name price" "pv blurb act";justify-items:start;align-items:center;
+  gap:0 14px;padding:12px 8px;border:0;border-top:1px solid #1B2538;border-radius:0;background:transparent;text-align:left;color:#FBF7EE}
+.shoppage .shop-pv{grid-area:pv;width:58px;height:58px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #1B2538}
+.shoppage .shop-pv .avatar{--av-size:52px !important}
+.shoppage .shop-tier{grid-area:tier;align-self:end;color:#9BA6BA}
+.shoppage .shop-card[data-tier="classic"] .shop-tier{color:#FF7A70}
+.shoppage .shop-card[data-tier="premium"] .shop-tier{color:#F2C14E}
+.shoppage .shop-card[data-tier="legendary"] .shop-tier{color:#B892E8}
+.shoppage .shop-card h3{grid-area:name;margin:0;color:#FBF7EE}
+.shoppage .shop-blurb{grid-area:blurb;align-self:start;min-height:0;margin:2px 0 0;color:#9BA6BA;font-size:.78rem}
+.shoppage .shop-price{grid-area:price;justify-self:end;margin:0;flex-wrap:nowrap}
+.shoppage .shop-price .chiclet-ico{display:none}
+.shoppage .shop-price b{font:700 1.5rem/1 var(--display);color:#F2C14E;text-shadow:0 0 6px rgba(242,193,78,.7),0 0 16px rgba(242,193,78,.35)}
+.shoppage .shop-limited{position:absolute;left:-9999px}
+.shoppage .shop-act{grid-area:act;justify-self:end;justify-items:end;width:auto;min-height:0;margin:4px 0 0}
+.shoppage .shop-act .btn{min-height:34px;padding:6px 14px;font-size:.74rem}
+.shoppage .shop-act .btn.ghost{background:var(--wool);color:var(--navy);border-color:var(--wool)}
+.shoppage .shop-card .shop-save{display:none}
+.shoppage .shop-need{font:600 .6rem var(--display);font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:#9BA6BA}
+.shoppage .shop-wearing{color:#7FE3B2}
+.shoppage .shop-act .linkbtn{color:#C9D3DE}
+.shoppage .shop-card.is-worn{box-shadow:inset 4px 0 0 #7FE3B2}
+.shoppage .shop-card.is-soon{opacity:.7}
+.shoppage .shop-soon{color:#FF7A70}
+@media (max-width:560px){ .shoppage .shop-grid{padding:4px 4px 6px} .shoppage .shop-card{padding:11px 6px;gap:0 12px} .shoppage .shop-blurb{display:none}
+  .shoppage .shop-card{grid-template-areas:"pv tier price" "pv name price" "pv name act"} }
+/* 26.4 Locker Room banner balance: everything centred in the locker (plate, then you and your Chiclets as one group) */
+.lr-locker{padding:16px 40px 20px}
+.lr-vents{max-width:420px;margin:0 auto}
+.lr-plate{margin-top:14px}
+.lr-inside{grid-template-columns:auto auto;justify-content:center;width:max-content;max-width:100%;margin:16px auto 0;padding:0;gap:20px}
+.lr-who{gap:9px}
+.lr-handle{right:14px;top:50%}
+@media (min-width:761px){ .lr-inside{max-width:none;margin:18px auto 4px;gap:26px} .lr-locker .lr-name{font-size:2.6rem} .lr-vents{max-width:520px} }
+@media (max-width:560px){ .lr-locker{padding:14px 30px 18px 22px} .lr-inside{gap:14px} .lr-handle{right:10px} }

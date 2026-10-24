@@ -48,26 +48,27 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
 
   <!-- Pick sheet -->
   <div id="app">
-    <!-- Team banner: team colours, sleeve stripes on the left, hem stripes along the bottom = progress -->
-    <header class="sheethead" aria-live="polite">
-      <div class="sh-in">
-        <div class="sh-main">
-          <div class="sh-kicker" id="kicker">Pick sheet</div>
-          <h1 class="sh-team" id="title">Pick sheet</h1>
-          <div class="sh-chips">
-            <span class="sh-chip" id="picked">0 of 84 picked</span>
-            <span class="sh-chip" id="scorechip">Score 0 pts</span>
-            <span class="sh-chip hidden" id="actual"></span>
-            <span class="sh-chip save" id="savestate" data-s="local">Saved on this device</span>
-            <label class="sh-switch" id="switchTeam"><span aria-hidden="true"><b>Switch</b> Team</span><select id="teamsel" aria-label="Switch team"></select></label>
-          </div>
+    <!-- The jumbotron: the team patch (city in block letters, nickname in the logo script), your predicted record in
+         three lit panels (W, L, OTL), score / actual / pace panels, and a "clock" bar for how much of the sheet is picked -->
+    <header class="jb" aria-live="polite">
+      <div class="jb-head">
+        <h1 class="team-patch" id="title">Pick sheet</h1>
+        <label class="sh-switch" id="switchTeam"><span aria-hidden="true"><b>Switch</b> Team</span><select id="teamsel" aria-label="Switch team"></select></label>
+      </div>
+      <div class="jb-kick"><span id="kicker">Pick sheet</span><span class="save jb-save" id="savestate" data-s="local">Saved on this device</span></div>
+      <div class="jb-grid">
+        <div class="jb-rec" id="rec" role="img" aria-label="Predicted record">
+          <div class="jb-cell"><b class="jb-dig gold" id="recW">0</b><span>W</span></div>
+          <div class="jb-cell"><b class="jb-dig red" id="recL">0</b><span>L</span></div>
+          <div class="jb-cell"><b class="jb-dig wh" id="recO">0</b><span>OTL</span></div>
         </div>
-        <div class="sh-rec">
-          <div class="rec" id="rec">0<span class="dash">–</span>0<span class="dash">–</span>0</div>
-          <div class="sh-recnote" id="recnote">Your predicted record</div>
+        <div class="jb-side">
+          <div class="jb-cell jb-mini"><span>Score</span><b class="jb-dig gold" id="scorechip">0</b></div>
+          <div class="jb-cell jb-mini"><span>Actual</span><b class="jb-dig wh" id="actual">—</b></div>
+          <div class="jb-cell jb-mini"><span>Pace</span><b class="jb-dig wh" id="recnote">—</b></div>
         </div>
       </div>
-      <div class="sh-hem" aria-hidden="true"><i id="bar"></i></div>
+      <div class="jb-clock"><span class="jb-lab">Picked</span><div class="jb-bar"><i id="bar"></i></div><b class="jb-dig gold" id="picked">0/84</b></div>
     </header>
 
     <!-- Signed out (or no username yet): one line -->
@@ -167,7 +168,13 @@ async function chooseTeam(code){
     canonical: `sheet.html?team=${code}`,
     noindex: !!viewing,
   });
-  document.getElementById("title").textContent=TEAMS[code].name;
+  // the team patch: city in block letters, nickname in the script ("SEATTLE Kraken")
+  // the scoreboard's light strip: the team's stripe colour, or its main colour when the stripe is too dark to glow (Chicago's black)
+  { const t=TEAMS[code], jb=document.querySelector(".jb"), st=getComputedStyle(document.documentElement).getPropertyValue("--stripe").trim()||t.accent;
+    jb?.style.setProperty("--jb-light", firstReadable("#0E1420",[st,t.accent,t.brand,t.board,"#EFE6D2"],2.2)); }
+  const tt=document.getElementById("title"), city=name.endsWith(nick) ? name.slice(0,-nick.length).trim() : "";
+  tt.replaceChildren(); if(city){ const b=document.createElement("b"); b.textContent=city; tt.append(b," "); }
+  const ni=document.createElement("i"); ni.textContent=nick||name; tt.append(ni); tt.setAttribute("aria-label",name);
   document.getElementById("kicker").textContent=viewing?`${VIEW_USER}’s ${SEASON_LABEL} pick sheet`:`${SEASON_LABEL} pick sheet`;
   if(viewing){
     document.getElementById("backLb").href=`leaderboard.html?team=${code}`;
@@ -412,7 +419,6 @@ function tally(ids, src){
   return {w,l,o,n:w+l+o,pts:w*2+o};
 }
 const byId=()=>Object.fromEntries(games.map(g=>[String(g.game_id),g]));
-const recHTML=t=>`${t.w}<span class="dash">–</span>${t.l}<span class="dash">–</span>${t.o}`;
 
 function refresh(){
   const G=byId(), total=games.length||84;
@@ -449,20 +455,20 @@ function refresh(){
   const ids=games.map(g=>String(g.game_id));
   const t=tally(ids,pickO);
   const rec=document.getElementById("rec");
-  rec.innerHTML=recHTML(t);
-  rec.setAttribute("aria-label",`Predicted record ${t.w} wins, ${t.l} losses, ${t.o} overtime losses`);
-  document.getElementById("recnote").textContent = t.n
-    ? `${t.pts} standings pts · ${total}-game pace ${Math.round(t.pts/t.n*total)}`
-    : `${viewing?"Their":"Your"} predicted record`;
+  document.getElementById("recW").textContent=t.w; document.getElementById("recL").textContent=t.l; document.getElementById("recO").textContent=t.o;
+  rec.setAttribute("aria-label",`${viewing?"Their":"Your"} predicted record: ${t.w} wins, ${t.l} losses, ${t.o} overtime losses`);
+  const pace=document.getElementById("recnote");
+  pace.textContent = t.n ? `${Math.round(t.pts/t.n*total)}` : "—";
+  pace.title = t.n ? `${t.pts} standings points so far; on pace for ${Math.round(t.pts/t.n*total)} over ${total} games` : "Standings-points pace, once games are picked";
   const picked=document.getElementById("picked");
-  picked.textContent=`${t.n} of ${total} picked`+(viewing&&hiddenCount?` · ${hiddenCount} hidden`:"");
+  picked.textContent=`${t.n}/${total}`+(viewing&&hiddenCount?` · ${hiddenCount} hidden`:"");
   picked.title=`${t.n} results and ${goalCount} goal totals picked`+(viewing&&hiddenCount?`; ${hiddenCount} hidden until puck drop`:"");
   document.getElementById("bar").style.width=((t.n+goalCount)/(2*total)*100)+"%";
 
   const a=tally(ids,actualOf), act=document.getElementById("actual"), sc=document.getElementById("scorechip");
-  sc.textContent=`${viewing?"Their score":"Score"} ${score} pt${score===1?"":"s"}`;
+  sc.textContent=String(score);
   sc.title=(oGraded||gGraded)?`Results ${oHit} of ${oGraded}, goals ${gHit} of ${gGraded}`:"Up to 2 points per game once games are final";
-  act.textContent=a.n?`Actual ${a.w}–${a.l}–${a.o}`:""; act.classList.toggle("hidden",!a.n);
+  act.textContent=a.n?`${a.w}-${a.l}-${a.o}`:"—"; act.title=a.n?`The team's actual record so far: ${a.w}–${a.l}–${a.o}`:"No games played yet";
   groups.forEach(gr=>{
     const m=tally(gr.ids,pickO);
     gr.el.querySelector(".mrec").textContent = m.n ? `${m.w}–${m.l}–${m.o} · ${m.pts} pts` : `${gr.ids.length} game${gr.ids.length===1?"":"s"}`;
