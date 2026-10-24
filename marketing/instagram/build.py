@@ -5,7 +5,7 @@
     python marketing/instagram/build.py pressbox 26.2          # a Press Box picture for that update (from pressbox.js)
 
 Each picture is an HTML page rendered to PNG with headless Microsoft Edge at Instagram's sizes:
-posts 1080x1350 (4:5), Stories and Reel covers 1080x1920.
+posts 1080x1440 (3:4, Instagram's grid shape), Stories and Reel covers 1080x1920.
 
 Look ("road sweater"): navy knit background, red-and-cream sleeve stripes across the top, hem stripes at the bottom,
 the logo in cream, cream felt-patch cards with stitched edges, gold accents, the site's own badge art and team colours.
@@ -73,7 +73,7 @@ h1 em{font-style:normal;color:var(--red2)}
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700'
          '&family=Barlow:wght@500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=block">')
 
-def page(body, w=1080, h=1350, extra=""):
+def page(body, w=1080, h=1440, extra=""):
     return (f'<!doctype html><html><head><meta charset="utf-8">{FONTS}<style>' + CSS % {"w": w, "h": h, "knit": KNIT}
             + extra + f'</style></head><body><div class="top"></div>{body}<div class="bot"></div></body></html>')
 
@@ -85,7 +85,7 @@ def edge(args, timeout=60):
     except subprocess.TimeoutExpired:
         return None
 
-def render(name, html, w=1080, h=1350):
+def render(name, html, w=1080, h=1440):
     os.makedirs(OUT, exist_ok=True)
     src = os.path.join(OUT, f"_{name}.html")
     open(src, "w", encoding="utf-8").write(html)
@@ -232,7 +232,7 @@ def gamenight(date):
     d = datetime.date.fromisoformat(date)
     n = len(games)
     size = 34 if n <= 8 else 31 if n <= 11 else 29 if n <= 13 else 25
-    pad = 16 if n <= 6 else 10 if n <= 9 else 7 if n <= 13 else 5
+    pad = 20 if n <= 6 else 14 if n <= 9 else 11 if n <= 13 else 8   # sized for the 3:4 (1080x1440) post
     rows = []
     for g in games:
         t = eastern(datetime.datetime.fromisoformat(g["startTimeUTC"].replace("Z", "+00:00")))

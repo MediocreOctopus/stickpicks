@@ -120,7 +120,7 @@ Draft one post per social media account for **every** new entry. Accounts today:
 | Account | Limit | Link tag |
 |---|---|---|
 | Bluesky · @stickpicks.hockey | 300 characters (link and emoji included) | `?ref=bluesky` |
-| Instagram · @stickpicks.hockey | 2,200-character caption; **needs a picture** (1080×1350); links in captions don't work, so say "link in bio" | `?ref=instagram` (the profile link) |
+| Instagram · @stickpicks.hockey | 2,200-character caption; **needs a picture** (1080×1440, 3:4, Instagram's grid shape); links in captions don't work, so say "link in bio" | `?ref=instagram` (the profile link) |
 
 When a new account is added (Instagram, Threads, X, TikTok…), add a row here with its limit and its own `?ref=` tag,
 and draft for it from then on.
