@@ -78,9 +78,9 @@ def page(body, w=1080, h=1350, extra=""):
             + extra + f'</style></head><body><div class="top"></div>{body}<div class="bot"></div></body></html>')
 
 def edge(args, timeout=60):
-    profile = os.path.join(os.environ.get("TEMP", OUT), "stickpicks-edge-render")   # its own profile, so an open Edge can't hold it up
+    profile = os.path.join(os.environ.get("TEMP", OUT), f"stickpicks-edge-render-{os.getpid()}")   # a fresh profile each run, so a stuck or open Edge can't hold it up
     try:
-        return subprocess.run([EDGE, "--headless=new", "--disable-gpu", f"--user-data-dir={profile}", "--no-first-run"] + args,
+        return subprocess.run([EDGE, "--headless", "--disable-gpu", f"--user-data-dir={profile}", "--no-first-run"] + args,
                               capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         return None
