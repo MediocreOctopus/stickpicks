@@ -90,25 +90,32 @@ def render(name, html, w=1080, h=1350):
     src = os.path.join(OUT, f"_{name}.html")
     open(src, "w", encoding="utf-8").write(html)
     png = os.path.join(OUT, f"{name}.png")
+    if os.path.exists(png): os.remove(png)   # so the wait below only sees the new one
     edge(["--hide-scrollbars", "--force-device-scale-factor=1", "--virtual-time-budget=8000",
           f"--window-size={w},{h}", f"--screenshot={png}", "file:///" + src.replace("\\", "/")])
+    # Edge 156+ hands the work to a background process and returns at once: wait for the picture to be written
+    import time
+    for _ in range(60):
+        if os.path.exists(png) and os.path.getsize(png) > 0:
+            size = os.path.getsize(png); time.sleep(0.6)
+            if os.path.getsize(png) == size: break
+        time.sleep(0.5)
     os.remove(src)
     print("made" if os.path.exists(png) else "FAILED", os.path.relpath(png, REPO))
 
 def site_art(badge_ids):
-    """The site's own badge and Chiclet drawings (badgeEl / chicletIcon in teams.js), so the pictures always match it."""
-    os.makedirs(OUT, exist_ok=True)
-    src = os.path.join(OUT, "_art.html")
-    url = lambda f: "file:///" + os.path.join(REPO, f).replace("\\", "/")
-    open(src, "w", encoding="utf-8").write(
-        f'<!doctype html><meta charset="utf-8"><pre id="o"></pre><script src="{url("config.js")}"></script>'
-        f'<script src="{url("teams.js")}"></script><script>document.getElementById("o").textContent=JSON.stringify('
-        f'{{badges:Object.fromEntries({json.dumps(badge_ids)}.map(id=>[id,badgeEl(id,180).outerHTML])),chiclet:chicletIcon(52).outerHTML}});</script>')
-    r = edge(["--allow-file-access-from-files", "--virtual-time-budget=4000", "--dump-dom", "file:///" + src.replace("\\", "/")])
-    os.remove(src)
-    m = re.search(r'<pre id="o">(.*?)</pre>', r.stdout.decode("utf-8", "replace") if r else "", re.S)
-    if not m or not m.group(1).strip(): sys.exit("couldn't read the badge art from teams.js")
-    return json.loads(_html.unescape(m.group(1)))
+    """Placeholders for the site's own badge and Chiclet drawings; ART_JS (put in the page) fills them in with badgeEl() and
+    chicletIcon() from teams.js, so the pictures always match the site."""
+    return {"badges": {i: f'<span class="art-badge" data-id="{i}"></span>' for i in badge_ids},
+            "chiclet": '<span class="art-chiclet"></span>'}
+
+def _file_url(f): return "file:///" + os.path.join(REPO, f).replace("\\", "/")
+ART_JS = (f'<script src="{_file_url("config.js")}"></script><script src="{_file_url("teams.js")}"></script>'
+          '<script>document.querySelectorAll(".art-badge").forEach(e=>e.replaceWith(badgeEl(e.dataset.id,180)));'
+          'document.querySelectorAll(".art-chiclet").forEach(e=>e.replaceWith(chicletIcon(52)));'
+          # teams.js also adds the site's tab bar and other page parts: keep only the picture's own pieces
+          'const keep=()=>[...document.body.children].forEach(c=>{ if(!c.matches(".top,.bot,.page,.stripe,script")) c.remove(); });'
+          'keep(); document.addEventListener("DOMContentLoaded",()=>setTimeout(keep,0)); addEventListener("load",keep);</script>')
 
 def schedule(date):
     with urllib.request.urlopen(urllib.request.Request(f"https://api-web.nhle.com/v1/schedule/{date}", headers=UA)) as r:
@@ -163,7 +170,7 @@ def intro():
       <div class="bds">{badges}</div>
       <p class="lede shop">Spend them on profile borders, throwback sweaters and gear for a Breakaway skater.</p>
       <div class="foot"><span>Never sold for real money</span><b>Link in bio</b></div>
-    </div>""", extra="""
+    </div>""" + ART_JS, extra="""
       .ch{margin-top:34px;padding:30px 40px}
       .chh{display:flex;align-items:center;gap:16px} .chh .chiclet-ico{width:64px;height:64px;display:grid;place-items:center}
       .chh .chiclet-ico svg{width:52px;height:58px;transform:rotate(45deg)}

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" class="home sheetpage" data-scheme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Libre+Caslon+Text:ital@1&family=Yellowtail&display=block" rel="stylesheet">
+<style>
+  :root{--b:#001628;--a:#99D9D9;--navy:#1C2B45;--wool:#EFE6D2;--paper:#F7F1E3;--gold:#D9A33A;--red:#E8463F}
+  *{box-sizing:border-box} body{margin:0;background:#EFE6D2;font-family:Barlow,sans-serif;color:#1C2B45}
+  .pg{width:var(--w,375px);margin:0;padding:14px 16px 24px}
+  .note{font:700 .78rem Oswald,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9B1C1F;margin:0 0 10px}
+  .knit{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='12'%3E%3Cpath d='M0 0 L7.5 9 L15 0' fill='none' stroke='%23fff' stroke-opacity='.05' stroke-width='3'/%3E%3C/svg%3E"),radial-gradient(ellipse at 30% -20%,rgba(255,255,255,.14),transparent 62%)}
+  .ban{position:relative;background-color:var(--b);color:#fff;border-radius:12px;overflow:hidden}
+  .ban::before{content:"";position:absolute;left:0;top:0;bottom:12px;width:26px;background:linear-gradient(to right,transparent 0 6px,var(--a) 6px 11px,transparent 11px 15px,var(--a) 15px 20px,transparent 20px)}
+  .hem{position:absolute;left:0;right:0;bottom:0;height:12px;background:linear-gradient(to bottom,var(--a) 0 5px,transparent 5px 7px,var(--a) 7px 12px);opacity:.35}
+  .hem i{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(to bottom,var(--a) 0 5px,transparent 5px 7px,var(--a) 7px 12px)}
+  .kick{font:600 .72rem Oswald,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--a)}
+  .chip{display:inline-grid;place-items:center;width:46px;height:28px;border-radius:5px;background:var(--b);color:#fff;font:700 .82rem Oswald,sans-serif;box-shadow:inset -5px 0 0 var(--a),0 0 0 1.5px rgba(255,255,255,.35)}
+  .sw{display:inline-flex;align-items:center;gap:6px;padding:5px 26px 3px 12px;border-radius:6px;background:var(--wool);color:var(--navy);position:relative;
+    outline:1.5px dashed rgba(28,43,69,.5);outline-offset:-4px;box-shadow:0 3px 0 rgba(0,0,0,.28);font:1.3rem/1 Yellowtail,cursive;white-space:nowrap}
+  .sw b{font:700 .76rem Oswald,sans-serif;letter-spacing:.14em;text-transform:uppercase;vertical-align:3px}
+  .sw::after{content:"";position:absolute;right:11px;top:50%;margin-top:-5px;width:.3em;height:.3em;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .saved{display:inline-flex;align-items:center;gap:6px;font:italic .8rem "Libre Caslon Text",serif;color:#C9D3DE}
+  .saved::before{content:"";width:8px;height:8px;border-radius:50%;background:#3FCF8E;box-shadow:0 0 0 3px rgba(63,207,142,.2)}
+
+  /* A · scoreboard */
+  .A .ban{padding:16px 16px 26px 42px}
+  .A .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .A h1{font:2.3rem/1 Yellowtail,cursive;margin:4px 0 0;color:#fff}
+  .A .sub{margin-top:8px}
+  .jum{margin-top:12px;background:#0B1220;border:3px solid #22324D;border-radius:12px;padding:12px;color:var(--wool);box-shadow:0 6px 0 rgba(0,0,0,.25)}
+  .jum .rec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:4px 6px 10px;border-bottom:1px solid rgba(239,230,210,.12)}
+  .jum .rec b{white-space:nowrap;font:700 2.4rem/1 Oswald,sans-serif;color:#F2C14E;text-shadow:0 0 14px rgba(242,193,78,.35);letter-spacing:.02em}
+  .jum .rec span{font:600 .62rem Oswald,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#9BA6BA;text-align:right}
+  .jum .rec span em{display:block;font:italic .8rem "Libre Caslon Text",serif;letter-spacing:0;text-transform:none;color:#C9CFDB;margin-top:3px}
+  .cells{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .cell{background:#15213A;border-radius:8px;padding:9px 4px 7px;text-align:center}
+  .cell b{display:block;font:700 1.6rem/1 Oswald,sans-serif;color:#FBF7EE}
+  .cell b small{font-size:.8rem;color:#9BA6BA}
+  .cell span{display:block;margin-top:4px;font:600 .58rem Oswald,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#9BA6BA}
+  .prog{margin-top:10px;height:8px;border-radius:99px;background:#15213A;overflow:hidden}.prog i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--a),#F2C14E)}
+
+  /* B · sweater banner */
+  .B .ban{padding:18px 18px 28px 44px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center}
+  .B h1{font:700 1.9rem/1 Oswald,sans-serif;text-transform:uppercase;margin:4px 0 0;letter-spacing:.01em}
+  .B .jer{width:96px;height:96px;grid-row:1 / span 2;grid-column:2;position:relative}
+  .B .jer svg{width:100%;height:100%}
+  .B .bigrec{grid-column:1 / -1;margin-top:8px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .B .bigrec b{font:700 2.9rem/1 Oswald,sans-serif;letter-spacing:.02em}
+  .B .bigrec b i{font-style:normal;color:var(--a);padding:0 2px}
+  .B .bigrec span{font:italic .85rem "Libre Caslon Text",serif;color:#C9D3DE}
+  .B .patches{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .pt{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 4px;border-radius:6px;background:rgba(255,255,255,.08);outline:1.5px dashed rgba(153,217,217,.6);outline-offset:-4px;
+    font:600 .72rem Oswald,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#E3EDF2}
+  .pt b{font:700 .95rem Oswald,sans-serif;color:#fff;letter-spacing:.02em}
+  .B .row2{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+  /* C · compact ribbon */
+  .C .ban{padding:12px 14px 22px 40px}
+  .C .r1{display:flex;align-items:center;gap:10px}
+  .C h1{font:700 1.15rem/1 Oswald,sans-serif;text-transform:uppercase;margin:0;flex:1;min-width:0}
+  .C .r2{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-top:10px}
+  .C .rec{font:700 1.9rem/1 Oswald,sans-serif;white-space:nowrap}
+  .C .rec i{font-style:normal;color:var(--a)}
+  .C .stats{display:grid;gap:3px;font:500 .76rem Barlow,sans-serif;white-space:nowrap;color:#D6E2E8}
+  .C .stats b{color:#fff;font-weight:700}
+  .C .r3{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+
+  @media (min-width:2000px){
+    .A .wrapA{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:16px;align-items:stretch}
+    .A .jum{margin-top:0}
+    .A .ban{display:flex;flex-direction:column;justify-content:space-between}
+    .A h1{font-size:3.2rem}
+    .B .jer{width:130px;height:130px}
+    .B h1{font-size:2.6rem}
+    .B .bigrec b{font-size:3.6rem}
+  }
+.desk .A .wrapA{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:16px;align-items:stretch}
+  .desk .A .jum{margin-top:0} .desk .A .ban{display:flex;flex-direction:column;justify-content:space-between} .desk .A h1{font-size:3.2rem}
+  .desk .B .jer{width:130px;height:130px} .desk .B h1{font-size:2.6rem} .desk .B .bigrec b{font-size:3.6rem}
+  .desk .C h1{font-size:1.6rem} .desk .C .rec{font-size:2.4rem} .desk .C .stats{font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="pg" id="root"></div>
+<template id="jersey"><svg viewBox="0 0 100 100"><path d="M30 14 L42 10 Q50 18 58 10 L70 14 L92 30 L82 46 L74 41 L74 90 L26 90 L26 41 L18 46 L8 30 Z" fill="#001628" stroke="#99D9D9" stroke-width="2.5"/><path d="M26 70 H74 M26 77 H74" stroke="#99D9D9" stroke-width="4"/><path d="M8 30 L18 46 M92 30 L82 46" stroke="#99D9D9" stroke-width="6"/><path d="M42 10 Q50 18 58 10" fill="none" stroke="#99D9D9" stroke-width="3"/><text x="50" y="58" text-anchor="middle" font-family="Oswald" font-weight="700" font-size="22" fill="#fff" stroke="#99D9D9" stroke-width="1">66</text></svg></template>
+<template id="A">
+  <div class="note">Option A · Scoreboard (matches the Leaderboard)</div>
+  <div class="A"><div class="wrapA">
+    <div class="ban knit"><div class="top"><div><div class="kick">2026–27 pick sheet</div><h1>Seattle Kraken</h1></div><span class="sw"><b>Switch</b> Team</span></div>
+      <div class="sub"><span class="saved">Saved to your account</span></div><div class="hem"><i></i></div></div>
+    <div class="jum">
+      <div class="rec"><b>36–40–8</b><span>Predicted record<em>80 pts · 84-game pace</em></span></div>
+      <div class="cells"><div class="cell"><b>7</b><span>Score</span></div><div class="cell"><b>6–3–1</b><span>Actual</span></div><div class="cell"><b>84<small>/84</small></b><span>Picked</span></div></div>
+      <div class="prog"><i></i></div>
+    </div>
+  </div></div>
+</template>
+<template id="B">
+  <div class="note">Option B · Sweater banner (team sweater with your number, three stat patches)</div>
+  <div class="B"><div class="ban knit">
+    <div><div class="kick">2026–27 pick sheet</div><h1>Seattle Kraken</h1></div>
+    <div class="jer">JERSEY</div>
+    <div class="bigrec"><b>36<i>–</i>40<i>–</i>8</b><span>predicted · 80 pts</span></div>
+    <div class="patches"><span class="pt">Score <b>7</b></span><span class="pt">Actual <b>6–3–1</b></span><span class="pt">Picked <b>84/84</b></span></div>
+    <div class="row2"><span class="saved">Saved</span><span class="sw"><b>Switch</b> Team</span></div>
+    <div class="hem"><i></i></div></div></div>
+</template>
+<template id="C">
+  <div class="note">Option C · Compact ribbon (more room for the games)</div>
+  <div class="C"><div class="ban knit">
+    <div class="r1"><span class="chip">SEA</span><h1>Seattle Kraken</h1><span class="sw"><b>Switch</b> Team</span></div>
+    <div class="r2"><div class="rec">36<i>–</i>40<i>–</i>8</div><div class="stats"><span>Score <b>7 pts</b> · Actual <b>6–3–1</b></span><span><b>84/84</b> picked · <span class="saved" style="font-size:.78rem">Saved</span></span></div></div>
+    <div class="hem"><i></i></div></div></div>
+</template>
+<script>
+  const q=new URLSearchParams(location.search); if(q.get("desk")) document.documentElement.classList.add("desk"); if(q.get("w")) document.documentElement.style.setProperty("--w",q.get("w"));
+  for(const s of (q.get("s")||"A").split(",")) document.getElementById("root").insertAdjacentHTML("beforeend",document.getElementById(s).innerHTML.replace("JERSEY",document.getElementById("jersey").innerHTML)+'<div style="height:22px"></div>');
+</script>
+</body></html>
