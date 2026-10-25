@@ -2,6 +2,7 @@
 
     python marketing/instagram/build.py                        # every starter-kit picture
     python marketing/instagram/build.py gamenight 2026-10-22   # a game-night picture for that date (real NHL schedule)
+    python marketing/instagram/build.py results 2026-10-24     # final scores for that date (the morning-after post)
     python marketing/instagram/build.py pressbox 26.2          # a Press Box picture for that update (from pressbox.js)
 
 Each picture is an HTML page rendered to PNG with headless Microsoft Edge at Instagram's sizes:
@@ -266,6 +267,40 @@ def gamenight(date):
       .pairs > span{{display:flex;align-items:center;gap:10px}} .pairs em{{font:italic 22px 'Libre Caslon Text',serif;color:#BFB7A5}}
       .pairs .chip{{width:84px;height:48px;font-size:24px}}"""))
 
+def results(date):
+    """Final scores for a date (the morning-after post): winner in bold, OT / SO tagged, overtime games counted for the OTL tip."""
+    with urllib.request.urlopen(urllib.request.Request(f"https://api-web.nhle.com/v1/score/{date}", headers=UA)) as r:
+        games = [g for g in json.load(r)["games"] if g.get("gameState") in ("OFF", "FINAL")]
+    if not games: return print(f"no finished games on {date}")
+    d = datetime.date.fromisoformat(date); n = len(games)
+    size = 34 if n <= 8 else 31 if n <= 11 else 29 if n <= 13 else 25
+    pad = 18 if n <= 6 else 12 if n <= 9 else 8 if n <= 13 else 6   # leaves room for the overtime note
+    rows, ot = [], 0
+    for g in games:
+        a, h = g["awayTeam"], g["homeTeam"]; aw = a["score"] > h["score"]
+        extra = (g.get("gameOutcome") or {}).get("lastPeriodType", "REG")
+        if extra != "REG": ot += 1
+        nm = lambda t, win: f'<span class="{"win" if win else ""}">{TEAMS.get(t["abbrev"], {}).get("name", t["abbrev"]).split(" ")[-1] if False else t["abbrev"]}</span>'
+        tag = f'<i class="ot">{extra}</i>' if extra != "REG" else '<i></i>'
+        rows.append(f'<div class="g">{chip(a["abbrev"])}<b class="{"w" if aw else ""}">{a["score"]}</b><span class="dash">–</span>'
+                    f'<b class="{"" if aw else "w"}">{h["score"]}</b>{chip(h["abbrev"])}{tag}</div>')
+    note = f"{ot} went to overtime. That's {ot} OTL calls that paid off." if ot > 1 else ""
+    render(f"07-results-{date}", page(f"""<div class="page">
+      <div class="kicker">{d.strftime('%A, %B')} {d.day} · finals</div>
+      <h1>Last <em>night</em></h1>
+      <div class="card list">{''.join(rows)}</div>
+      {f'<p class="lede" style="font-size:36px">{note}</p>' if note else ''}
+      <div class="foot"><span>Tonight's picks are open</span><b>Link in bio</b></div>
+    </div>""", extra=f""".list{{margin-top:34px;padding:16px 40px}}
+      .chip{{display:inline-grid;place-items:center;width:{size*2.3:.0f}px;height:{size*1.3:.0f}px;border-radius:7px;font:700 {size*.62:.0f}px/1 Oswald,sans-serif;
+        letter-spacing:1px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),0 2px 0 rgba(0,0,0,.2)}}
+      .g{{display:grid;grid-template-columns:auto 70px 30px 70px auto 1fr;align-items:center;gap:0 14px;padding:{pad}px 0;border-bottom:2px solid #E2D9C6}}
+      .g:last-child{{border-bottom:0}}
+      .g b{{font:700 {size*1.25:.0f}px/1 Oswald,sans-serif;color:#9AA3B2;text-align:center}} .g b.w{{color:var(--ink)}}
+      .g .dash{{font:700 {size}px Oswald;color:#B9AE97;text-align:center}}
+      .g i{{justify-self:end;font:700 {size*.7:.0f}px Oswald,sans-serif;font-style:normal;letter-spacing:2px}}
+      .g i.ot{{color:#fff;background:var(--otl);padding:6px 12px;border-radius:6px}}"""))
+
 def otl_tip():
     render("04-otl-tip", page("""<div class="page">
       <div class="kicker">Quick tip</div>
@@ -289,16 +324,23 @@ def breakaway_cover():
     </div>""", 1080, 1920), 1080, 1920)
 
 def story_lock():
-    render("06-story-picks-lock", page(f"""<div class="page" style="top:250px;bottom:200px;text-align:center">
-      <div style="margin:0 50px">{LOGO}</div>
-      <h1 style="font-size:132px;margin-top:130px">Picks lock<br><em>at puck drop</em></h1>
-      <p class="lede" style="font-size:46px">Call tonight's games before they start.</p>
-      <div class="foot" style="justify-content:center;margin-bottom:330px"><b>Tap the link ↓</b></div>
-    </div>""", 1080, 1920), 1080, 1920)
+    """Story (1080x1920). Instagram covers about the top 250px (profile bar) and bottom 340px (reply bar), so everything sits
+    between them; the dashed box is where the link sticker goes."""
+    render("06-story-picks-lock", page(f"""<div class="page" style="top:250px;bottom:340px;left:70px;right:70px;text-align:center;align-items:center">
+      <div style="width:100%;margin:10px 0 0">{LOGO}</div>
+      <div class="kicker" style="margin-top:70px">Tonight on stickpicks</div>
+      <h1 style="font-size:150px;line-height:.95;margin-top:18px">Picks lock<br><em>at puck drop</em></h1>
+      <p class="lede" style="font-size:50px;margin-top:34px">Call the result and the total goals<br>before each game starts.</p>
+      <div class="patches" style="margin-top:44px;justify-content:center"><span>W</span><span>L</span><span>OTL</span><span>+ goals</span></div>
+      <div class="tap">Tap the link ↓</div><div class="sticker"></div>
+    </div>""", 1080, 1920, extra=""".tap{margin-top:auto;font:700 46px Oswald,sans-serif;letter-spacing:10px;text-transform:uppercase;color:var(--gold)}
+      .sticker{margin-top:22px;width:62%;height:120px;border-radius:22px;border:4px dashed rgba(239,230,210,.4)}"""), 1080, 1920)
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "gamenight":
         gamenight(sys.argv[2])
+    elif len(sys.argv) >= 3 and sys.argv[1] == "results":
+        results(sys.argv[2])
     elif len(sys.argv) >= 3 and sys.argv[1] == "pressbox":
         pressbox(sys.argv[2])
     else:
