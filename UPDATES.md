@@ -125,6 +125,14 @@ Draft one post per social media account for **every** new entry. Accounts today:
 When a new account is added (Instagram, Threads, X, TikTok…), add a row here with its limit and its own `?ref=` tag,
 and draft for it from then on.
 
+**Automatic posting** (`.github/workflows/social.yml` running `scripts/social.py`): after each deploy, if the newest
+`pressbox.js` entry is live and no post links to `#v<version>` (or says "<version> is live"), it posts to Bluesky by itself
+with the Press Box picture, and emails an "📸 Instagram" issue with the picture and a ready caption. So drafts are only
+needed when the owner wants different wording: post it by hand before the deploy finishes and the automatic one is skipped.
+The same job posts game-day posts (the morning "Last night" finals after 4+ games, and the game-night slate in the 4 hours
+before the first puck drop), skipping either if the owner already posted one that day. Test it with
+`python scripts/social.py --dry-run` (add `--now 2026-10-26T20:20` for another time, UTC).
+
 **Instagram** posts need a picture of the update: make it with `python marketing/instagram/build.py pressbox 26.2`
 (any version: it reads the entry from `pressbox.js`; long updates show their first 6 lines). The caption ends with "link in bio" instead of a link.
 

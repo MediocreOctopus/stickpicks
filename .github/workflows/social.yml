@@ -1,0 +1,55 @@
+name: Social posts
+
+# Posts to Bluesky on its own, and emails an Instagram post to make by hand, from scripts/social.py:
+#   - a new Press Box version, right after the deploy that puts it live
+#   - "Last night": the finals, the morning after a night with 4+ games
+#   - Game night: today's games, in the 4 hours before the first puck drop
+# It never posts the same thing twice, and skips a recap or game-night post if one was already posted by hand that day.
+# Instagram: each post also arrives as an email ("📸 Instagram: ...") with the picture and a caption to paste.
+# Needs the repo secret BSKY_APP_PASSWORD (Bluesky → Settings → Privacy and security → App passwords).
+# To test without posting: Actions → Social posts → Run workflow → tick "Dry run".
+on:
+  schedule:
+    - cron: "20 13-23 * * *"   # every hour at :20, 9am to 7pm Eastern (8am to 6pm in winter)
+    - cron: "20 0-1 * * *"     # and into the evening, for late puck drops
+  workflow_run:
+    workflows: ["Deploy site"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: show what would be posted, don't post"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: social
+  cancel-in-progress: false
+
+jobs:
+  post:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Emoji font for the pictures
+        run: sudo apt-get install -y -qq fonts-noto-color-emoji >/dev/null
+      - name: Post what's due
+        env:
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PYTHONIOENCODING: utf-8
+        run: python3 scripts/social.py ${{ inputs.dry_run && '--dry-run' || '' }}
+      - name: Keep the pictures for a week
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: social-pictures
+          path: marketing/instagram/png/*.png
+          retention-days: 7
+          if-no-files-found: ignore

@@ -12,12 +12,15 @@ Look ("road sweater"): navy knit background, red-and-cream sleeve stripes across
 the logo in cream, cream felt-patch cards with stitched edges, gold accents, the site's own badge art and team colours.
 Team names in words and team colours only: never NHL or team logos (trademark note in CLAUDE.md).
 """
-import datetime, html as _html, json, os, re, subprocess, sys, urllib.request
+import datetime, html as _html, json, os, pathlib, re, shutil, subprocess, sys, tempfile, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(HERE, "png")
-EDGE = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+# The browser that renders the pictures: Edge on the owner's PC, Chrome on GitHub's Linux machines (scripts/social.py)
+EDGE = next((b for b in [os.environ.get("BROWSER_BIN"), r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+             shutil.which("google-chrome"), shutil.which("chromium"), shutil.which("chromium-browser")] if b and os.path.exists(b)), None)
+def _url(path): return pathlib.Path(path).resolve().as_uri()
 UA = {"User-Agent": "Mozilla/5.0 (stickpicks marketing)"}
 
 LOGO = open(os.path.join(REPO, "logo.svg"), encoding="utf-8").read().strip().replace('class="logo-svg"', 'class="logo"')
@@ -79,7 +82,7 @@ def page(body, w=1080, h=1440, extra=""):
             + extra + f'</style></head><body><div class="top"></div>{body}<div class="bot"></div></body></html>')
 
 def edge(args, timeout=60):
-    profile = os.path.join(os.environ.get("TEMP", OUT), f"stickpicks-edge-render-{os.getpid()}")   # a fresh profile each run, so a stuck or open Edge can't hold it up
+    profile = os.path.join(tempfile.gettempdir(), f"stickpicks-edge-render-{os.getpid()}")   # a fresh profile each run, so a stuck or open Edge can't hold it up
     try:
         return subprocess.run([EDGE, "--headless", "--disable-gpu", f"--user-data-dir={profile}", "--no-first-run"] + args,
                               capture_output=True, timeout=timeout)
@@ -93,7 +96,7 @@ def render(name, html, w=1080, h=1440):
     png = os.path.join(OUT, f"{name}.png")
     if os.path.exists(png): os.remove(png)   # so the wait below only sees the new one
     edge(["--hide-scrollbars", "--force-device-scale-factor=1", "--virtual-time-budget=8000",
-          f"--window-size={w},{h}", f"--screenshot={png}", "file:///" + src.replace("\\", "/")])
+          f"--window-size={w},{h}", f"--screenshot={png}", _url(src)])
     # Edge 156+ hands the work to a background process and returns at once: wait for the picture to be written
     import time
     for _ in range(60):
@@ -110,7 +113,7 @@ def site_art(badge_ids):
     return {"badges": {i: f'<span class="art-badge" data-id="{i}"></span>' for i in badge_ids},
             "chiclet": '<span class="art-chiclet"></span>'}
 
-def _file_url(f): return "file:///" + os.path.join(REPO, f).replace("\\", "/")
+def _file_url(f): return _url(os.path.join(REPO, f))
 ART_JS = (f'<script src="{_file_url("config.js")}"></script><script src="{_file_url("teams.js")}"></script>'
           '<script>document.querySelectorAll(".art-badge").forEach(e=>e.replaceWith(badgeEl(e.dataset.id,180)));'
           'document.querySelectorAll(".art-chiclet").forEach(e=>e.replaceWith(chicletIcon(52)));'

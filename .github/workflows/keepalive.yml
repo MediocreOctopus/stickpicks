@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Keep every scheduled job switched on
         run: |
-          for wf in update-games.yml keepalive.yml monitor.yml backup.yml weekly-report.yml reminders.yml; do
+          for wf in update-games.yml keepalive.yml monitor.yml backup.yml weekly-report.yml reminders.yml social.yml; do
             gh workflow enable "$wf" --repo "$GITHUB_REPOSITORY"
           done
         env:
