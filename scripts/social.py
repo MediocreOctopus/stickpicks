@@ -222,7 +222,8 @@ def main():
     else: print("Press Box: nothing new to post")
 
     # one game-day post per run
-    hand_recap = any(build.eastern(t).date() == today and re.search(r"last night|yesterday|finals", txt, re.I) for t, txt, _ in posts)
+    hand = [(t, txt) for t, txt, uris in posts if not any("&p=" in u for u in uris)]   # posted by hand, not by this script
+    hand_recap = any(build.eastern(t).date() == today and re.search(r"last night|yesterday|finals", txt, re.I) for t, txt in hand)
     if hand_recap: print("recap: the owner already posted last night's finals")
     if 9 <= et.hour < 15 and not hand_recap and not already(f"recap-{yday}", posts):
         finals = [g for g in scores(yday.isoformat()) if g.get("gameState") in ("OFF", "FINAL")]
@@ -233,7 +234,7 @@ def main():
     if not games: return print("slate: no games today")
     first = min(utc(g["startTimeUTC"]) for g in games)
     if already(f"slate-{today}", posts): return print("slate: already posted")
-    if any(build.eastern(t).date() == today and re.search(r"tonight|games? today|\d+-game", txt, re.I) for t, txt, _ in posts):
+    if any(build.eastern(t).date() == today and re.search(r"tonight|games? today|\d+-game", txt, re.I) for t, txt in hand):
         return print("slate: the owner already posted about tonight's games")
     if not (first - datetime.timedelta(hours=4) <= now < first - datetime.timedelta(minutes=10)):
         return print(f"slate: not in the window (first puck drop {et_clock(first)} ET)")
