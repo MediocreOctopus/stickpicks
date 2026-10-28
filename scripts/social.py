@@ -18,7 +18,7 @@ for in the account's recent posts. A slate is also skipped if the owner already 
   python scripts/social.py --dry-run  # show what would be posted, and make the pictures, without posting
   python scripts/social.py --dry-run --now 2026-10-25T17:00   # pretend it's that time (UTC)
 """
-import datetime, json, os, re, sys, urllib.error, urllib.parse, urllib.request
+import datetime, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "marketing", "instagram"))
@@ -31,9 +31,16 @@ UA = {"User-Agent": "stickpicks-social (https://stickpicks.hockey)"}
 DRY = "--dry-run" in sys.argv
 TAGS = "#NHL #hockey #icehockey #hockeyfans #pickem"
 
-def get(url, headers=None):
-    with urllib.request.urlopen(urllib.request.Request(url, headers={**UA, **(headers or {})}), timeout=30) as r:
-        return json.load(r)
+def get(url, headers=None, tries=4):
+    """GET JSON, retrying a few times (20s, 40s, 60s apart) so a brief NHL or Bluesky hiccup doesn't fail the run."""
+    for n in range(tries):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={**UA, **(headers or {})}), timeout=30) as r:
+                return json.load(r)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as e:
+            if n == tries - 1: raise
+            print(f"({url.split('?')[0]} didn't answer: {e}; trying again)")
+            time.sleep(20 * (n + 1))
 
 def post_json(url, body, headers=None, raw=None, ctype="application/json"):
     data = raw if raw is not None else json.dumps(body).encode()
