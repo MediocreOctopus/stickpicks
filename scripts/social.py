@@ -42,14 +42,21 @@ def get(url, headers=None, tries=4):
             print(f"({url.split('?')[0]} didn't answer: {e}; trying again)")
             time.sleep(20 * (n + 1))
 
-def post_json(url, body, headers=None, raw=None, ctype="application/json"):
+def post_json(url, body, headers=None, raw=None, ctype="application/json", tries=1):
+    """POST, and read the JSON answer. With tries > 1, a request that times out or can't connect is sent again
+    (30s, then 60s later): only for requests that are safe to repeat (signing in, uploading a picture)."""
     data = raw if raw is not None else json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method="POST", headers={**UA, "Content-Type": ctype, **(headers or {})})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        sys.exit(f"{url} said {e.code}: {e.read().decode()[:400]}")
+    for n in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            sys.exit(f"{url} said {e.code}: {e.read().decode()[:400]}")
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            if n == tries - 1: raise
+            print(f"({url.rsplit('/', 1)[-1]} didn't answer: {e}; trying again)")
+            time.sleep(30 * (n + 1))
 
 # ── times ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 def now_utc():
@@ -99,13 +106,23 @@ def bluesky_post(text, display, uri, png, alt):
         return None
     pw = os.environ.get("BSKY_APP_PASSWORD")
     if not pw: sys.exit("BSKY_APP_PASSWORD isn't set (repo secret)")
-    s = post_json(f"{PDS}/xrpc/com.atproto.server.createSession", {"identifier": HANDLE, "password": pw})
+    s = post_json(f"{PDS}/xrpc/com.atproto.server.createSession", {"identifier": HANDLE, "password": pw}, tries=3)
     auth = {"Authorization": f"Bearer {s['accessJwt']}"}
-    blob = post_json(f"{PDS}/xrpc/com.atproto.repo.uploadBlob", None, auth, raw=open(png, "rb").read(), ctype="image/png")["blob"]
+    blob = post_json(f"{PDS}/xrpc/com.atproto.repo.uploadBlob", None, auth, raw=open(png, "rb").read(), ctype="image/png", tries=3)["blob"]
     rec = {"$type": "app.bsky.feed.post", "createdAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
            "langs": ["en"], **with_link(text, display, uri),
            "embed": {"$type": "app.bsky.embed.images", "images": [{"alt": alt, "image": blob, "aspectRatio": {"width": 1080, "height": 1440}}]}}
-    r = post_json(f"{PDS}/xrpc/com.atproto.repo.createRecord", {"repo": s["did"], "collection": "app.bsky.feed.post", "record": rec}, auth)
+    body = {"repo": s["did"], "collection": "app.bsky.feed.post", "record": rec}
+    try:
+        r = post_json(f"{PDS}/xrpc/com.atproto.repo.createRecord", body, auth)
+    except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        # no answer: the post may or may not have gone up, so look before trying again (never post twice)
+        print(f"(posting didn't answer: {e}; checking whether it went up)")
+        time.sleep(30)
+        r = next(({"uri": it["post"]["uri"]} for it in get("https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?" +
+                  urllib.parse.urlencode({"actor": HANDLE, "limit": 10})).get("feed", [])
+                  if any(uri in f.get("uri", "") for fa in it["post"]["record"].get("facets", []) for f in fa.get("features", []))), None)
+        if not r: r = post_json(f"{PDS}/xrpc/com.atproto.repo.createRecord", body, auth)
     rkey = r["uri"].rsplit("/", 1)[-1]
     img = f"https://cdn.bsky.app/img/feed_fullsize/plain/{s['did']}/{blob['ref']['$link']}@jpeg"
     print(f"posted: https://bsky.app/profile/{HANDLE}/post/{rkey}")

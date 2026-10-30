@@ -1,7 +1,7 @@
 """Writes marketing/stickpicks-social.ics: when each automatic social post (scripts/social.py) should go out, for the
 rest of the regular season, to import into the "stickpicks social" Google Calendar.
 
-Uses the same rules as social.py and the times social.yml runs (every hour at :20, 13:20 to 01:20 UTC):
+Uses the same rules as social.py and the times social.yml runs (every half hour at :20 and :50, 13:20 to 01:50 UTC):
   - "Last night" recap: the first run from 9am Eastern, the morning after a night with 4+ games.
   - Game night: the first run in the 4 hours before the first puck drop (not the run that posted the recap).
 Press Box posts follow deploys, so they can't be on the calendar. GitHub can start runs a little late, and a post is
@@ -15,7 +15,7 @@ import datetime, json, os, sys, urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "marketing", "stickpicks-social.ics")
 UA = {"User-Agent": "stickpicks-calendar (https://stickpicks.hockey)"}
-RUN_HOURS = list(range(13, 24)) + [24, 25]   # UTC hours of the :20 runs (24, 25 = 00:20, 01:20 the next day)
+RUN_HOURS = list(range(13, 24)) + [24, 25]   # UTC hours of the :20 and :50 runs (24, 25 = 00:xx, 01:xx the next day)
 
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
@@ -45,7 +45,7 @@ def season(start):
 
 def runs(day):
     base = datetime.datetime.combine(day, datetime.time())
-    return [base + datetime.timedelta(hours=h, minutes=20) for h in RUN_HOURS]
+    return [base + datetime.timedelta(hours=h, minutes=m) for h in RUN_HOURS for m in (20, 50)]
 
 def event(uid, start, title, desc):
     stamp = lambda t: t.strftime("%Y%m%dT%H%M%SZ")

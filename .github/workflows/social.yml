@@ -10,8 +10,8 @@ name: Social posts
 # To test without posting: Actions → Social posts → Run workflow → tick "Dry run".
 on:
   schedule:
-    - cron: "20 13-23 * * *"   # every hour at :20, 9am to 7pm Eastern (8am to 6pm in winter)
-    - cron: "20 0-1 * * *"     # and into the evening, for late puck drops
+    - cron: "20,50 13-23 * * *"   # every half hour, 9am to 7pm Eastern (8am to 6pm in winter); GitHub sometimes
+    - cron: "20,50 0-1 * * *"     # skips scheduled runs for hours, so the extra runs give missed posts another chance
   workflow_run:
     workflows: ["Deploy site"]
     types: [completed]
