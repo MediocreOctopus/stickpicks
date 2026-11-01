@@ -46,28 +46,43 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
     </div>
   </nav>
 
-  <!-- Head-to-head banner in the team's colours (same sweater banner as the pick sheet) -->
-  <header class="sheethead cmphead" aria-live="polite">
-    <div class="sh-in">
-      <div class="sh-main">
-        <div class="sh-kicker" id="kicker">Head to head</div>
-        <div class="h2h" id="h2h">
-          <div class="side me"><span class="who"><span id="meFace"></span><span class="whoname" id="meName">You</span></span><b id="mePts">0</b><span class="detail" id="meDetail">points</span></div>
-          <div class="vs">vs</div>
-          <div class="side them"><span class="who"><span class="whoname" id="themName">Them</span><span id="themFace"></span></span><b id="themPts">0</b><span class="detail" id="themDetail">points</span></div>
+  <!-- Head to head: the pick sheet's jumbotron, one lit panel per player (you in gold, them in red) -->
+  <header class="jb cmp-jb" aria-live="polite">
+    <div class="jb-head">
+      <h1 class="team-patch" id="title">Head to head</h1>
+      <span class="cmp-kick" id="kicker">Head to head</span>
+    </div>
+    <!-- an old-school scoreboard: every stat in its own lit box, the label underneath; names on tags above the boxes -->
+    <div class="cmp-board" id="h2h">
+      <div class="cmp-side me">
+        <span class="cmp-tag me"><span id="meFace"></span><span class="whoname" id="meName">You</span></span>
+        <div class="cmp-box cmp-pts"><b class="jb-dig gold" id="mePts">0</b><span>Points</span></div>
+        <div class="cmp-pair">
+          <div class="cmp-box"><b class="jb-dig gold" id="meRes">0/0</b><span>Results</span></div>
+          <div class="cmp-box"><b class="jb-dig gold" id="meGls">0/0</b><span>Goals</span></div>
         </div>
-        <div class="sh-chips">
-          <span class="sh-chip" id="h2hGames">Loading…</span>
-          <span class="sh-chip hidden" id="h2hSame"></span>
-        </div>
-        <div class="sh-chips cmp-links">
-          <a class="sh-switch sh-link" id="theirSheet" href="sheet.html">Their sheet</a>
-          <a class="sh-link ghost" id="theirProfile" href="profile.html">Their profile</a>
-          <a class="sh-link ghost" id="mySheet" href="sheet.html">My sheet</a>
+      </div>
+      <div class="cmp-mid">
+        <span class="cmp-tag mid">vs</span>
+        <div class="cmp-box"><b class="jb-dig wh" id="h2hRec">0–0</b><span>Games won</span><small id="h2hTied"></small></div>
+        <div class="cmp-box"><b class="jb-dig wh" id="h2hSame">0/0</b><span>Same picks</span></div>
+      </div>
+      <div class="cmp-side them">
+        <span class="cmp-tag them"><span id="themFace"></span><span class="whoname" id="themName">Them</span></span>
+        <div class="cmp-box cmp-pts"><b class="jb-dig red" id="themPts">0</b><span>Points</span></div>
+        <div class="cmp-pair">
+          <div class="cmp-box"><b class="jb-dig red" id="themRes">0/0</b><span>Results</span></div>
+          <div class="cmp-box"><b class="jb-dig red" id="themGls">0/0</b><span>Goals</span></div>
         </div>
       </div>
     </div>
-    <div class="sh-hem" aria-hidden="true"><i style="width:100%"></i></div>
+    <div class="cmp-foot">
+      <span class="cmp-links">
+        <a id="theirSheet" href="sheet.html">Their sheet</a>
+        <a id="theirProfile" href="profile.html">Profile</a>
+        <a id="mySheet" href="sheet.html">My sheet</a>
+      </span>
+    </div>
   </header>
 
   <!-- Only when signed out -->
@@ -82,13 +97,14 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
     </div>
   </div>
 
+  <!-- whose column is whose: pinned above the games while scrolling -->
   <div class="cmp-head" aria-hidden="true">
-    <span>Game</span><span id="colMe">You</span><span id="colThem">Them</span>
+    <span class="cmp-colgame">Game</span><span class="cmp-col me" id="colMe">You</span><span class="cmp-col them" id="colThem">Them</span>
   </div>
   <main id="sheet"></main>
   <div class="empty hidden" id="empty"></div>
 
-  <footer>1 point for the right result, 1 for the exact goals. The highlighted side won that game. Picks for games that haven’t started stay hidden until puck drop. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a> · <a href="pressbox.html">Press Box</a> · <a href="privacy.html#contact">Contact</a></footer>
+  <footer>1 point for the result, 1 for the exact goals. A lit cell won that game. Picks stay hidden until puck drop. <a href="rules.html">Rules</a> · <a href="privacy.html">Privacy &amp; Terms</a> · <a href="pressbox.html">Press Box</a> · <a href="privacy.html#contact">Contact</a></footer>
 </div>
 <div class="hem" aria-hidden="true"></div>
 
@@ -112,7 +128,14 @@ mountTeamMenu($("teamMenu"));
 mountChicletNav(sb);
 applyTheme(team);
 document.title=`You vs ${other} · ${TEAMS[team]?.name} · stickpicks`;
-$("kicker").textContent=`${TEAMS[team]?.name} · ${SEASON_LABEL} head to head`;
+$("kicker").textContent=`${SEASON_LABEL} head to head`;
+if(TEAMS[team]){   // the team patch ("SEATTLE Kraken") and the light strip in the team's colour, as on the pick sheet
+  const t=TEAMS[team], name=t.name, nick=teamNick(team), city=name.endsWith(nick)?name.slice(0,-nick.length).trim():"";
+  const st=getComputedStyle(document.documentElement).getPropertyValue("--stripe").trim()||t.accent;
+  document.querySelector(".jb").style.setProperty("--jb-light", firstReadable("#0E1420",[st,t.accent,t.brand,t.board,"#EFE6D2"],2.2));
+  const tt=$("title"); tt.replaceChildren(); if(city){ const b=document.createElement("b"); b.textContent=city; tt.append(b," "); }
+  const ni=document.createElement("i"); ni.textContent=nick||name; tt.append(ni); tt.setAttribute("aria-label",`${name} head to head`);
+}
 $("themName").textContent=other; $("colThem").textContent=other;
 $("theirSheet").href=`sheet.html?team=${team}&user=${encodeURIComponent(other)}`;
 $("theirProfile").href=`profile.html?user=${encodeURIComponent(other)}`;
@@ -175,16 +198,15 @@ function pickCell(p, sc, opts={}){
   const cell=document.createElement("div"); cell.className="cmp-cell";
   if(opts.side) cell.dataset.side=opts.side;
   const label=document.createElement("span"); label.className="cmp-who"; label.textContent=opts.name; cell.appendChild(label);
-  if(p?.hidden){ cell.insertAdjacentHTML("beforeend",'<span class="locknote">Picked · hidden until puck drop</span>'); cell.classList.add("secret"); return cell; }
+  if(p?.hidden){ cell.insertAdjacentHTML("beforeend",'<span class="locknote">🔒 Hidden</span>'); cell.classList.add("secret"); return cell; }
   if(!p || (!p.o && p.g==null)){ cell.insertAdjacentHTML("beforeend",'<span class="locknote">No pick</span>'); cell.classList.add("nopick"); return cell; }
   const o=document.createElement("span"); o.className="cpick"+(p.o?"":" none"); o.textContent=p.o||"–";
   if(sc && sc.outcomeHit!==null) o.classList.add(sc.outcomeHit?"hitmark":"missmark");
   const gl=document.createElement("span"); gl.className="gpick"; gl.textContent=p.g!=null?p.g:"–";
-  const gw=document.createElement("small"); gw.textContent=" goals"; gl.appendChild(gw);   // "goals" hidden on phones to save room
+  const gw=document.createElement("small"); gw.textContent=" G"; gl.appendChild(gw);
   if(sc && sc.goalsHit!==null) gl.classList.add(sc.goalsHit?"hitmark":"missmark");
   cell.append(o,gl);
   if(sc){ const b=document.createElement("span"); b.className="ptsbadge"; b.dataset.p=sc.points; b.textContent=`+${sc.points}`; cell.appendChild(b); }
-  if(opts.diff) cell.classList.add("diff");
   return cell;
 }
 
@@ -242,7 +264,7 @@ function render(){
       fin.dataset.r=r; fin.textContent=`Final ${r} ${us}–${them}${g.period_type!=="REG"?" "+g.period_type:""} · ${g.home_score+g.away_score} goals`;
     }else if(started){ fin.dataset.r="live"; fin.textContent="In progress"; }
 
-    row.append(info, pickCell(a,sa,{side:"me",diff:differs,name:myName==="You"?"You":myName}), pickCell(b,sb_,{side:"them",diff:differs,name:theirName}));
+    row.append(info, pickCell(a,sa,{side:"me",name:myName==="You"?"You":myName}), pickCell(b,sb_,{side:"them",name:theirName}));
     list.appendChild(row);
   });
 
@@ -253,13 +275,13 @@ function render(){
 
   // scoreboard
   $("mePts").textContent=T.me.pts; $("themPts").textContent=T.them.pts;
-  const det=x=>`results ${x.o}/${x.og} · goals ${x.g}/${x.gg}`;
-  $("meDetail").textContent=det(T.me); $("themDetail").textContent=det(T.them);
+  $("meRes").textContent=`${T.me.o}/${T.me.og}`; $("meGls").textContent=`${T.me.g}/${T.me.gg}`;
+  $("themRes").textContent=`${T.them.o}/${T.them.og}`; $("themGls").textContent=`${T.them.g}/${T.them.gg}`;
   $("h2h").dataset.lead = T.me.pts>T.them.pts?"me":T.me.pts<T.them.pts?"them":"tie";
   const played=wins+losses+ties;
-  $("h2hGames").textContent = played ? `Game by game: you ${wins} · ${theirName} ${losses} · ${ties} tied` : "Scores appear once games are final";
-  $("h2hSame").textContent = comparable ? `Same picks on ${agree} of ${comparable}` : "";
-  $("h2hSame").classList.toggle("hidden", !comparable);
+  $("h2hRec").textContent = `${wins}–${losses}`;
+  $("h2hTied").textContent = ties ? `${ties} tied` : "";
+  $("h2hSame").textContent = `${agree}/${comparable}`;
 }
 
 document.querySelector(".sh-seg").addEventListener("click",e=>{

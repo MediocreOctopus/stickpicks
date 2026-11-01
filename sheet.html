@@ -49,7 +49,8 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
   <!-- Pick sheet -->
   <div id="app">
     <!-- The jumbotron: the team patch (city in block letters, nickname in the logo script), your predicted record in
-         three lit panels (W, L, OTL), score / actual / pace panels, and a "clock" bar for how much of the sheet is picked -->
+         three big lit boxes (W, L, OTL), a row of smaller boxes under them (score / actual / pace), and a "clock" bar for
+         how much of the sheet is picked. Every stat in its own box, the label underneath (like Compare) -->
     <header class="jb" aria-live="polite">
       <div class="jb-head">
         <h1 class="team-patch" id="title">Pick sheet</h1>
@@ -63,9 +64,9 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
           <div class="jb-cell"><b class="jb-dig wh" id="recO">0</b><span>OTL</span></div>
         </div>
         <div class="jb-side">
-          <div class="jb-cell jb-mini"><span>Score</span><b class="jb-dig gold" id="scorechip">0</b></div>
-          <div class="jb-cell jb-mini"><span>Actual</span><b class="jb-dig wh" id="actual">—</b></div>
-          <div class="jb-cell jb-mini"><span>Pace</span><b class="jb-dig wh" id="recnote">—</b></div>
+          <div class="jb-cell jb-mini"><b class="jb-dig gold" id="scorechip">0</b><span>Score</span></div>
+          <div class="jb-cell jb-mini"><b class="jb-dig wh" id="actual">—</b><span>Actual</span></div>
+          <div class="jb-cell jb-mini"><b class="jb-dig wh" id="recnote">—</b><span>Pace</span></div>
         </div>
       </div>
       <div class="jb-clock"><span class="jb-lab">Picked</span><div class="jb-bar"><i id="bar"></i></div><b class="jb-dig gold" id="picked">0/84</b></div>

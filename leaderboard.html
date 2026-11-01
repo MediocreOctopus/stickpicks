@@ -110,7 +110,7 @@ try{var po=JSON.parse(localStorage.getItem("stickpicks-playoffs")||"null");if(po
 <script src="teams.js?v=__V__"></script>
 <script>
 const sb = makeClient();
-let team=null, myName=null;
+let team=null, myName=null, myAvatar=null;
 mountTeamMenu(document.getElementById("teamMenu"));
 mountChicletNav(sb);
 
@@ -380,6 +380,10 @@ function renderPlayoffBoard(list){
 function scoreHead(label, teamCode, note){
   const el=document.createElement("div"); el.className="sb-head";
   const who=document.createElement("div"); who.className="sb-who";
+  if(myName){   // your name on a gold tag above the boxes, as on Compare
+    const tag=document.createElement("span"); tag.className="sb-tag"; const nm=document.createElement("span"); nm.textContent=myName;
+    tag.append(avatarEl(myAvatar, myName, 26), nm); who.append(tag);
+  }
   const l=document.createElement("div"); l.className="you-label"; l.textContent=label; who.append(l);
   if(teamCode){ const t=document.createElement("div"); t.className="you-team"; const nm=document.createElement("span"); nm.textContent=TEAMS[teamCode]?.name||teamCode; t.append(swatch(teamCode), nm); who.append(t); }
   if(note){ const n=document.createElement("div"); n.className="sb-note"; n.textContent=note; who.append(n); }
@@ -446,8 +450,8 @@ async function start(){
     signedIn=!!session;
     if(session){
       const {data}=await sb.from("profiles").select("*").eq("user_id",session.user.id).maybeSingle();
-      myName=data?.username||null;
-      if(myName) rememberMe(myName, avatarFromProfile(data));
+      myName=data?.username||null; myAvatar=avatarFromProfile(data);
+      if(myName) rememberMe(myName, myAvatar);
     }
     setInterval(load, 60*1000);
     document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load(); });

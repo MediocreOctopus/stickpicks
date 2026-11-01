@@ -329,7 +329,7 @@ async function loadStats(){
   const {data:sheets}=await sb.rpc("my_sheets",{p_season:SEASON});
   const board = username ? (await sb.rpc("leaderboard",{p_season:SEASON,p_team:null})).data : null;
   showStats(sheets||[], board||[], username, team=>`sheet.html?team=${team}`, "No picks yet. Use Pick Team to start your first sheet.");
-  myBadges(sb, username).then(r=>{ showBadges(r,true); try{ localStorage.setItem(`stickpicks-badges-${user.id}`, JSON.stringify(r.earned)); }catch(e){} })
+  myBadges(sb, username).then(r=>{ showBadges(r,true); markBadgesSeen(user.id, r.earned); })
     .catch(()=>{ $("badgeGrid").innerHTML='<p class="hint" style="margin:0">Couldn’t load badges right now.</p>'; });
 }
 

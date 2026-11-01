@@ -3,6 +3,19 @@
 // When adding one, also set PRESS_BOX_LATEST in teams.js to the new version (it lights the footer's New dot).
 const PRESS_BOX = [
   {
+    version: "26.5",
+    name: "",
+    date: "2026-11-01",
+    intro: "",
+    items: [
+      ["new", "Comparing sheets now opens on a head-to-head jumbotron: points, results and goals for each player, with games won in the middle."],
+      ["improved", "Each player on the Compare page has a colour, gold and red, on the scoreboard, the name bar and every pick, and the names stay pinned at the top while scrolling."],
+      ["improved", "The Compare page is cleaner, with less text in every row."],
+      ["improved", "The pick sheet and Leaderboard scoreboards now match: every stat in its own lit box with its label underneath, and the player's name on a tag above the Leaderboard scoreboard."],
+      ["fixed", "Badges already earned no longer pop up again as new."],
+    ],
+  },
+  {
     version: "26.4",
     name: "",
     date: "2026-10-23",

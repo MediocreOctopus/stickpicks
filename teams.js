@@ -1268,11 +1268,20 @@ async function playerBadges(sb, username, board){
   return withTrophyCase(computeBadges(picks, games, board, username, joined, honours, firstDay), kept);
 }
 
-// "New badge" pop-up: compares with the badges this device has already shown you.
-function announceBadges(userId, earned, who){
+// The badges this device has already shown you, so they don't pop up as "new" again. The list only grows: a partial
+// check (the home page before your sheets load, or a lookup that failed) must not shrink it, or every older badge
+// would pop up again on the next full check. Returns the list from before (null the first time on this device).
+// Every page that records badges as seen goes through here (home, Badges, your profile).
+function markBadgesSeen(userId, earned){
   const key=`stickpicks-badges-${userId}`;
   let seen=null; try{ seen=JSON.parse(localStorage.getItem(key)||"null"); }catch(e){}
-  try{ localStorage.setItem(key, JSON.stringify(earned)); }catch(e){}
+  if(seen && !Array.isArray(seen)) seen=null;
+  try{ localStorage.setItem(key, JSON.stringify([...new Set([...(seen||[]), ...earned])])); }catch(e){}
+  return seen;
+}
+// "New badge" pop-up: compares with the badges this device has already shown you.
+function announceBadges(userId, earned, who){
+  const seen=markBadgesSeen(userId, earned);
   // First time on this device (a new phone, a cleared browser): a new player's first badge or two are announced, but a
   // returning player's whole collection is recorded quietly instead of popping up as "23 new badges"
   if(!seen && earned.length>2) return;
@@ -1627,7 +1636,7 @@ document.addEventListener("DOMContentLoaded",()=>{ showRememberedChiclets(); mar
 // Press Box (pressbox.html): the footer link gets a small "New" dot until the player has opened the latest update.
 // Only for returning players (a first visit doesn't need it). Keep PRESS_BOX_LATEST equal to the newest version in
 // pressbox.js; scripts/check_site.py stops the deploy if they differ.
-const PRESS_BOX_LATEST="26.4";
+const PRESS_BOX_LATEST="26.5";
 function markPressBox(){
   const a=document.querySelector('footer a[href="pressbox.html"]');
   if(!a || a.getAttribute("aria-current")) return;

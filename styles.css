@@ -643,27 +643,47 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .lb td.name a{color:var(--ink);text-decoration:none}
 .lb td.name a:hover,.lb td.name a:focus-visible{text-decoration:underline}
 
-/* ───── Side-by-side comparison (compare.html): same sweater banner and rows as the pick sheet ───── */
-.h2h{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:14px;margin-top:8px}
-.h2h .side{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-.h2h .them{text-align:right;align-items:flex-end}
-.h2h .who{display:inline-flex;align-items:center;gap:8px;max-width:100%;font:600 1.05rem var(--display);letter-spacing:.04em;text-transform:uppercase;color:color-mix(in srgb, var(--board-ink) 85%, transparent)}
-.h2h .whoname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.h2h .who .avatar{border-width:2px}
-.h2h b{font:700 clamp(2.6rem,9vw,3.8rem)/1 var(--display);font-variant-numeric:tabular-nums;margin-top:4px}
-.h2h .detail{font:italic .8rem var(--serif);color:color-mix(in srgb, var(--board-ink) 72%, transparent);margin-top:4px}
-.h2h .vs{font:700 1rem var(--display);color:var(--title);text-transform:uppercase;letter-spacing:.14em}
-.h2h[data-lead="me"] .me b,.h2h[data-lead="them"] .them b{color:var(--title)}
-.cmp-links{margin-top:8px}
-.sh-link{text-decoration:none}
-.sh-link::after{content:none}
-.sh-link.ghost{display:inline-flex;align-items:center;font:600 .75rem var(--display);letter-spacing:.12em;text-transform:uppercase;padding:2px 11px;border-radius:999px;
-  color:var(--board-ink);border:1.5px solid color-mix(in srgb, var(--board-ink) 45%, transparent)}
-.sh-link:hover{filter:brightness(1.1);text-decoration:underline}
+/* ───── Side-by-side comparison (compare.html): the pick sheet's jumbotron, you in gold and them in red ─────
+   The two colours mark each player everywhere on the page: name tags, digits, the pinned name bar and each column's edge. */
+.comparepage{--cmp-me:#D9A33A;--cmp-me-lit:#F2C14E;--cmp-them:#C8302B;--cmp-them-lit:#FF5A4E}
+.cmp-kick{font:600 .62rem var(--display);letter-spacing:.2em;text-transform:uppercase;color:#9BA6BA}
+.cmp-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.62fr) minmax(0,1fr);gap:10px;align-items:start;margin-top:14px}
+.cmp-side,.cmp-mid{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0}
+/* each stat in its own lit box: a dark screen with a fine bulb grid, the number lit, the label underneath */
+.cmp-box{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px 4px 8px;min-width:0;
+  background:#05080F;border-radius:6px;box-shadow:inset 0 0 0 2px #1B2538,inset 0 6px 14px rgba(0,0,0,.6);text-align:center}
+.cmp-box::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.06) 1px,transparent 1.4px) 0 0/5px 5px}
+.cmp-box > *{position:relative;z-index:1}
+.cmp-box span,.cmp-box small{font:600 .58rem var(--display);letter-spacing:.2em;text-transform:uppercase;color:#9BA6BA}
+.cmp-box small{letter-spacing:.14em;color:#6E7A90;margin-top:-3px}
+.cmp-box .jb-dig{font-size:1.5rem}
+.cmp-pts{padding:12px 4px 10px}
+.cmp-pts .jb-dig{font-size:3.4rem}
+.cmp-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp-side.me{--lit:var(--cmp-me-lit)} .cmp-side.them{--lit:var(--cmp-them-lit)}
+.cmp-board[data-lead="me"] .me .cmp-pts,.cmp-board[data-lead="them"] .them .cmp-pts{box-shadow:inset 0 0 0 2px var(--lit),0 0 14px color-mix(in srgb, var(--lit) 45%, transparent),inset 0 6px 14px rgba(0,0,0,.6)}
+/* name tags above the boxes: felt patches in each player's colour */
+.cmp-tag{align-self:center;display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:3px 12px 3px 4px;border-radius:999px;
+  font:700 .85rem var(--display);letter-spacing:.06em;outline:1.5px dashed rgba(255,255,255,.55);outline-offset:-3px;box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.cmp-tag.me{background:var(--cmp-me);color:#1C2B45;outline-color:rgba(28,43,69,.45)}
+.cmp-tag.them{background:var(--cmp-them);color:#FBF7EE}
+.cmp-tag.mid{padding:3px 12px;min-height:calc(1.2em + 6px);background:transparent;box-shadow:none;outline:0;color:#9BA6BA;font-size:.8rem;letter-spacing:.24em;text-transform:uppercase}
+.cmp-tag .whoname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-tag .avatar{border-width:2px}
+.cmp-foot{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:12px}
+.cmp-links{display:flex;gap:6px;flex-wrap:wrap}
+.cmp-links a{padding:3px 11px;border-radius:999px;font:600 .68rem var(--display);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;
+  color:#EFE6D2;border:1.5px solid rgba(239,230,210,.4)}
+.cmp-links a:hover{border-color:#EFE6D2}
+.cmp-links a#theirSheet{background:var(--cmp-them);border-color:var(--cmp-them);color:#FBF7EE}
 
+/* the pinned name bar and the game rows */
 .cmp-head,.cmp-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
-.cmp-head{margin-top:14px;padding:0 12px 6px;font:600 .78rem var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);border-bottom:4px double var(--ink)}
-.cmp-head span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-head{position:sticky;top:0;z-index:5;margin-top:14px;padding:8px 12px;background:var(--bg);border-bottom:3px solid var(--ink)}
+.cmp-colgame{font:600 .72rem var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.cmp-col{display:flex;align-items:center;gap:7px;min-width:0;font:700 .85rem var(--display);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-col::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:var(--c)}
+.cmp-col.me{--c:var(--cmp-me)} .cmp-col.them{--c:var(--cmp-them)}
 .comparepage .month{margin-top:20px}
 .cmp-row{padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
 .cmp-row.is-home{box-shadow:inset 5px 0 0 var(--edge)}
@@ -671,33 +691,38 @@ details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}
 .cmp-game .gdate{flex:none;width:6.2rem}
 .cmp-game .opp{min-width:0}
 .final[data-r="live"]{background:var(--gold);color:#3A2A08}
-.cmp-cell{display:flex;align-items:center;gap:8px;min-height:2.5rem;padding:4px 8px;border-radius:6px;border:2px solid transparent}
-.cmp-cell.diff{border-color:color-mix(in srgb, var(--ink) 25%, transparent);border-style:dashed}
-.cmp-row[data-winner="me"] .cmp-cell[data-side="me"],.cmp-row[data-winner="them"] .cmp-cell[data-side="them"]{background:color-mix(in srgb, var(--gold) 16%, transparent);border-color:var(--gold);border-style:solid}
-.cmp-who{display:none}
+.cmp-cell{display:flex;align-items:center;gap:8px;min-height:2.5rem;padding:4px 8px 4px 10px;border-radius:6px;border-left:4px solid var(--c)}
+.cmp-cell[data-side="me"]{--c:var(--cmp-me)} .cmp-cell[data-side="them"]{--c:var(--cmp-them)}
+.cmp-row[data-winner="me"] .cmp-cell[data-side="me"],.cmp-row[data-winner="them"] .cmp-cell[data-side="them"]{background:color-mix(in srgb, var(--c) 22%, transparent);box-shadow:inset 0 0 0 1.5px var(--c)}
+.cmp-who{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}   /* read out by screen readers; the name bar shows it */
 .cpick{display:inline-flex;align-items:center;justify-content:center;gap:1px;min-width:2.6rem;height:1.9rem;padding:0 6px;border-radius:4px;background:var(--board);color:var(--board-ink);box-shadow:inset 0 -3px 0 var(--stripe);font:600 .9rem var(--display);white-space:nowrap}
 [data-scheme="dark"] .cpick{outline:1.5px solid var(--stripe);outline-offset:-1.5px}
 .cpick.none{background:transparent;color:var(--muted);box-shadow:none;border:2px solid var(--line)}
 .gpick{font:600 .95rem var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
-.gpick small{font:inherit}
+.gpick small{font:600 .7rem var(--display);color:var(--muted)}
 .hitmark::after{content:" ✓";color:var(--win)}
 .missmark::after{content:" ✗";color:var(--loss)}
 .cpick.missmark{opacity:.6}
 .cmp-cell .ptsbadge{margin:0 0 0 auto}
-.locknote{font:italic .82rem var(--serif);color:var(--muted)}
+.locknote{font:600 .78rem var(--display);letter-spacing:.06em;color:var(--muted)}
+@media (min-width:761px){ .cmp-box .jb-dig{font-size:2rem} .cmp-pts .jb-dig{font-size:4.4rem} .cmp-tag{font-size:.95rem} .cmp-board{gap:14px} .cmp-side,.cmp-mid,.cmp-pair{gap:10px} }
 @media (max-width:760px){
-  .h2h{gap:8px}
-  .h2h .who{font-size:.9rem;gap:6px}
-  .cmp-head{display:none}
+  .cmp-board{gap:6px}
+  .cmp-head{grid-template-columns:1fr 1fr;column-gap:8px;padding:7px 10px}
+  .cmp-colgame{display:none}
   .cmp-row{grid-template-columns:1fr 1fr;row-gap:6px;column-gap:8px;padding:8px 10px}
   .cmp-game{grid-column:1 / -1;gap:10px}
   .cmp-game .gdate{width:auto}
-  .cmp-cell{flex-wrap:wrap;gap:4px 6px;padding:5px 6px;align-content:flex-start}
-  .gpick small{display:none}
+  .cmp-cell{gap:4px 6px;padding:5px 6px 5px 8px}
   .cmp-cell .ptsbadge{min-width:1.9rem;padding:2px 4px}
-  .cmp-who{display:block;flex-basis:100%;font:600 .66rem var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
-@media (max-width:420px){ .h2h .detail{display:none} .sh-seg button[data-short]{font-size:0} .sh-seg button[data-short]::after{content:attr(data-short);font-size:.74rem} }
+@media (max-width:420px){
+  .cmp-board{gap:6px} .cmp-side,.cmp-mid,.cmp-pair{gap:6px}
+  .cmp-box .jb-dig{font-size:1.05rem} .cmp-pts .jb-dig{font-size:2.6rem}
+  .cmp-box{padding:8px 2px 6px} .cmp-box span,.cmp-box small{font-size:.48rem;letter-spacing:.1em}
+  .cmp-tag{font-size:.72rem;padding-right:8px}
+  .sh-seg button[data-short]{font-size:0} .sh-seg button[data-short]::after{content:attr(data-short);font-size:.74rem}
+}
 /* ───── Avatars: sweater (team + number), photo, or initial ───── */
 .avatar{--av-size:32px;--av-bg:var(--wool);width:var(--av-size);height:var(--av-size);flex:none;box-sizing:border-box;border-radius:50%;overflow:hidden;
   display:inline-grid;place-items:center;vertical-align:middle;background:var(--av-bg);color:#9B1C1F;
@@ -1743,22 +1768,22 @@ html.playoffs .felt-patch.red{background:var(--gold);color:var(--ice);outline-co
 .jb-rec .jb-cell{padding:12px 4px 10px;display:flex;flex-direction:column;justify-content:center}
 .jb-rec .jb-cell span{margin-top:6px}
 .jb-side{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.jb-mini{padding:8px 4px 7px}
-.jb-mini .jb-dig{font-size:1.5rem;margin-top:3px}
+.jb-mini{padding:8px 4px 7px;display:flex;flex-direction:column;justify-content:center}
+.jb-mini .jb-dig{font-size:1.5rem}
+.jb-mini span{margin-top:5px}
 .jb-clock{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;margin-top:12px}
 .jb-clock .jb-dig{font-size:1.15rem}
 .jb-bar{height:10px;border-radius:3px;background:#05080F;box-shadow:inset 0 0 0 1px #1B2538;overflow:hidden}
 .jb-bar i{display:block;height:100%;width:0;
   background:repeating-linear-gradient(90deg,#F2C14E 0 6px,transparent 6px 8px);box-shadow:0 0 8px #F2C14E}
-/* desktop and tablets: W / L / OTL on the left, Score / Actual / Pace down the right like a scoreboard's side panels */
+/* desktop and tablets: bigger digits; W / L / OTL on top, Score / Actual / Pace in smaller boxes underneath (26.5, like Compare) */
 @media (min-width:761px){
   .jb{padding:18px 20px 16px}
   .team-patch i{font-size:2.7rem} .team-patch b{font-size:1.1rem}
-  .jb-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:stretch}
   .jb-rec .jb-dig{font-size:3.8rem}
-  .jb-side{grid-template-columns:1fr}
-  .jb-mini{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;text-align:left}
-  .jb-mini .jb-dig{margin-top:0;font-size:1.7rem}
+  .jb-grid{gap:10px} .jb-rec,.jb-side{gap:10px}
+  .jb-mini{padding:10px 4px 8px}
+  .jb-mini .jb-dig{font-size:2rem}
 }
 @media (max-width:380px){ .jb-rec .jb-dig{font-size:2.4rem} .jb-mini .jb-dig{font-size:1.25rem} .team-patch i{font-size:1.9rem} }
 @media print{ .jb{background:none;color:#000;border-color:#999;box-shadow:none} .jb .sh-switch{display:none} }
@@ -1775,6 +1800,20 @@ html.playoffs .felt-patch.red{background:var(--gold);color:var(--ice);outline-co
 .lbpage .sb-cell.rank b{color:#FBF7EE;text-shadow:0 0 6px rgba(255,255,255,.6),0 0 16px rgba(255,255,255,.3)}
 .lbpage .sb-cell:nth-child(3) b,.lbpage .sb-cell:nth-child(4) b{color:#FBF7EE;text-shadow:0 0 6px rgba(255,255,255,.5),0 0 14px rgba(255,255,255,.25)}
 .lbpage .sb-cell b small{color:#9BA6BA;text-shadow:none}
+/* 26.5: like Compare, your name on a gold tag above the boxes; Rank and Points are the big boxes, the rest smaller */
+.sb-tag{display:inline-flex;align-items:center;gap:7px;width:max-content;max-width:100%;padding:3px 12px 3px 4px;border-radius:999px;
+  background:#D9A33A;color:#1C2B45;font:700 .85rem var(--display);letter-spacing:.06em;outline:1.5px dashed rgba(28,43,69,.45);outline-offset:-3px;box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.sb-tag > span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-tag .avatar{border-width:2px}
+.lbpage .sb-cells{grid-template-columns:repeat(2,minmax(0,1.35fr)) repeat(2,minmax(0,1fr));align-items:stretch}
+.lbpage .sb-cell{display:flex;flex-direction:column;justify-content:center}
+.lbpage .sb-cell:nth-child(-n+2) b{font-size:2.9rem}
+.lbpage .sb-cell:nth-child(n+3) b{font-size:1.7rem}
+@media (max-width:560px){
+  .lbpage .sb-cells{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lbpage .sb-cell:nth-child(-n+2) b{font-size:2.6rem}
+  .lbpage .sb-cell:nth-child(n+3) b{font-size:1.4rem}
+}
 
 /* ═════════ 26.4 Locker Room: your locker, a season jumbotron, the first-shift checklist, gear patches ═════════ */
 .lr-locker{position:relative;margin-top:4px;padding:14px 22px 18px;border-radius:12px;color:var(--wool);border:3px solid #0E1626;box-shadow:0 8px 0 rgba(0,0,0,.25);

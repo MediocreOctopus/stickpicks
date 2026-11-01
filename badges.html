@@ -106,7 +106,7 @@ async function start(){
       own=true; who=me?.username||null;
       if(VIEW) history.replaceState(null,"","badges.html"+(q.get("badge")?`?badge=${q.get("badge")}`:""));
       result=await myBadges(sb, who);
-      try{ localStorage.setItem(`stickpicks-badges-${session.user.id}`, JSON.stringify(result.earned)); }catch(e){}   // seen here: no pop-up for them
+      markBadgesSeen(session.user.id, result.earned);   // seen here: no pop-up for them
       $("bBack").textContent="Back to your profile";
     }else{
       // signed out: show every badge (all to earn), with a nudge to join
