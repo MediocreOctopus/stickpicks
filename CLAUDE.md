@@ -155,6 +155,27 @@ Download the backup from Actions → "Back up the database" → a run → Artifa
 Restoring over the live project replaces current data: try it on a spare Supabase project first.
 
 
+## Accounts
+
+Every outside account stickpicks uses. Keep this list current: add a row when a new account is made, and never put
+passwords, keys or private email addresses here (this repo is public). "stickpicks Google account" = the project's
+own Gmail; the owner's personal accounts are not named. Logins and secrets are the owner's; Claude never creates
+accounts or types passwords/keys.
+
+| Service | What it's for | Signs in with | Keys / renewals |
+|---|---|---|---|
+| GitHub (MediocreOctopus) | Code, Pages hosting, Actions (deploys, score updates, posts, backups, reports) | owner's GitHub account; notifications go to alerts@ | Repo secrets (Supabase, Bluesky, backups, GoatCounter); fine-grained token "stickpicks alarm clock" for cron-job.org, **expires 2027-11-01** (calendar reminder 2027-10-18) |
+| Supabase (project quomusxbmkwhgrunosfy) | Database and player sign-in | owner's GitHub account (Sign in with GitHub); account email = stickpicks Google account | Secret + publishable keys in GitHub secrets |
+| Porkbun | Domain stickpicks.hockey, DNS, email forwarding (contact@, alerts@) | contact@ | Domain renewal (auto-renew; check the date in Porkbun) |
+| stickpicks Google account | Gmail (all stickpicks mail, filters/labels), Calendar (reminders, "stickpicks social"), Apps Script | stickpicks Google account | Google app password for Gmail "Send mail as" contact@ |
+| Google Search Console (Domain property) | Search indexing reports | stickpicks Google account (delegated owner); the owner's personal account verified the domain and must stay on it | — |
+| Bluesky @stickpicks.hockey | Social account; automatic posts | contact@ | App password "stickpicks automation" in the GitHub secret BSKY_APP_PASSWORD |
+| Instagram @stickpicks.hockey | Social account (professional); posted by hand from the 📸 emails | stickpicks Google account | — |
+| GoatCounter (stickpicks.goatcounter.com) | Visitor stats | stickpicks Google account | Optional API token GOATCOUNTER_TOKEN (weekly report visits) |
+| cron-job.org | Backup alarm clock: starts the score updates (15 min) and social posts (30 min) on GitHub | stickpicks Google account | Holds the GitHub token above in both jobs' Authorization header |
+
+Not made yet (roadmap): Google Play developer account, Apple developer account. Watching: stickpicks.com (owned by someone else).
+
 ## Roadmap and things being watched
 
 Kept here (not only in one PC's Claude memory) so every device and session knows them. Dates are also on the
