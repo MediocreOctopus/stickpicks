@@ -15,7 +15,7 @@ on:
   workflow_run:
     workflows: ["Deploy site"]
     types: [completed]
-  workflow_dispatch:
+  workflow_dispatch:   # the Run workflow button, and cron-job.org every half hour as a backup (inputs: dry_run false)
     inputs:
       dry_run:
         description: "Dry run: show what would be posted, don't post"

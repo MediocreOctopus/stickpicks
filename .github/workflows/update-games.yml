@@ -6,7 +6,14 @@ on:
     # Scores usually land within about 15–30 minutes of the final horn.
     # keepalive.yml stops GitHub switching this off over a quiet summer.
     - cron: "7,22,37,52 * * * *"
-  workflow_dispatch: # adds a "Run workflow" button for manual updates
+  workflow_dispatch: # adds a "Run workflow" button for manual updates; cron-job.org also starts it this way, every
+                     # 15 minutes, as a backup for days GitHub skips its own scheduled runs
+
+# One run at a time: a backup run that lands on top of a scheduled one waits its turn, so puck-drop reminders
+# (marked as sent at the end of each run) can't go out twice.
+concurrency:
+  group: update-games
+  cancel-in-progress: false
 
 jobs:
   update:
